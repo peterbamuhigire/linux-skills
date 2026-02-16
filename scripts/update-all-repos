@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# ====================================================
+# One-Click Repository Update Script
+# ====================================================
+# Purpose: Pull the latest changes for all Git repositories
+#          on a Linux server in one command.
+#
+# Usage:   update-all-repos
+#
+# Setup:
+#   1. Copy this script to /usr/local/bin/
+#      sudo cp update-all-repos /usr/local/bin/update-all-repos
+#      sudo chmod +x /usr/local/bin/update-all-repos
+#
+#   2. Edit the REPOS section below to add your own repositories.
+#      Format: REPOS["Display Name"]="/path/to/repo"
+#
+#   3. Make sure Git is installed and SSH keys or HTTPS credentials
+#      are configured for each repository.
+#
+#   4. Run it: update-all-repos
+# ====================================================
+
+# ----------------------------------------------------
+# Configuration: Add your repositories here
+# ----------------------------------------------------
+declare -A REPOS
+REPOS["MyApp"]="/var/www/html/myapp"
+REPOS["Backend API"]="/var/www/html/backend"
+# Add more repos as needed:
+# REPOS["Repo Name"]="/path/to/repo"
+
+# ----------------------------------------------------
+# Function to update a single repository
+# ----------------------------------------------------
+update_repo() {
+    local repo_name=$1
+    local repo_path=$2
+
+    echo "=================================================="
+    echo "Updating: $repo_name"
+    echo "Location: $repo_path"
+    echo "NOTE: Tracked files will be overwritten."
+    echo "      Untracked files (uploads) will remain untouched."
+    echo "=================================================="
+    echo ""
+
+    if [ ! -d "$repo_path/.git" ]; then
+        echo "Error: $repo_path is not a Git repository."
+        echo ""
+        return
+    fi
+
+    cd "$repo_path" || { echo "Cannot enter $repo_path"; echo ""; return; }
+
+    # Mark as safe to avoid 'dubious ownership' errors
+    git config --global --add safe.directory "$repo_path" 2>/dev/null
+
+    # Reset tracked changes to avoid merge conflicts
+    echo "Resetting local changes..."
+    git reset --hard HEAD
+
+    # Pull latest changes
+    echo "Pulling latest changes..."
+    if git pull --rebase; then
+        echo ""
+        echo "Successfully updated $repo_name"
+        current_branch=$(git rev-parse --abbrev-ref HEAD)
+        echo "  Branch: $current_branch"
+        echo "  Latest commit:"
+        git log -1 --oneline
+    else
+        echo ""
+        echo "Error pulling changes for $repo_name!"
+        echo "  (Check SSH key authentication or internet connection)"
+    fi
+
+    echo ""
+}
+
+# ----------------------------------------------------
+# Main: Loop through all repositories
+# ----------------------------------------------------
+echo "=================================================="
+echo "Updating all repositories..."
+echo "=================================================="
+echo ""
+
+for repo_name in "${!REPOS[@]}"; do
+    update_repo "$repo_name" "${REPOS[$repo_name]}"
+done
+
+echo "All repositories have been processed."
+echo ""
