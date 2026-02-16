@@ -6,7 +6,7 @@ Every time a new Git repository is cloned or created on this server, it **must**
 
 Both scripts live in `/usr/local/bin/` and are owned by root (require `sudo` to edit).
 
-### 1. `update-all-repos.sh` (batch/non-interactive)
+### 1. `update-all-repos` (batch/non-interactive)
 
 Add a new entry to the `REPOS` associative array at the top of the file:
 
@@ -39,16 +39,15 @@ Three changes are needed:
 |---|------------------|-----------------------------------|
 | 1 | Maduuka          | /var/www/html/Maduuka             |
 | 2 | DMS_web          | /var/www/html/DMS_web             |
-| 3 | Medic8           | /var/www/html/Medic8              |
-| 4 | Server Manager   | /var/www/html/server-manager      |
-| 5 | BIRDC ERP        | /var/www/html/birdcerp            |
-| 6 | Linux Skills     | /home/administrator/linux-skills  |
+| 3 | Server Manager   | /var/www/html/server-manager      |
+| 4 | BIRDC ERP        | /var/www/html/birdcerp            |
+| 5 | Linux Skills     | /home/administrator/linux-skills  |
 
 ## Quick Command
 
 To edit the scripts:
 
 ```bash
-sudo nano /usr/local/bin/update-all-repos.sh
+sudo nano /usr/local/bin/update-all-repos
 sudo nano /usr/local/bin/update-repos
 ```

@@ -11,4 +11,4 @@ Claude Code reads this repo automatically at the start of every session.
 
 ## Key Rules
 
-- **New repo on server?** It MUST be added to both `/usr/local/bin/update-all-repos.sh` and `/usr/local/bin/update-repos`. See `notes/new-repo-checklist.md` for instructions.
+- **New repo on server?** It MUST be added to both `/usr/local/bin/update-all-repos` and `/usr/local/bin/update-repos`. See `notes/new-repo-checklist.md` for instructions.
