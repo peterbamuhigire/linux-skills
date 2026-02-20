@@ -285,29 +285,31 @@ if systemctl is-active apache2 &>/dev/null; then
         info "mod_security is not installed (optional, adds WAF layer)"
     fi
 
-    # Check security headers in vhosts (check both enabled and available)
-    VHOST_COUNT=$(ls /etc/apache2/sites-enabled/*.conf 2>/dev/null | wc -l)
-    HSTS_COUNT=$(grep -rl "Strict-Transport-Security" /etc/apache2/sites-enabled/ /etc/apache2/sites-available/ 2>/dev/null | grep -v ".backup" | sort -u | wc -l)
-    XFRAME_COUNT=$(grep -rl "X-Frame-Options" /etc/apache2/sites-enabled/ /etc/apache2/sites-available/ 2>/dev/null | grep -v ".backup" | sort -u | wc -l)
-    XCTYPE_COUNT=$(grep -rl "X-Content-Type-Options" /etc/apache2/sites-enabled/ /etc/apache2/sites-available/ 2>/dev/null | grep -v ".backup" | sort -u | wc -l)
+    # Check security headers (global conf or per-vhost)
+    GLOBAL_CONF="/etc/apache2/conf-available/security.conf /etc/apache2/conf-enabled/"
+    VHOST_DIRS="/etc/apache2/sites-enabled/ /etc/apache2/sites-available/"
 
-    if [[ "$HSTS_COUNT" -ge "$VHOST_COUNT" && "$VHOST_COUNT" -gt 0 ]]; then
-        pass "HSTS header set on all $VHOST_COUNT vhosts"
-    else
-        warn "HSTS header set on $HSTS_COUNT of $VHOST_COUNT vhosts"
-    fi
+    check_header() {
+        local header="$1" label="$2"
+        # Check global config first
+        if grep -rq "$header" $GLOBAL_CONF 2>/dev/null; then
+            pass "$label (set globally)"
+        else
+            local VHOST_COUNT
+            VHOST_COUNT=$(ls /etc/apache2/sites-enabled/*.conf 2>/dev/null | wc -l)
+            local HEADER_COUNT
+            HEADER_COUNT=$(grep -rl "$header" $VHOST_DIRS 2>/dev/null | grep -v ".backup" | sort -u | wc -l)
+            if [[ "$HEADER_COUNT" -ge "$VHOST_COUNT" && "$VHOST_COUNT" -gt 0 ]]; then
+                pass "$label (set on all vhosts)"
+            else
+                warn "$label (set on $HEADER_COUNT of $VHOST_COUNT vhosts)"
+            fi
+        fi
+    }
 
-    if [[ "$XFRAME_COUNT" -ge "$VHOST_COUNT" && "$VHOST_COUNT" -gt 0 ]]; then
-        pass "X-Frame-Options set on all vhosts"
-    else
-        warn "X-Frame-Options set on $XFRAME_COUNT of $VHOST_COUNT vhosts"
-    fi
-
-    if [[ "$XCTYPE_COUNT" -ge "$VHOST_COUNT" && "$VHOST_COUNT" -gt 0 ]]; then
-        pass "X-Content-Type-Options set on all vhosts"
-    else
-        warn "X-Content-Type-Options set on $XCTYPE_COUNT of $VHOST_COUNT vhosts"
-    fi
+    check_header "Strict-Transport-Security" "HSTS header configured"
+    check_header "X-Frame-Options" "X-Frame-Options configured"
+    check_header "X-Content-Type-Options" "X-Content-Type-Options configured"
 else
     info "Apache is not running"
 fi
