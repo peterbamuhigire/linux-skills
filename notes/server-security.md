@@ -35,15 +35,11 @@ without breaking the services your users depend on.
 The `server-audit.sh` script checks everything in this guide non-destructively.
 
 ```bash
-# Copy to server
-sudo cp ~/linux-skills/scripts/server-audit.sh /usr/local/bin/server-audit
-sudo chmod +x /usr/local/bin/server-audit
+# Symlink to make it available as a command
+sudo ln -s /home/administrator/linux-skills/scripts/server-audit.sh /usr/local/bin/check-server-security
 
 # Run it
-sudo server-audit
-
-# Run with log file
-sudo server-audit --log
+sudo check-server-security
 ```
 
 It outputs color-coded **PASS** / **WARN** / **FAIL** for each check with a final score.
