@@ -307,7 +307,19 @@ if systemctl is-active apache2 &>/dev/null; then
         fi
     }
 
-    check_header "Strict-Transport-Security" "HSTS header configured"
+    # HSTS only applies to SSL vhosts — count only *:443 configs
+    HSTS_GLOBAL=$(grep -rq "Strict-Transport-Security" $GLOBAL_CONF 2>/dev/null && echo "yes" || echo "no")
+    if [[ "$HSTS_GLOBAL" == "yes" ]]; then
+        pass "HSTS header configured (set globally)"
+    else
+        SSL_VHOST_COUNT=$(grep -rl "VirtualHost \*:443" /etc/apache2/sites-enabled/ 2>/dev/null | wc -l)
+        HSTS_COUNT=$(grep -rl "Strict-Transport-Security" /etc/apache2/sites-enabled/ /etc/apache2/sites-available/ 2>/dev/null | grep -v ".backup" | sort -u | wc -l)
+        if [[ "$HSTS_COUNT" -ge "$SSL_VHOST_COUNT" && "$SSL_VHOST_COUNT" -gt 0 ]]; then
+            pass "HSTS header set on all $SSL_VHOST_COUNT SSL vhosts"
+        else
+            warn "HSTS header set on $HSTS_COUNT of $SSL_VHOST_COUNT SSL vhosts"
+        fi
+    fi
     check_header "X-Frame-Options" "X-Frame-Options configured"
     check_header "X-Content-Type-Options" "X-Content-Type-Options configured"
 else
