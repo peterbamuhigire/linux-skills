@@ -26,9 +26,10 @@
 # Configuration: Add your repositories here
 # ----------------------------------------------------
 declare -A REPOS
+# Always include linux-skills on every server
+REPOS["Linux Skills"]="/home/administrator/linux-skills"
+# Add your project repos below:
 REPOS["MyApp"]="/var/www/html/myapp"
-REPOS["Backend API"]="/var/www/html/backend"
-# Add more repos as needed:
 # REPOS["Repo Name"]="/path/to/repo"
 
 # ----------------------------------------------------

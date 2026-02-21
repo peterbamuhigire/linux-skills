@@ -1,6 +1,6 @@
 # How to Set Up `update-all-repos` on Any Linux Server
 
-A single command to pull the latest changes for all your Git repositories at once.
+**This script is MANDATORY on every Linux server we manage.** It provides a single command to pull the latest changes for all Git repositories at once, keeping servers in sync.
 
 ## Prerequisites
 
@@ -28,13 +28,16 @@ Open the script and update the `REPOS` array with your own repositories:
 
 ```bash
 declare -A REPOS
+# linux-skills must ALWAYS be included on every server
+REPOS["Linux Skills"]="/home/administrator/linux-skills"
+# Add project repos:
 REPOS["MyApp"]="/var/www/html/myapp"
 REPOS["Backend API"]="/var/www/html/backend"
-REPOS["Admin Panel"]="/var/www/html/admin"
 ```
 
 - The key (e.g., `"MyApp"`) is a display name shown during updates.
 - The value is the absolute path to the cloned repository on the server.
+- **`linux-skills` must always be in the list** — this keeps the knowledge base up to date on every server.
 
 ### 3. Make it executable
 
@@ -72,3 +75,12 @@ Untracked files (like user uploads in `/uploads/` directories) are **not** affec
   0 2 * * * /usr/local/bin/update-all-repos >> /var/log/repo-updates.log 2>&1
   ```
 - **Production warning**: The script resets tracked changes. Any manual edits to tracked files on the server will be lost.
+
+## Server Setup Requirement
+
+This script is **mandatory on all Linux servers we run**. When provisioning a new server:
+
+1. Clone the `linux-skills` repo to `/home/administrator/linux-skills`
+2. Copy and configure `update-all-repos` as described above
+3. Ensure `linux-skills` is listed in the REPOS array
+4. Add all other project repos deployed on that server
