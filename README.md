@@ -27,3 +27,4 @@ notes/      Setup guides and troubleshooting
 - [Redis Setup](notes/redis-setup.md) — Redis for PHP sessions and application caching
 - [Server Security](notes/server-security.md) — Server hardening and security audit guide
 - [New Repo Checklist](notes/new-repo-checklist.md) — Steps for adding a new repo to the server
+- [Astro Site Setup](notes/astro-site-setup.md) — Deploy a new Astro site (clone, Nginx, SSL, update-repos)

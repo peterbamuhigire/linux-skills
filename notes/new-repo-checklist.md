@@ -34,11 +34,16 @@ sudo nano /usr/local/bin/update-all-repos
 
 ## Current Repos in the Script
 
-| # | Name                    | Path                              | Post-Update          |
-|---|-------------------------|-----------------------------------|----------------------|
-| 1 | Maduuka Demo            | /var/www/html/maduukademo         |                      |
-| 2 | DMS_web                 | /var/www/html/DMS_web             |                      |
-| 3 | Server Manager          | /var/www/html/server-manager      |                      |
-| 4 | BIRDC ERP               | /var/www/html/birdcerp            |                      |
-| 5 | Linux Skills            | /home/administrator/linux-skills  |                      |
-| 6 | Maduuka Website (Astro) | /var/www/maduuka-website          | npm install && build |
+| #  | Name                      | Path                                | Post-Update                              |
+|----|---------------------------|-------------------------------------|------------------------------------------|
+|  1 | Maduuka Demo              | /var/www/html/maduukademo           |                                          |
+|  2 | DMS_web                   | /var/www/html/DMS_web               |                                          |
+|  3 | Server Manager            | /var/www/html/server-manager        |                                          |
+|  4 | BIRDC ERP                 | /var/www/html/birdcerp              |                                          |
+|  5 | Linux Skills              | /home/administrator/linux-skills    |                                          |
+|  6 | Maduuka Website (Astro)   | /var/www/maduuka-website            | npm install --production && npm run build |
+|  7 | BIRDC Website (Astro)     | /var/www/html/birdc-website         | npm install --production && npm run build |
+|  8 | Dynapharm Website (Astro) | /var/www/html/dynapharm-website     | npm install --production && npm run build |
+|  9 | Chwezi Website (Astro)    | /var/www/html/chwezi-website        | npm install --production && npm run build |
+| 10 | TechGuy Website (Astro)   | /var/www/html/techguy-website       | npm install --production && npm run build |
+| 11 | Tooke Online (Astro)      | /var/www/html/tookeonline-website   | npm install --production && npm run build |
