@@ -55,14 +55,20 @@ No `.sh` extension needed — `/usr/local/bin` is in the system PATH, so it work
 
 ## What It Does
 
-For each repository listed in the `REPOS` array, the script:
+For each repository listed in the `REPO_LIST` array, the script:
 
 1. Checks that the directory is a valid Git repo
-2. Runs `git reset --hard HEAD` to discard local tracked changes
+2. Runs `git reset --hard HEAD` and `git clean -fd` to discard local changes
 3. Runs `git pull --rebase` to fetch and apply the latest changes
 4. Reports the current branch and latest commit
+5. **Fixes `node_modules/.bin/` permissions** — if the repo has a `node_modules/.bin/` directory, any files missing the execute bit are automatically fixed with `chmod +x`. This prevents `Permission denied` errors when running tools like `astro`, `vite`, etc.
+6. Runs the post-update build command (e.g., `npm run build`) if changes were detected
 
 Untracked files (like user uploads in `/uploads/` directories) are **not** affected.
+
+### Astro / Node.js Permission Fix
+
+`npm install` can sometimes strip execute permissions from binaries in `node_modules/.bin/`. The script detects this and fixes it automatically before running any build step. This was added after encountering `astro: Permission denied` errors during builds.
 
 ## Tips
 
