@@ -102,11 +102,85 @@ failregex = ^<HOST> .* "POST /api/
 ignoreregex =
 ```
 
+## Nginx Jails (General)
+
+```ini
+[nginx-http-auth]
+enabled  = true
+port     = http,https
+logpath  = /var/log/nginx/error.log
+maxretry = 5
+bantime  = 3600
+
+[nginx-botsearch]
+enabled  = true
+port     = http,https
+logpath  = /var/log/nginx/access.log
+maxretry = 2
+bantime  = 86400
+```
+
+## Recidive Jail — Tuned for Repeat Offenders
+
+The `recidive` jail bans IPs that keep getting banned by other jails. Tune it
+so that persistent attackers get a very long ban:
+
+```ini
+[recidive]
+enabled  = true
+logpath  = /var/log/fail2ban.log
+bantime  = 2592000    ; 30 days
+findtime = 86400      ; look back 24 hours
+maxretry = 3          ; 3 bans in 24 hours triggers 30-day ban
+action   = %(action_mwl)s
+```
+
+## Action Configurations
+
+fail2ban ships with built-in action levels. Add `action` to any jail:
+
+```ini
+# Ban only (default)
+action = %(action_)s
+
+# Ban + send whois + log lines to admin email
+action = %(action_mwl)s
+
+# Ban + send whois to admin email (no log lines)
+action = %(action_mw)s
+```
+
+Set global mail target in `[DEFAULT]`:
+```ini
+[DEFAULT]
+destemail = admin@example.com
+sender    = fail2ban@example.com
+mta       = sendmail
+action    = %(action_mwl)s
+```
+
+## Useful Per-Jail Overrides
+
+Override global defaults for specific jails inline:
+
+```ini
+[sshd]
+enabled  = true
+port     = ssh
+maxretry = 3
+bantime  = 86400
+findtime = 300
+# Aggressive: each new SSH fail within 5 min = 1-day ban
+```
+
 ## Operations
 
 ```bash
 # Check all bans
 sudo fail2ban-client status
+
+# Status of specific jail
+sudo fail2ban-client status sshd
 
 # Unban
 sudo fail2ban-client set <jail> unbanip <ip>
@@ -114,6 +188,12 @@ sudo fail2ban-client set <jail> unbanip <ip>
 # Test a filter against a log file
 sudo fail2ban-regex /var/log/nginx/access.log /etc/fail2ban/filter.d/saas-api-limit.conf
 
+# Check which jails are enabled
+sudo fail2ban-client status | grep 'Jail list'
+
 # Reload after changes
 sudo systemctl reload fail2ban
+
+# View current bans from the database
+sudo fail2ban-client get sshd banip
 ```
