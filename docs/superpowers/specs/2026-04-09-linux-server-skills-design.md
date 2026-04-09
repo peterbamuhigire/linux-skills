@@ -52,7 +52,7 @@ Backups:
   MySQL            — cron 8x/day → backup-alert.sh → mysql-backup.sh
                      GPG AES256 encrypted → rclone → gdrive:cloudclusters-techguy-backups
                      Local: 7 days | Google Drive: 3 days
-  DMS              — root cron daily 2AM → backup-dms
+  App files        — root cron (schedule per app) → product-specific backup script
                      GPG encrypted → Google Drive, 7-day retention
   Credentials:     ~/.mysql-backup.cnf, ~/.backup-encryption-key,
                    ~/.config/rclone/rclone.conf (all mode 600)
@@ -89,7 +89,7 @@ Services (10):
 | brightsoma.com | PHP app (Apache) | /var/www/html/brightsoma |
 | dynagricug.com | Astro static | /var/www/html/dynagricug/dist |
 | dynapharmafrica.com | Astro static | /var/www/html/dynapharm-website/dist |
-| erp.dynapharmafrica.com | PHP app (Apache) | /var/www/html/DMS_web |
+| erp.dynapharmafrica.com | PHP app (Apache) | /var/www/html/erp-app |
 | kampuspad.com | PHP app (Apache) | /var/www/html/KampusPadWebsite |
 | chwezicore.com | Astro + PHP | /var/www/html/chwezi-website/dist |
 | tookeonline.com | Astro static | /var/www/html/tookeonline-website/dist |
@@ -355,12 +355,13 @@ mysql -u root -p target_db < ~/restore/dump_TIMESTAMP/dbname.sql
 mysql -u root -p < ~/restore/dump_TIMESTAMP/all-databases.sql
 ```
 
-**DMS restore:** `/backups/dms/` — similar GPG decrypt + file restore
+**App file restore:** product-specific backup scripts store archives in `/backups/<app>/` — same GPG decrypt + file restore pattern
 
-**Maduuka demo reset:**
-- `sudo reset-maduuka-from-git` — drops + recreates from git SQL dump
-- Backup exists before destruction: `/var/backups/maduuka/`
-- Requires typing `YES`
+**Demo/dev environment reset (git-tracked SQL dump pattern):**
+- Some apps ship a git-tracked SQL dump as the source of truth for their demo DB
+- A reset script drops + recreates the DB from that dump: `sudo reset-<app>-from-git`
+- Always creates a timestamped safety backup in `/var/backups/<app>/` before destruction
+- Requires typing `YES` — never skippable
 
 **Emergency checklist after data loss:**
 1. Don't panic — backups exist (local 7 days + Drive 3 days)
