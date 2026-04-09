@@ -110,16 +110,17 @@ else
     [[ "$CONT" =~ ^[Yy]$ ]] || error "Aborted."
 fi
 
-# ─── Step 5: Clone linux-skills ──────────────────────────────────────────────
+# ─── Step 5: Clone linux-skills → ~/.claude/skills ───────────────────────────
 
-info "Step 5: Setting up linux-skills repo..."
+info "Step 5: Setting up linux-skills as Claude Code skills directory..."
 
 DEFAULT_REPO="git@github.com:your-org/linux-skills.git"
 prompt "Enter linux-skills repo SSH URL (default: $DEFAULT_REPO): "
 read -r SKILLS_REPO
 SKILLS_REPO="${SKILLS_REPO:-$DEFAULT_REPO}"
 
-SKILLS_DIR="$HOME/linux-skills"
+SKILLS_DIR="$HOME/.claude/skills"
+mkdir -p "$HOME/.claude"
 
 if [[ -d "$SKILLS_DIR/.git" ]]; then
     info "linux-skills already cloned at $SKILLS_DIR — pulling latest..."
@@ -128,6 +129,8 @@ else
     info "Cloning linux-skills to $SKILLS_DIR..."
     git clone "$SKILLS_REPO" "$SKILLS_DIR"
 fi
+
+info "Claude Code will load all skills from $SKILLS_DIR on startup"
 
 # ─── Step 6: Symlink scripts ─────────────────────────────────────────────────
 
@@ -146,7 +149,6 @@ UPDATE_SCRIPT="$SKILLS_DIR/scripts/update-all-repos"
 if [[ -f "$UPDATE_SCRIPT" ]]; then
     sudo cp "$UPDATE_SCRIPT" /usr/local/bin/update-all-repos
     sudo chmod +x /usr/local/bin/update-all-repos
-    # update-repos wrapper (alias)
     printf '#!/bin/bash\n/usr/local/bin/update-all-repos "$@"\n' | \
         sudo tee /usr/local/bin/update-repos > /dev/null
     sudo chmod +x /usr/local/bin/update-repos
@@ -155,27 +157,9 @@ else
     warn "update-all-repos script not found at $UPDATE_SCRIPT — skipping"
 fi
 
-# ─── Step 7: Claude Code config ──────────────────────────────────────────────
+# ─── Step 7: Register linux-skills in update-all-repos ───────────────────────
 
-info "Step 7: Configuring Claude Code skills path..."
-CLAUDE_DIR="$HOME/.claude"
-mkdir -p "$CLAUDE_DIR"
-
-# Check if skills dir exists in the cloned repo
-SKILLS_SOURCE="$HOME/.claude/skills"
-if [[ ! -d "$SKILLS_SOURCE" ]]; then
-    warn "~/.claude/skills not found — Claude Code will discover skills from the repo"
-fi
-
-# Write a note to CLAUDE.md if it exists
-CLAUDE_MD="$SKILLS_DIR/CLAUDE.md"
-if [[ -f "$CLAUDE_MD" ]]; then
-    info "CLAUDE.md found — Claude Code will load context from $SKILLS_DIR on startup"
-fi
-
-# ─── Step 8: Register linux-skills in update-all-repos ───────────────────────
-
-info "Step 8: Register linux-skills in update-all-repos..."
+info "Step 7: Register linux-skills in update-all-repos..."
 if [[ -f /usr/local/bin/update-all-repos ]]; then
     if grep -q "linux-skills" /usr/local/bin/update-all-repos 2>/dev/null; then
         info "linux-skills already registered in update-all-repos"

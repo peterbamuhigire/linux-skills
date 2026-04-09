@@ -182,15 +182,18 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ## 10. Clone Linux Skills & Scripts
 
-```bash
-cd /home/administrator
-git clone <linux-skills-repo-url> linux-skills
+linux-skills IS the Claude Code skills directory — clone it to `~/.claude/skills`
+so all skills load automatically when Claude Code starts.
 
-sudo ln -sf /home/administrator/linux-skills/scripts/server-audit.sh \
+```bash
+mkdir -p ~/.claude
+git clone <linux-skills-repo-url> ~/.claude/skills
+
+sudo ln -sf ~/.claude/skills/scripts/server-audit.sh \
     /usr/local/bin/check-server-security
 sudo chmod +x /usr/local/bin/check-server-security
 
-sudo cp /home/administrator/linux-skills/scripts/update-all-repos \
+sudo cp ~/.claude/skills/scripts/update-all-repos \
     /usr/local/bin/update-all-repos
 sudo chmod +x /usr/local/bin/update-all-repos
 printf '#!/bin/bash\n/usr/local/bin/update-all-repos "$@"\n' | \
