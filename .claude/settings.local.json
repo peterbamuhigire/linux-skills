@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"/c/Users/Peter/.claude/skills/linux-security-analysis/references\")",
+      "Bash(mkdir -p \"/c/Users/Peter/.claude/skills/linux-server-hardening/references\")",
+      "Bash(mkdir -p \"/c/Users/Peter/.claude/skills/linux-site-deployment/references\")"
+    ]
+  }
+}
