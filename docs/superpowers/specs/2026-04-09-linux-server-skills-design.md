@@ -76,29 +76,23 @@ Services (10):
 
 ---
 
-## 3. Hosted Sites (19 domains)
+## 3. Site Deployment Patterns
 
-| Domain | Type | Web Root |
-|---|---|---|
-| maduuka.com | Astro static | /var/www/maduuka-website/dist |
-| demo.maduuka.com | PHP app (Apache) | /var/www/html/maduukademo |
-| shops.maduuka.com | PHP app (Apache) | /var/www/html/maduuka_app |
-| birdc.ug | Astro static | /var/www/html/birdc-website/dist |
-| demo.pibid.org | PHP app (Apache) | /var/www/html/birdcerp/public |
-| techguypeter.com | Astro static | /var/www/html/techguy-website/dist |
-| brightsoma.com | PHP app (Apache) | /var/www/html/brightsoma |
-| dynagricug.com | Astro static | /var/www/html/dynagricug/dist |
-| dynapharmafrica.com | Astro static | /var/www/html/dynapharm-website/dist |
-| erp.dynapharmafrica.com | PHP app (Apache) | /var/www/html/erp-app |
-| kampuspad.com | PHP app (Apache) | /var/www/html/KampusPadWebsite |
-| chwezicore.com | Astro + PHP | /var/www/html/chwezi-website/dist |
-| tookeonline.com | Astro static | /var/www/html/tookeonline-website/dist |
-| academiapro.app | Astro static | /var/www/html/academiapro-website/dist |
-| aqarproperty.co.uk | Astro static | /var/www/html/aqar-website/dist |
-| medic8.app | Astro static | /var/www/html/medic8-website/dist |
-| server.techguypeter.com | PHP app (Apache) | /var/www/html/server-manager/public |
-| phpmyadmin.techguypeter.com | phpMyAdmin (Apache) | /usr/share/phpmyadmin |
-| phpmyadmin.dynapharmafrica.com | phpMyAdmin (Apache) | /usr/share/phpmyadmin |
+The server hosts 20+ sites and apps. Projects come and go — some are transferred to
+client servers, some are retired. Skills must work for any site, not specific ones.
+
+Three deployment patterns are supported:
+
+| Pattern | Description | Web Root Convention | Build Step |
+|---|---|---|---|
+| A — Astro static | Nginx serves built files directly | `/var/www/[html/]<repo>/dist` | `npm install --production && npm run build` |
+| B — PHP app | Nginx proxies to Apache on port 8080 | `/var/www/html/<repo>[/public]` | none |
+| C — Astro + PHP | Static front-end + PHP backend | `/var/www/html/<repo>/dist` | `composer install --no-dev && npm install --production && npm run build` |
+
+Special cases also on the server:
+- **phpMyAdmin** — Apache-served, `/usr/share/phpmyadmin`, IP-restricted
+- **Node.js APIs** — systemd services, proxied by Nginx to a local port
+- **WordPress sites** — PHP app (Pattern B) with specific fail2ban jails
 
 ---
 
