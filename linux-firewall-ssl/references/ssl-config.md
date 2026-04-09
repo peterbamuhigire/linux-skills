@@ -64,3 +64,77 @@ sudo certbot --nginx -d <domain> --key-type ecdsa --elliptic-curve secp384r1
     Require ip 127.0.0.1
 </Directory>
 ```
+
+## OpenSSL — Inspect and Verify Certificates
+
+```bash
+# Show cert details (expiry, issuer, SANs):
+openssl x509 -in /etc/letsencrypt/live/<domain>/cert.pem -text -noout
+openssl x509 -in /etc/letsencrypt/live/<domain>/cert.pem -noout -dates
+
+# Verify cert against CA bundle:
+openssl verify -CAfile /etc/ssl/certs/ca-certificates.crt /etc/letsencrypt/live/<domain>/cert.pem
+
+# Test live TLS connection — shows cert chain, protocol, cipher:
+openssl s_client -connect <domain>:443 -servername <domain>
+
+# Test that old protocols are refused:
+openssl s_client -connect <domain>:443 -tls1   2>&1 | grep -E "handshake|alert"
+openssl s_client -connect <domain>:443 -tls1_1 2>&1 | grep -E "handshake|alert"
+# Both should return: handshake failure
+
+# Check OCSP stapling response:
+openssl s_client -connect <domain>:443 -status 2>&1 | grep -A5 "OCSP response"
+
+# Generate a self-signed cert (testing/internal use):
+openssl req -newkey rsa:2048 -nodes -keyout server.key -x509 -days 365 -out server.crt
+
+# Generate with EC key (preferred — stronger, lighter):
+openssl req -new -x509 -nodes -newkey ec:<(openssl ecparam -name secp384r1) \
+    -keyout cert.key.x509 -out cert.crt -days 3650
+
+# Generate a CSR + RSA key (to send to a CA):
+openssl req --out CSR.csr -new -newkey rsa:2048 -nodes -keyout server-privatekey.key
+
+# Generate a CSR with an EC key (two-step):
+openssl genpkey -algorithm EC -out eckey.pem -pkeyopt ec_paramgen_curve:P-384 -pkeyopt ec_param_enc:named_curve
+openssl req -new -key eckey.pem -out eckey.csr
+```
+
+## Apache TLS Hardening (/etc/apache2/mods-enabled/ssl.conf)
+
+```apache
+# Disable all protocols older than TLSv1.3:
+SSLProtocol all -SSLv3 -TLSv1 -TLSv1.1 -TLSv1.2
+
+# Restart Apache after changes:
+# sudo systemctl restart apache2
+```
+
+Check effective TLS config with sslscan (see monitoring-commands.md).
+
+## UFW Firewall — Essential Commands
+
+```bash
+# Status and enable:
+sudo ufw status
+sudo systemctl status ufw
+sudo ufw enable
+
+# Allow / deny ports:
+sudo ufw allow 22/tcp          # SSH (TCP only)
+sudo ufw allow 443             # HTTPS (both TCP and UDP)
+sudo ufw allow 53              # DNS (both protocols)
+sudo ufw deny  8080/tcp        # block a port
+
+# Reload after editing /etc/ufw/before.rules:
+sudo ufw reload
+
+# View underlying iptables rules (Ubuntu 20.04):
+sudo iptables -L
+sudo iptables -t mangle -L
+sudo ip6tables -L
+
+# View nftables rules (Ubuntu 22.04+):
+sudo nft list ruleset
+```

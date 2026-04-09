@@ -65,3 +65,69 @@ df -h                              # current
 du -sh /var/log/ /var/www/ ~/backups/  # top consumers
 sudo find / -type f -size +500M 2>/dev/null   # very large files
 ```
+
+## Open Ports and Network Services Audit
+
+```bash
+# Canonical snapshot — listening services with process names:
+sudo ss -tulpn
+
+# Legacy equivalent:
+sudo netstat -tulpn
+
+# Show active connections (established, not just listeners):
+sudo netstat -np -A inet
+
+# Connections by state summary:
+ss -tan | awk '{print $1}' | sort | uniq -c | sort -rn
+
+# Which process owns port 3306?
+sudo ss -tulpn | grep :3306
+sudo lsof -i :3306
+```
+
+## nmap Local Network Audit
+
+```bash
+# Verify your own server's open ports (run from a second machine or localhost):
+sudo nmap -sS <server-ip>           # SYN scan — fastest TCP
+sudo nmap -sU <server-ip>           # UDP scan
+sudo nmap -A  <server-ip>           # OS + service version + traceroute
+sudo nmap -sn 192.168.0.0/24        # discovery scan — which hosts are up
+
+# TLS/cipher audit of a web server:
+nmap --script ssl-enum-ciphers -p 443 <domain>
+
+# SSH algorithm audit:
+nmap -p 22 --script=ssh2-enum-algos <server-ip>
+```
+
+## /proc Filesystem Reads
+
+```bash
+# Live kernel network parameters:
+ls /proc/sys/net/ipv4/
+
+# Check if ICMP (ping) is ignored:
+cat /proc/sys/net/ipv4/icmp_echo_ignore_all   # 0 = normal, 1 = ignore pings
+
+# Temporarily block all pings (resets on reboot):
+sudo bash -c "echo '1' > /proc/sys/net/ipv4/icmp_echo_ignore_all"
+
+# Permanently change a kernel parameter (survives reboot):
+sudo sysctl -w net.ipv4.icmp_echo_ignore_all=0
+# To persist, add the parameter to /etc/sysctl.conf, then:
+sudo sysctl -p
+```
+
+## sslscan — TLS Protocol Audit
+
+```bash
+sudo apt install sslscan
+
+# Scan a host — shows which TLS versions and ciphers are enabled:
+sslscan <domain>
+sslscan 192.168.0.3
+
+# Verify only TLSv1.2 and TLSv1.3 are enabled (SSLv2/3 and TLSv1.0/1.1 should show as disabled)
+```

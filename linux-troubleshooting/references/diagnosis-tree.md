@@ -105,6 +105,7 @@ ls -la ~/.backup-encryption-key      # GPG key present and mode 600?
 
 ## Branch 10: Site Down After update-all-repos
 
+
 ```bash
 sudo systemctl status nginx
 sudo nginx -t                        # config broken by update?
@@ -116,4 +117,69 @@ sudo git log --oneline -5
 sudo git reset --hard <good-commit-hash>
 sudo npm run build                   # if Astro site
 sudo nginx -t && sudo systemctl reload nginx
+```
+
+## Branch 11: Open Port / Unexpected Listener
+
+```bash
+# See all listening TCP/UDP sockets with process names (replaces netstat)
+sudo ss -tulpn
+# or legacy:
+sudo netstat -tulpn
+
+# Check which process owns a specific port:
+sudo ss -tulpn | grep :8080
+sudo lsof -i :8080           # install: sudo apt install lsof
+
+# All files open by a specific process (useful for zombie/stuck processes):
+sudo lsof -p <pid>
+
+# All network connections for a process name:
+sudo lsof -i -n -P | grep nginx
+```
+
+Fix: `sudo ufw deny <port>/tcp` to block unexpected listeners | kill the process
+
+## Branch 12: Tracing a Crashing or Misbehaving Process
+
+```bash
+# Trace system calls made by a command (shows what it opens, reads, writes):
+strace -c -f <command>                  # summary table of syscalls
+strace -e trace=file <command>          # only file-related syscalls
+strace -p <pid>                         # attach to running process
+
+# Confirm binary syscalls (security audit of what ls actually does):
+strace -c -f -S name ls 2>&1 1>/dev/null | tail -n +3 | head -n -2 | awk '{print $(NF)}'
+```
+
+Install: `sudo apt install strace`
+
+## Branch 13: Security Audit — Who Is Listening / What Accessed a File
+
+```bash
+# Install auditd (Ubuntu):
+sudo apt install auditd
+
+# List active audit rules:
+sudo auditctl -l
+
+# Watch /etc/passwd for writes/attribute changes:
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+
+# Watch a directory for all access:
+sudo auditctl -w /var/www/html/ -p rwxa -k webroot_watch
+
+# Make rules permanent (survives reboot):
+sudo sh -c "auditctl -l > /etc/audit/rules.d/custom.rules"
+sudo systemctl restart auditd
+
+# Search audit log by key:
+sudo ausearch -i -k passwd_changes
+sudo aureport -i -k | grep 'passwd_changes'
+
+# Authentication report (who logged in, success/fail):
+sudo aureport -au
+
+# Look up a specific event number:
+sudo ausearch -a <event_number>
 ```
