@@ -8,9 +8,14 @@
 
 ## 1. Overview
 
-A set of 14 Claude Code skills (1 hub + 13 spokes) for managing production Linux servers.
+A set of 15 Claude Code skills (1 hub + 14 spokes) for managing production Linux servers.
 Heavy emphasis on security and system administration. Skills are interactive-first, with
 reference-style output for monitoring and log analysis tasks.
+
+**Portability:** All skills are written for any Ubuntu/Debian server. The server context
+block in Section 2 is a default profile for the primary server — when working on a
+different server, the context is updated and all skills adapt automatically. No skill
+hardcodes product names, app paths, or assumptions about what is currently hosted.
 
 Skills live in: `C:\Users\Peter\.claude\skills\`
 
@@ -104,20 +109,21 @@ Special cases also on the server:
 |---|---|
 | `linux-sysadmin` | Numbered menu → routes to the correct spoke |
 
-### Spokes (13)
+### Spokes (14)
 
 | Skill | Purpose | Style |
 |---|---|---|
-| `linux-server-provisioning` | Fresh Ubuntu 24.04 server setup A→Z | Interactive step-by-step |
-| `linux-server-hardening` | Security audit + hardening walkthrough | Interactive checklist |
+| `linux-server-provisioning` | Fresh Ubuntu/Debian server setup A→Z | Interactive step-by-step |
+| `linux-server-hardening` | Apply hardening fixes interactively | Interactive checklist |
+| `linux-security-analysis` | Deep security audit — finds issues, rates severity, produces report | Analysis + report |
 | `linux-access-control` | Users, SSH keys, sudo, file permissions | Interactive + reference |
 | `linux-firewall-ssl` | UFW management + certbot/Let's Encrypt | Interactive |
 | `linux-intrusion-detection` | fail2ban, AIDE, auditd setup & management | Interactive |
-| `linux-service-management` | systemd: manage all 10 services, journalctl | Interactive + reference |
-| `linux-disk-storage` | Space analysis, cleanup, no-swap considerations | Interactive |
+| `linux-service-management` | systemd: manage services, journalctl | Interactive + reference |
+| `linux-disk-storage` | Space analysis, cleanup, swap management | Interactive |
 | `linux-system-monitoring` | CPU, RAM, disk, network health reading | Reference-heavy |
 | `linux-webstack` | Nginx + Apache + PHP-FPM + Node.js management | Mixed |
-| `linux-log-management` | journalctl, Nginx/Apache/fail2ban logs, logrotate | Reference-heavy |
+| `linux-log-management` | journalctl, web server/fail2ban logs, logrotate | Reference-heavy |
 | `linux-troubleshooting` | Incident diagnosis: high load, OOM, crash, 502 | Interactive |
 | `linux-disaster-recovery` | GPG backup decryption + restore + emergency | Interactive step-by-step |
 | `linux-site-deployment` | Add new website: clone → build → Nginx → SSL → register | Interactive |
@@ -133,18 +139,19 @@ Opens with a numbered menu:
 ```
 What do you need to do?
   1. Set up a new server
-  2. Security hardening & audit
-  3. Manage users & access
-  4. Firewall & SSL certificates
-  5. Intrusion detection (fail2ban, AIDE)
-  6. Manage services (nginx, mysql, php-fpm…)
-  7. Disk & storage
-  8. Monitor system health
-  9. Web stack management (Nginx, Apache, PHP-FPM)
- 10. Log management
- 11. Troubleshoot an issue
- 12. Disaster recovery & restore from backup
- 13. Deploy a new website
+  2. Security analysis (deep audit — findings & severity report)
+  3. Security hardening (apply fixes)
+  4. Manage users & access
+  5. Firewall & SSL certificates
+  6. Intrusion detection (fail2ban, AIDE)
+  7. Manage services (nginx, mysql, php-fpm…)
+  8. Disk & storage
+  9. Monitor system health
+ 10. Web stack management (Nginx, Apache, PHP-FPM)
+ 11. Log management
+ 12. Troubleshoot an issue
+ 13. Disaster recovery & restore from backup
+ 14. Deploy a new website
 ```
 
 Embeds full server context block. Routes to the corresponding spoke skill.
@@ -176,7 +183,109 @@ Initial Ubuntu 24.04 setup for this server pattern:
 - Confirms current baseline is still in place (won't re-harden what's done)
 - References: `notes/server-security.md`, `scripts/server-audit.sh`
 
-### 5.4 `linux-access-control`
+### 5.4 `linux-security-analysis`
+
+A thorough, read-only security audit that produces a severity-rated report.
+**No changes are made** — this skill only observes and reports. Use
+`linux-server-hardening` to fix the findings.
+
+**Scope — 10 analysis layers:**
+
+1. **System & kernel**
+   - Kernel version + CVE exposure check
+   - ASLR, dmesg_restrict, kptr_restrict, sysctl hardening parameters
+   - Unattended upgrades status, pending security updates
+
+2. **Users & authentication**
+   - Accounts with UID 0 (should be root only)
+   - Accounts with empty passwords
+   - sudo group members — who has privilege escalation?
+   - SSH config: PermitRootLogin, PasswordAuthentication, MaxAuthTries, X11Forwarding
+   - Authorized keys audit across all user accounts
+   - PAM password policy
+
+3. **Network exposure**
+   - All listening ports: `ss -tulnp` — what is exposed and to where?
+   - Services bound to 0.0.0.0 vs 127.0.0.1 (databases must be localhost-only)
+   - UFW status and rule review
+   - IPv6 exposure
+
+4. **Firewall & access control**
+   - UFW default policies (incoming deny, outgoing allow)
+   - Open ports vs what should be open (22, 80, 443 only for web servers)
+   - Rate limiting in place?
+
+5. **Web server security**
+   - Nginx: `server_tokens`, security headers on all vhosts, dotfile blocking,
+     catch-all returning 444, HSTS configuration
+   - Apache: ServerTokens, ServerSignature, directory listing disabled
+   - SSL/TLS: protocol versions (TLSv1.0/1.1 must be absent), cipher suites,
+     HSTS, certificate expiry, ECDSA vs RSA
+   - PHP-FPM: `expose_php`, `display_errors`, `allow_url_include`,
+     session hardening, `disable_functions`
+
+6. **Database security**
+   - MySQL: bind-address (must be 127.0.0.1), anonymous users, test databases,
+     root remote login, application user privileges (principle of least privilege)
+   - PostgreSQL: listen_addresses, pg_hba.conf review
+   - Redis: bind address, requirepass set, dangerous commands renamed/disabled
+
+7. **File system**
+   - World-writable files in `/var/www` and system directories
+   - SUID/SGID binaries: `find / -perm /6000 -type f` — expected vs unexpected
+   - Credential file permissions: all sensitive files must be mode 600
+   - Unowned files: `find / -nouser -nogroup`
+   - `/tmp` and `/var/tmp` sticky bit
+
+8. **Intrusion detection & monitoring**
+   - fail2ban: running, jail count, recent bans
+   - AIDE: installed and database initialised?
+   - auditd: running, watch rules configured?
+   - Log monitoring tool present (logwatch/logcheck)?
+
+9. **Backup integrity**
+   - Backup cron jobs present and scheduled correctly
+   - Last backup timestamp — is it recent?
+   - Backup credential files exist and are mode 600
+   - rclone remote accessible: `rclone about gdrive:`
+   - GPG encryption key present
+
+10. **Package & software**
+    - Packages with available security updates
+    - Installed but unnecessary services running
+    - Lynis scan (if installed): `sudo lynis audit system`
+
+**Output format — severity-rated report:**
+
+```
+SECURITY ANALYSIS REPORT
+Server: <hostname> | <OS> | <date>
+═══════════════════════════════════
+
+[CRITICAL] MySQL is listening on 0.0.0.0:3306 — exposed to internet
+[HIGH]     SSH password authentication is enabled
+[HIGH]     3 world-writable files found in /var/www
+[MEDIUM]   AIDE not installed — no file integrity monitoring
+[MEDIUM]   12 packages have pending security updates
+[LOW]      X11 forwarding is enabled in SSH config
+[INFO]     auditd is not running (optional)
+[PASS]     UFW active, default deny incoming
+[PASS]     fail2ban running with 11 jails
+...
+
+Summary: 2 CRITICAL | 3 HIGH | 4 MEDIUM | 2 LOW | 6 INFO | 18 PASS
+Overall security score: 72%
+
+Recommended next step: Run linux-server-hardening to fix CRITICAL and HIGH items.
+```
+
+**Relationship to other skills:**
+- `linux-security-analysis` — finds and reports (read-only)
+- `linux-server-hardening` — fixes what analysis found (makes changes)
+- `scripts/server-audit.sh` in linux-skills repo — lightweight quick check;
+  this skill is the deep, comprehensive version
+
+### 5.6 `linux-access-control`
 
 - User management: create, delete, lock accounts
 - Sudo group: add/remove users, audit `sudo` group members
@@ -185,7 +294,7 @@ Initial Ubuntu 24.04 setup for this server pattern:
   verify `/etc/shadow` (640), `/etc/passwd` (644)
 - Service account isolation: verify web processes run as `www-data`
 
-### 5.5 `linux-firewall-ssl`
+### 5.7 `linux-firewall-ssl`
 
 **UFW:**
 - View current rules: `sudo ufw status verbose`
@@ -201,7 +310,7 @@ Initial Ubuntu 24.04 setup for this server pattern:
 - Troubleshoot renewal failure (check `.well-known/acme-challenge/` location)
 - Verify `ssl-params.conf` is included in every SSL vhost
 
-### 5.6 `linux-intrusion-detection`
+### 5.8 `linux-intrusion-detection`
 
 **fail2ban — all 11 jails:**
 - Check status: `sudo fail2ban-client status`
@@ -222,7 +331,7 @@ Initial Ubuntu 24.04 setup for this server pattern:
 - Set watch rules (e.g. watch `/etc/passwd`, `/etc/shadow`)
 - Read audit log: `sudo ausearch -f /etc/passwd`
 
-### 5.7 `linux-service-management`
+### 5.9 `linux-service-management`
 
 For each core service (`nginx`, `apache2`, `mysql`, `postgresql`,
 `php8.3-fpm`, `fail2ban`, `certbot.timer`, `cron`, `msmtp`) and any
@@ -244,7 +353,7 @@ Debug a crashed service:
 2. `journalctl -u <service> --since "5 min ago"` — find the error
 3. Common fixes by service
 
-### 5.8 `linux-disk-storage`
+### 5.10 `linux-disk-storage`
 
 - Check disk usage: `df -h`, `du -sh /var/www/* | sort -rh | head -20`
 - Find largest files: `find / -type f -size +100M 2>/dev/null`
@@ -258,7 +367,7 @@ Debug a crashed service:
 **Emergency disk space** (guided): find and clear space fast when disk is
 approaching full, prioritising safe targets (caches, old logs, old backups)
 
-### 5.9 `linux-system-monitoring`
+### 5.11 `linux-system-monitoring`
 
 - CPU: `htop`, `top`, load averages, per-process CPU
 - Memory: free/used/cached, no swap means OOM kills are possible
@@ -269,7 +378,7 @@ approaching full, prioritising safe targets (caches, old logs, old backups)
 - Backup health: verify last backup timestamp and cron is active
 - Quick health one-liner: `uptime && free -h && df -h && ss -tlnp`
 
-### 5.10 `linux-webstack`
+### 5.12 `linux-webstack`
 
 **Nginx:**
 - Test config: `sudo nginx -t`
@@ -296,7 +405,7 @@ approaching full, prioritising safe targets (caches, old logs, old backups)
 - Restart after update: `sudo systemctl restart <service-name>`
 - Register new Node.js service as a systemd unit (template provided)
 
-### 5.11 `linux-log-management`
+### 5.13 `linux-log-management`
 
 - journalctl: filter by service, time range, priority level
 - Nginx logs: access pattern analysis, find 4xx/5xx spikes
@@ -308,7 +417,7 @@ approaching full, prioritising safe targets (caches, old logs, old backups)
 - logrotate: check config `/etc/logrotate.d/`, force rotate, add new log
 - Finding attack patterns: high 404 rates, auth failure spikes, bot activity
 
-### 5.12 `linux-troubleshooting`
+### 5.14 `linux-troubleshooting`
 
 Systematic diagnosis tree — asks symptoms first, then guides:
 
@@ -325,7 +434,7 @@ Systematic diagnosis tree — asks symptoms first, then guides:
 | Backup failed | Check cron log → check rclone token → check GPG key |
 | Site down after update | `nginx -t` → check update-all-repos build log |
 
-### 5.13 `linux-disaster-recovery`
+### 5.15 `linux-disaster-recovery`
 
 **MySQL restore (from GPG-encrypted backup):**
 
@@ -365,7 +474,7 @@ mysql -u root -p < ~/restore/dump_TIMESTAMP/all-databases.sql
 5. Re-run `check-server-security` after recovery
 6. Check all services are running: `systemctl status nginx mysql php8.3-fpm`
 
-### 5.14 `linux-site-deployment`
+### 5.16 `linux-site-deployment`
 
 Interactive — asks domain, site type, then walks through exact steps.
 
@@ -426,14 +535,16 @@ server {
 
 ## 6. Shared Conventions
 
-- All skills use the server context block from Section 2
+- All skills are generic Ubuntu/Debian — no product names, no hardcoded app paths
+- Server context block (Section 2) is a default profile; skills adapt to any server
 - Destructive operations (reset, restore, drop) always confirm before executing
 - Skills reference existing linux-skills repo docs where relevant:
-  - `linux-server-hardening` → `notes/server-security.md`
+  - `linux-security-analysis` + `linux-server-hardening` → `notes/server-security.md`, `scripts/server-audit.sh`
   - `linux-disaster-recovery` → `notes/mysql-backup-setup.md`
   - `linux-site-deployment` → `notes/new-repo-checklist.md`
 - All `.md` skill files follow the 500-line hard limit (skills repo standard)
 - Each skill has frontmatter: `name` + `description` fields
+- `linux-security-analysis` is always read-only — it never modifies the system
 
 ---
 
@@ -442,19 +553,20 @@ server {
 Write skills in this order (most foundational first):
 
 1. `linux-sysadmin` (hub — needed to route to everything else)
-2. `linux-server-hardening` (highest priority, security-heavy)
-3. `linux-site-deployment` (most frequent daily operation)
-4. `linux-service-management` (core operational skill)
-5. `linux-troubleshooting` (incident response)
-6. `linux-disaster-recovery` (critical safety net)
-7. `linux-firewall-ssl`
-8. `linux-intrusion-detection`
-9. `linux-webstack`
-10. `linux-access-control`
-11. `linux-system-monitoring`
-12. `linux-disk-storage`
-13. `linux-log-management`
-14. `linux-server-provisioning` (least frequent)
+2. `linux-security-analysis` (deep audit — understand the security posture first)
+3. `linux-server-hardening` (fix what analysis finds)
+4. `linux-site-deployment` (most frequent daily operation)
+5. `linux-service-management` (core operational skill)
+6. `linux-troubleshooting` (incident response)
+7. `linux-disaster-recovery` (critical safety net)
+8. `linux-firewall-ssl`
+9. `linux-intrusion-detection`
+10. `linux-webstack`
+11. `linux-access-control`
+12. `linux-system-monitoring`
+13. `linux-disk-storage`
+14. `linux-log-management`
+15. `linux-server-provisioning` (least frequent)
 
 ---
 
