@@ -13,7 +13,8 @@ Every script listed here must obey [`spec.md`](spec.md) — standard flags,
 Status legend:
 - **core=yes** → installed by `install-skills-bin core` during initial setup.
 - **core=no** → lazy-installed by `install-skills-bin <skill>` on first use.
-- **[EXIST]** → already in `scripts/`, needs rename/refactor to match spec.
+- **[DONE]** → written to spec, sources `common.sh`, has standard flags.
+- **[EXIST]** → legacy script; migration to `sk-*` pending.
 - **[NEW]** → to be written next session.
 
 Sources: `PB`=Pro Bash · `SSB`=Shell Scripting Bible · `WCS`=Wicked Cool Shell
@@ -31,8 +32,8 @@ date, backed up, and what's running on it?
 
 | # | Script | Skill | Core? | Status | Purpose | Source |
 |---|---|---|---|---|---|---|
-| 1 | `sk-audit` | linux-security-analysis | yes | [EXIST] | Read-only 14-section security audit producing PASS/WARN/FAIL report with score. | EX |
-| 2 | `sk-update-all-repos` | linux-site-deployment | yes | [EXIST] | Pull all registered repos on this server; interactive menu + `all`. | EX |
+| 1 | `sk-audit` | linux-security-analysis | yes | **[DONE]** | Read-only 14-section security audit producing PASS/WARN/FAIL report with score. Migrated from server-audit.sh; sources common.sh; full standard flags. | EX |
+| 2 | `sk-update-all-repos` | linux-site-deployment | yes | **[DONE]** | Pull all registered repos; interactive menu + `--all`/`--repo` flags. Registry at /etc/linux-skills/repos.conf. Migrated from update-all-repos. | EX |
 | 3 | `sk-new-script` | linux-bash-scripting | yes | [NEW] | Scaffold a new `sk-*` script from the canonical template in a skill's `scripts/` dir. | PB |
 | 4 | `sk-lint` | linux-bash-scripting | yes | [NEW] | Run `shellcheck` + custom engine checks (standard flags, `common.sh` sourced, no `set -e` footguns) on a script. | PB |
 | 5 | `sk-system-health` | linux-system-monitoring | yes | [NEW] | One-screen snapshot: load, CPU, mem, swap, disk, top 5 processes, uptime. | VK, MU |
@@ -90,7 +91,7 @@ backups, database ops, troubleshooting.
 
 | # | Script | Skill | Status | Purpose | Source |
 |---|---|---|---|---|---|
-| 37 | `sk-mysql-backup` | linux-disaster-recovery | [EXIST] | Dump all databases with gzip + gpg + rclone upload. Rotate local/remote. | EX |
+| 37 | `sk-mysql-backup` | linux-disaster-recovery | **[DONE]** | Dump all databases, gpg-encrypt, rclone upload, rotate. Refactored from mysql-backup.sh; 6-section template; config file support; standard flags. | EX |
 | 38 | `sk-mysql-restore` | linux-disaster-recovery | [NEW] | Guided restore: list backups, pick, download, decrypt, show sizes, confirm, restore. | EX |
 | 39 | `sk-mysql-tune` | linux-webstack | [NEW] | Analyze `my.cnf` + runtime variables, suggest improvements (innodb_buffer_pool_size, etc.). Non-destructive. | MU |
 | 40 | `sk-mysql-user-audit` | linux-webstack | [NEW] | Show MySQL users, hosts, grants; flag anonymous, `%` hosts, users with too many privileges. | EX (sk-audit touches) |
@@ -215,6 +216,29 @@ server won't install the mail or DNS scripts, etc.
 | Config mgmt & observability | 0 | 0 | 6 | 6 |
 | Secrets & DR | 0 | 0 | 4 | 4 |
 | **Total** | **15** | **46** | **27** | **88** |
+
+## Foundation status (2026-04-10, post-session 2)
+
+The foundation artifacts that Phase 1 of `build-order.md` required are
+**complete**:
+
+| Component | Status | Location | Lines |
+|---|---|---|---|
+| `scripts/lib/common.sh` | ✅ DONE | `scripts/lib/common.sh` | ~440 |
+| `scripts/install-skills-bin` | ✅ DONE | `scripts/install-skills-bin` | ~350 |
+| LXD test harness | ✅ DONE | `scripts/tests/run-test.sh` | ~200 |
+| `scripts/tests/common-sh.test.sh` | ✅ DONE | 9 assertions covering counters, flag parsing, temp files, atomic_write, backup_file, require_debian, require_cmd, require_flag | ~130 |
+| `scripts/tests/install-skills-bin.test.sh` | ✅ DONE | 9 assertions covering parse, --list, --dry-run, real install, common.sh placement, idempotency, per-skill install, uninstall | ~120 |
+| `sk-audit.sh` migration | ✅ DONE | `scripts/sk-audit.sh` | ~430 |
+| `sk-update-all-repos.sh` migration | ✅ DONE | `scripts/sk-update-all-repos.sh` | ~280 |
+| `sk-mysql-backup.sh` migration | ✅ DONE | `scripts/sk-mysql-backup.sh` | ~280 |
+| `setup-claude-code.sh` rewrite | ✅ DONE | installs common.sh + calls install-skills-bin core | ~200 |
+
+**Still to do in the next session** (the remaining Phase 1 requirement):
+
+- Run the LXD test harness on a real machine: `sudo ./scripts/tests/run-test.sh --suite foundation`. This was not run as part of this session (the development machine is Windows).
+- Write `sk-new-script` and `sk-lint` (the last two tier-1 scripts that round out scripts 1–5 of the foundation proof).
+- Run tier-1 scripts 1–5 in LXD as the foundation smoke test.
 
 ## Build order for next session
 

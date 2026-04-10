@@ -1,0 +1,441 @@
+#!/usr/bin/env bash
+#: Title:       install-skills-bin
+#: Synopsis:    install-skills-bin <command> [options]
+#: Description: Installer for the linux-skills engine. Reads ## Scripts manifests
+#:              from each SKILL.md and installs declared sk-* scripts to
+#:              /usr/local/bin/. Also installs the shared library
+#:              /usr/local/lib/linux-skills/common.sh. Hybrid C install model:
+#:              `core` for tier-1, `<skill-name>` for per-skill lazy install.
+#: Author:      Peter Bamuhigire <techguypeter.com>
+#: Contact:     +256784464178
+#: Version:     0.1.0
+
+set -uo pipefail
+
+SCRIPT_VERSION="0.1.0"
+
+# =============================================================================
+# 1. Library + safety
+# =============================================================================
+
+# Locate the repo root (assume this script lives at <repo>/scripts/)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Load common.sh — development path first, production path second
+SK_LIB=""
+if [[ -f "$SCRIPT_DIR/lib/common.sh" ]]; then
+    SK_LIB="$SCRIPT_DIR/lib/common.sh"
+elif [[ -f "/usr/local/lib/linux-skills/common.sh" ]]; then
+    SK_LIB="/usr/local/lib/linux-skills/common.sh"
+else
+    echo "FATAL: cannot find common.sh (looked in $SCRIPT_DIR/lib/ and /usr/local/lib/linux-skills/)" >&2
+    exit 5
+fi
+# shellcheck source=/dev/null
+source "$SK_LIB"
+
+# =============================================================================
+# 2. Defaults
+# =============================================================================
+
+INSTALL_BIN_DIR="/usr/local/bin"
+INSTALL_LIB_DIR="/usr/local/lib/linux-skills"
+FORCE=0
+SKILL_NAME=""
+COMMAND=""
+
+# =============================================================================
+# 3. Functions
+# =============================================================================
+
+usage() {
+    cat <<EOF
+Usage: install-skills-bin <command> [options]
+
+The installer for the linux-skills engine. Reads ## Scripts manifests from
+each SKILL.md and installs declared sk-* scripts to /usr/local/bin/.
+The shared library common.sh is installed to /usr/local/lib/linux-skills/.
+
+COMMANDS:
+    core                        Install all tier-1 (core) scripts
+    all                         Install every script in every skill (opt-in)
+    <skill-name>                Install one skill's scripts
+                                (e.g. install-skills-bin linux-webstack)
+    --list                      List available scripts and whether installed
+    --update [<skill>]          git pull + re-install changed scripts
+    --uninstall <skill-name>    Remove a skill's scripts
+
+STANDARD FLAGS:
+    -h, --help                  Show this help and exit
+        --version               Print version
+    -y, --yes                   Non-interactive mode
+    -n, --dry-run               Print actions, change nothing
+        --log                   Log to /var/log/linux-skills/
+    -v, --verbose               Extra diagnostic output
+    -q, --quiet                 Errors and result only
+        --force                 Overwrite existing scripts in /usr/local/bin
+
+EXIT CODES:
+    0  success
+    1  generic failure
+    2  usage/flag error
+    3  precondition failed (not Debian/Ubuntu)
+    4  user aborted
+    5  dependency missing
+
+EXAMPLES:
+    sudo install-skills-bin core
+    sudo install-skills-bin linux-webstack
+    sudo install-skills-bin --list
+    sudo install-skills-bin --update
+    sudo install-skills-bin --uninstall linux-mail-server
+
+AUTHOR:
+    Peter Bamuhigire <techguypeter.com> +256784464178
+EOF
+}
+
+# ----------------------------------------------------------------------------
+# Manifest parser
+# ----------------------------------------------------------------------------
+#
+# Reads a SKILL.md, finds the "## Scripts" section, and emits one
+# "script|source|core|purpose" line per manifest row. Header and separator
+# rows are skipped. Backticks are stripped from the script name.
+#
+parse_manifest() {
+    local skill_md="$1"
+    [[ -f "$skill_md" ]] || return 0
+
+    awk '
+        /^## Scripts/         { in_section=1; next }
+        /^## /                { in_section=0; next }
+        !in_section           { next }
+        /^\|.*---.*\|/        { next }                    # separator row
+        /^\| *Script *\|/     { next }                    # header row
+        /^\|/ {
+            # Split on |
+            n = split($0, cells, /\|/)
+            if (n < 5) next
+            for (i = 2; i <= 5; i++) {
+                gsub(/^[ \t]+|[ \t]+$/, "", cells[i])
+                gsub(/`/, "", cells[i])
+            }
+            name = cells[2]
+            source = cells[3]
+            core = cells[4]
+            purpose = cells[5]
+            # Skip if the name does not look like a script
+            if (name !~ /^(sk-|update-all-repos)/) next
+            print name "|" source "|" core "|" purpose
+        }
+    ' "$skill_md"
+}
+
+# ----------------------------------------------------------------------------
+# Install a single script from a manifest row
+# ----------------------------------------------------------------------------
+install_one() {
+    local skill="$1"
+    local name="$2"
+    local source="$3"
+    local purpose="$4"
+
+    local src="$REPO_ROOT/$source"
+    local dest="$INSTALL_BIN_DIR/$name"
+
+    if [[ ! -f "$src" ]]; then
+        warn "$name: source file missing: $src (skipped)"
+        return 0
+    fi
+
+    if [[ -f "$dest" && "$FORCE" != "1" ]]; then
+        # Only overwrite if content differs
+        if cmp -s "$src" "$dest"; then
+            info "$name: already installed, unchanged"
+            return 0
+        fi
+        warn "$name: exists at $dest and differs; use --force to overwrite"
+        return 1
+    fi
+
+    if [[ "$DRY_RUN" == "1" ]]; then
+        info "DRY-RUN would install $src → $dest"
+        return 0
+    fi
+
+    run install -m 0755 -o root -g root "$src" "$dest" || return 1
+    pass "$name installed ($purpose)"
+    _sk_audit "installed $name from skill $skill"
+}
+
+# ----------------------------------------------------------------------------
+# Install common.sh to the system library path
+# ----------------------------------------------------------------------------
+install_library() {
+    local src="$SCRIPT_DIR/lib/common.sh"
+    local dest="$INSTALL_LIB_DIR/common.sh"
+
+    [[ -f "$src" ]] || die "common.sh missing at $src" 5
+
+    if [[ "$DRY_RUN" == "1" ]]; then
+        info "DRY-RUN would install common.sh → $dest"
+        return 0
+    fi
+
+    run install -d -m 0755 "$INSTALL_LIB_DIR"
+    if [[ -f "$dest" ]] && cmp -s "$src" "$dest"; then
+        info "common.sh already up-to-date at $dest"
+        return 0
+    fi
+    run install -m 0644 -o root -g root "$src" "$dest" || die "failed to install common.sh" 1
+    pass "common.sh installed to $dest"
+    _sk_audit "installed common.sh"
+}
+
+# ----------------------------------------------------------------------------
+# Install all scripts for one skill
+# ----------------------------------------------------------------------------
+install_skill() {
+    local skill="$1"
+    local skill_md="$REPO_ROOT/$skill/SKILL.md"
+
+    if [[ ! -f "$skill_md" ]]; then
+        die "skill not found: $skill (no $skill_md)" 2
+    fi
+
+    header "Installing scripts for $skill"
+    install_library
+
+    local count=0
+    local installed=0
+    while IFS='|' read -r name source core purpose; do
+        [[ -z "$name" ]] && continue
+        count=$((count + 1))
+        if install_one "$skill" "$name" "$source" "$purpose"; then
+            installed=$((installed + 1))
+        fi
+    done < <(parse_manifest "$skill_md")
+
+    if (( count == 0 )); then
+        info "$skill has no scripts in its manifest"
+    else
+        info "$skill: $installed/$count scripts installed"
+    fi
+}
+
+# ----------------------------------------------------------------------------
+# Install all CORE (tier-1) scripts across all skills
+# ----------------------------------------------------------------------------
+install_core() {
+    header "Installing CORE scripts (tier-1)"
+    install_library
+
+    local total_count=0
+    local total_installed=0
+
+    local skill_md
+    for skill_md in "$REPO_ROOT"/linux-*/SKILL.md; do
+        local skill
+        skill="$(basename "$(dirname "$skill_md")")"
+        [[ "$skill" == "linux-sysadmin" ]] && continue
+        while IFS='|' read -r name source core purpose; do
+            [[ -z "$name" ]] && continue
+            if [[ "$core" == "yes" ]]; then
+                total_count=$((total_count + 1))
+                if install_one "$skill" "$name" "$source" "$purpose"; then
+                    total_installed=$((total_installed + 1))
+                fi
+            fi
+        done < <(parse_manifest "$skill_md")
+    done
+
+    info "core install complete: $total_installed/$total_count scripts"
+}
+
+# ----------------------------------------------------------------------------
+# Install EVERY script across all skills (opt-in)
+# ----------------------------------------------------------------------------
+install_all() {
+    header "Installing ALL scripts (every skill)"
+    install_library
+
+    local skill_md
+    for skill_md in "$REPO_ROOT"/linux-*/SKILL.md; do
+        local skill
+        skill="$(basename "$(dirname "$skill_md")")"
+        [[ "$skill" == "linux-sysadmin" ]] && continue
+        install_skill "$skill"
+    done
+}
+
+# ----------------------------------------------------------------------------
+# List what's available and what's installed
+# ----------------------------------------------------------------------------
+list_scripts() {
+    header "Available scripts"
+    printf "  %-30s %-30s %-6s %s\n" "SCRIPT" "SKILL" "CORE?" "INSTALLED?"
+    printf "  %-30s %-30s %-6s %s\n" "------" "-----" "-----" "----------"
+    local skill_md
+    for skill_md in "$REPO_ROOT"/linux-*/SKILL.md; do
+        local skill
+        skill="$(basename "$(dirname "$skill_md")")"
+        while IFS='|' read -r name source core purpose; do
+            [[ -z "$name" ]] && continue
+            local status="no"
+            [[ -f "$INSTALL_BIN_DIR/$name" ]] && status="yes"
+            printf "  %-30s %-30s %-6s %s\n" "$name" "$skill" "$core" "$status"
+        done < <(parse_manifest "$skill_md")
+    done
+}
+
+# ----------------------------------------------------------------------------
+# Uninstall one skill's scripts
+# ----------------------------------------------------------------------------
+uninstall_skill() {
+    local skill="$1"
+    local skill_md="$REPO_ROOT/$skill/SKILL.md"
+    [[ -f "$skill_md" ]] || die "skill not found: $skill" 2
+
+    header "Uninstalling scripts for $skill"
+
+    local count=0
+    while IFS='|' read -r name source core purpose; do
+        [[ -z "$name" ]] && continue
+        local dest="$INSTALL_BIN_DIR/$name"
+        if [[ -f "$dest" ]]; then
+            if [[ "$DRY_RUN" == "1" ]]; then
+                info "DRY-RUN would remove $dest"
+            else
+                run rm -f "$dest"
+                pass "removed $name"
+                _sk_audit "uninstalled $name from skill $skill"
+            fi
+            count=$((count + 1))
+        fi
+    done < <(parse_manifest "$skill_md")
+
+    info "$skill: $count scripts removed"
+}
+
+# ----------------------------------------------------------------------------
+# Update path: git pull then re-install
+# ----------------------------------------------------------------------------
+update_skills() {
+    local target_skill="${1:-}"
+
+    header "Updating linux-skills repo"
+    require_cmd git
+
+    if [[ ! -d "$REPO_ROOT/.git" ]]; then
+        die "not a git repo: $REPO_ROOT" 3
+    fi
+
+    # Lock to prevent concurrent updates
+    local lockfile="/run/linux-skills.lock"
+    exec 9>"$lockfile" 2>/dev/null || exec 9>"/tmp/linux-skills.lock"
+    if ! flock -n 9; then
+        die "another install-skills-bin is running (lock held)" 1
+    fi
+
+    info "current HEAD: $(cd "$REPO_ROOT" && git rev-parse --short HEAD)"
+    if [[ "$DRY_RUN" == "1" ]]; then
+        info "DRY-RUN would run: git -C $REPO_ROOT pull --ff-only"
+    else
+        run git -C "$REPO_ROOT" pull --ff-only || die "git pull failed" 1
+    fi
+    info "new HEAD: $(cd "$REPO_ROOT" && git rev-parse --short HEAD)"
+
+    if [[ -n "$target_skill" ]]; then
+        install_skill "$target_skill"
+    else
+        # Re-install every currently-installed script
+        info "re-installing every currently-installed script"
+        local skill_md
+        for skill_md in "$REPO_ROOT"/linux-*/SKILL.md; do
+            local skill
+            skill="$(basename "$(dirname "$skill_md")")"
+            # Only touch skills that have at least one script already installed
+            local any_installed=0
+            while IFS='|' read -r name source core purpose; do
+                [[ -z "$name" ]] && continue
+                if [[ -f "$INSTALL_BIN_DIR/$name" ]]; then
+                    any_installed=1
+                    break
+                fi
+            done < <(parse_manifest "$skill_md")
+            if (( any_installed )); then
+                install_skill "$skill"
+            fi
+        done
+    fi
+    install_library
+}
+
+# =============================================================================
+# 4. Flag parsing
+# =============================================================================
+
+# Custom pre-parse for --force and positional command (before standard flags)
+ARGS=()
+for arg in "$@"; do
+    case "$arg" in
+        --force) FORCE=1 ;;
+        *)       ARGS+=("$arg") ;;
+    esac
+done
+set -- "${ARGS[@]}"
+
+parse_standard_flags "$@"
+
+# Pick the first remaining arg as the command
+if (( ${#REMAINING_ARGS[@]} == 0 )); then
+    usage
+    exit 2
+fi
+
+COMMAND="${REMAINING_ARGS[0]}"
+REMAINING_ARGS=("${REMAINING_ARGS[@]:1}")
+
+# =============================================================================
+# 5. Sanity checks
+# =============================================================================
+
+case "$COMMAND" in
+    --list)      : ;;
+    *)           require_root ;;
+esac
+
+# =============================================================================
+# 6. Main logic
+# =============================================================================
+
+case "$COMMAND" in
+    core)
+        install_core
+        ;;
+    all)
+        install_all
+        ;;
+    --list)
+        list_scripts
+        ;;
+    --update)
+        update_skills "${REMAINING_ARGS[0]:-}"
+        ;;
+    --uninstall)
+        if (( ${#REMAINING_ARGS[@]} == 0 )); then
+            die "--uninstall requires a skill name" 2
+        fi
+        uninstall_skill "${REMAINING_ARGS[0]}"
+        ;;
+    linux-*)
+        install_skill "$COMMAND"
+        ;;
+    *)
+        die "unknown command: $COMMAND (try --help)" 2
+        ;;
+esac
+
+print_summary

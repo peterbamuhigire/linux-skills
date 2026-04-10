@@ -143,7 +143,7 @@ sudo install-skills-bin linux-disaster-recovery
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
 | sk-backup-verify | scripts/sk-backup-verify.sh | yes | Verify last backup age, integrity (tar/gpg check), remote copy reachable via rclone. |
-| sk-mysql-backup | scripts/sk-mysql-backup.sh | no | Dump all databases with gzip + gpg + rclone upload; rotate local and remote. |
+| sk-mysql-backup | scripts/sk-mysql-backup.sh | yes | Dump all databases with gzip + gpg + rclone upload; rotate local and remote. Refactored to source common.sh and honor standard flags. |
 | sk-mysql-restore | scripts/sk-mysql-restore.sh | no | Guided restore: list backups, pick, download, decrypt, show sizes, confirm, restore. |
 | sk-postgres-backup | scripts/sk-postgres-backup.sh | no | `pg_dump` + compression + gpg + rclone, per database or all, with rotation. |
 | sk-postgres-restore | scripts/sk-postgres-restore.sh | no | Guided PostgreSQL restore from backup file or remote. |

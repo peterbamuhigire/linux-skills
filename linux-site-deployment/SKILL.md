@@ -129,7 +129,7 @@ sudo install-skills-bin linux-site-deployment
 
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
-| sk-update-all-repos | scripts/update-all-repos | yes | Pull all registered repos on this server; interactive menu + `all`. (Legacy name kept for muscle memory.) |
+| sk-update-all-repos | scripts/sk-update-all-repos.sh | yes | Pull all registered repos on this server; interactive menu + `--all`/`--repo` flags. |
 | sk-nginx-new-site | scripts/sk-nginx-new-site.sh | no | Generate a new Nginx vhost from template, issue cert via certbot, reload. |
 | sk-apache-new-site | scripts/sk-apache-new-site.sh | no | Generate an Apache vhost on port 8080, `a2ensite`, `configtest`, reload. |
 | sk-astro-deploy | scripts/sk-astro-deploy.sh | no | Clone an Astro site, install deps, build, set up Nginx vhost + SSL, register in `update-all-repos`. |
