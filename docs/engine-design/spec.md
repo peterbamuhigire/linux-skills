@@ -79,12 +79,22 @@ and runs the installer if they are not.
 - `install-skills-bin core` — installs tier-1 core scripts.
 - `install-skills-bin <skill-name>` — installs one skill's scripts.
 - `install-skills-bin all` — installs everything (opt-in, for golden images).
-- `install-skills-bin --list` — shows what is installed vs. available.
+- `install-skills-bin --list` — shows what is installed vs. available, with
+  the installed version (git SHA) next to each script.
+- `install-skills-bin --update [skill-name]` — runs `git pull --ff-only` in
+  `~/.claude/skills/` first, then re-runs the install for the named skill
+  (or every installed skill if no name is given). Diffs the old and new
+  binary; if unchanged, prints "up to date" and skips. This is the
+  **upgrade path** for servers when `common.sh` or any `sk-*` script is
+  updated upstream — idempotent, safe to run on cron.
 - `install-skills-bin --uninstall <skill-name>` — removes a skill's scripts.
 - Installer reads the `## Scripts` manifest in each `SKILL.md` to decide what
   to copy. It uses `install(1)` with mode `0755`, owner `root`, group `root`.
-- On conflict (target exists), the installer refuses unless `--force` is
-  passed. It never silently overwrites.
+- On conflict (target exists **and** differs), the installer refuses unless
+  `--force` is passed. It never silently overwrites.
+- On every run, the installer also refreshes
+  `/usr/local/lib/linux-skills/common.sh` from the repo so library updates
+  reach servers the same way script updates do.
 
 ## 4. Naming convention
 
@@ -370,8 +380,62 @@ These are non-negotiable for every script.
     `3` precondition failed, `4` user aborted, `5` dependency missing.
 14. **Log where it matters** — destructive operations write a timestamped
     entry to `/var/log/linux-skills/<script>.log` regardless of `--log`.
+15. **Idempotency is the default** — every script that mutates state must be
+    safe to run multiple times without side effects. Before appending a line
+    to a file, check whether it is already present. Before writing a config
+    block, check whether it matches the desired content. Before creating a
+    user, check whether the user already exists. Before running `apt install`,
+    check whether the package is already installed at the right version. A
+    second run must report "no changes" or "already applied" and exit 0,
+    never "failed: already exists". Explicit non-idempotent behavior
+    (deliberately re-applying, re-generating, re-hashing) requires a
+    `--force` flag and a warning in `--help`. Idempotency is verified in
+    integration tests (see §12).
 
-## 10. What this session produces vs. what comes next
+## 10. Integration testing (mandatory before ship)
+
+No `sk-*` script is considered "done" until it has a passing integration
+test in a fresh LXD container. Testing is not optional for tier 1 — a
+single broken hardening or cleanup script can lock you out of a production
+server or delete the wrong files.
+
+### 10.1 Test harness
+
+Integration tests live in `scripts/tests/` and run against a disposable
+LXD container built from a plain Ubuntu 24.04 image. The harness:
+
+1. Launches a fresh container (`lxc launch ubuntu:24.04 sk-test-<script>`).
+2. Pushes the repo into the container.
+3. Runs `install-skills-bin core` inside.
+4. Executes the test script for `sk-<name>`.
+5. On pass, destroys the container.
+6. On fail, leaves the container running with a message explaining how to
+   attach for debugging.
+
+### 10.2 Per-script test contract
+
+Every script must ship with a test that covers:
+
+1. **`--help`** — exits 0, contains every decision flag listed in the
+   script.
+2. **`--dry-run`** — runs end-to-end with dummy flags, changes nothing,
+   exits 0. Verified by snapshotting `/etc` and key files before and
+   after: they must be byte-identical.
+3. **Real run (non-interactive)** — runs with `--yes` and the minimum
+   required decision flags, achieves the intended state, exits 0.
+4. **Idempotency** — the real run is executed twice. The second run must
+   report "already applied / no changes" and exit 0. No doubled lines in
+   config files, no duplicate users, no restart loops.
+5. **Failure path** — one deliberately broken input (e.g. wrong flag,
+   missing dependency) must exit non-zero with a clear error message.
+
+### 10.3 CI
+
+The test harness runs in CI on every PR. A PR cannot merge until all
+affected scripts pass their tests. `shellcheck` also runs in CI and must
+pass with zero warnings on changed files.
+
+## 11. What this session produces vs. what comes next
 
 **This session (planning):**
 - This spec file.
@@ -389,7 +453,32 @@ These are non-negotiable for every script.
 - Integration testing (a VM-backed smoke test of each script with
   `--dry-run`).
 
-## 11. Open questions deferred to implementation session
+## 12. Build order for the implementation session
+
+Do **not** attempt to write all 88 scripts in one pass. Build the
+foundation, prove it works, then scale the pattern.
+
+1. **Foundation (day 1):**
+   - `scripts/lib/common.sh` (the library)
+   - `scripts/install-skills-bin` (the installer)
+   - LXD integration test harness under `scripts/tests/`
+   - Tier 1 scripts 1–5: `sk-audit` (migrate from `server-audit.sh`),
+     `sk-update-all-repos` (rename), `sk-new-script`, `sk-lint`,
+     `sk-system-health`.
+2. **Foundation smoke test:** every foundation script has a passing LXD
+   integration test. `shellcheck` clean. Hybrid C install flow
+   (`install-skills-bin core`) works end to end on a fresh container.
+3. **If the foundation is sound, continue.** If it isn't, fix it before
+   writing any more scripts — every subsequent script inherits its bugs.
+4. **Tier 1 remainder (scripts 6–15):** build and test one at a time.
+5. **Tier 2 theme by theme** — hardening first (highest safety risk), then
+   web stack, then databases, then services/disk/troubleshooting,
+   then provisioning/packages. End each theme with a
+   `shellcheck` + LXD integration pass before moving on.
+6. **Tier 3 on demand** — these ship last and only for servers that need
+   them.
+
+## 13. Open questions deferred to implementation session
 
 - Should `common.sh` be installed to `/usr/local/lib/linux-skills/` (clean) or
   `/usr/local/bin/sk-lib.sh` (co-located)? Leaning clean.

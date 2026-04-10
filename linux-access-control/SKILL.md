@@ -9,21 +9,11 @@ metadata:
 ---
 # Access Control
 
+**This skill is self-contained.** Every command below is a standard
+Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
+are convenience wrappers — never required.
+
 ## User Management
-
-```bash
-# Fast audit — all users, lock state, sudo, password age:
-sudo sk-user-audit
-
-# Add a new administrator with SSH key and sudo in one step:
-sudo sk-new-sudoer --user alice --key ~/alice.pub
-
-# Lock / unlock an account:
-sudo sk-user-suspend --user alice --lock
-sudo sk-user-suspend --user alice --unlock
-```
-
-Manual commands:
 
 ```bash
 sudo adduser <username>                         # create (interactive)
@@ -32,6 +22,11 @@ sudo deluser <username>                         # remove user (keeps home)
 sudo deluser --remove-home <username>           # remove user + home
 sudo passwd -l <username>                       # lock account
 sudo passwd -u <username>                       # unlock account
+
+# Audit
+grep -v "nologin\|false" /etc/passwd | cut -d: -f1,3
+grep ^sudo /etc/group                           # who has sudo
+awk -F: '$3 == 0 {print $1}' /etc/passwd       # UID-0 accounts
 ```
 
 ---
@@ -39,15 +34,19 @@ sudo passwd -u <username>                       # unlock account
 ## SSH Key Management
 
 ```bash
-# Audit all authorized_keys across users:
-sudo sk-ssh-key-audit
-
-# Add a key for a user (manual):
+# Add a key for a user
 mkdir -p /home/<username>/.ssh
 chmod 700 /home/<username>/.ssh
 echo "<public-key>" >> /home/<username>/.ssh/authorized_keys
 chmod 600 /home/<username>/.ssh/authorized_keys
 chown -R <username>:<username> /home/<username>/.ssh
+
+# Audit all keys on the server
+find /home /root -name authorized_keys 2>/dev/null | \
+    while read f; do echo "=== $f ==="; cat "$f"; done
+
+# Revoke: edit the file, delete the key line
+sudo nano /home/<username>/.ssh/authorized_keys
 
 # Test before restarting SSH (keep existing session open!)
 sudo sshd -t && sudo systemctl restart sshd
@@ -75,6 +74,21 @@ chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys
 ```
 
 Full permission patterns and audit commands: `references/permissions-reference.md`
+
+---
+
+## Optional fast path (when sk-* scripts are installed)
+
+Running `sudo install-skills-bin linux-access-control` installs:
+
+| Task | Fast-path script |
+|---|---|
+| All users, UID, lock state, sudo, password age | `sudo sk-user-audit` |
+| All authorized_keys across users | `sudo sk-ssh-key-audit` |
+| Create user + SSH key + sudo in one step | `sudo sk-new-sudoer --user <u> --key <file>` |
+| Lock or unlock a user account | `sudo sk-user-suspend --user <u> --lock\|--unlock` |
+
+These are optional wrappers. The manual commands above are the source of truth.
 
 ## Scripts
 

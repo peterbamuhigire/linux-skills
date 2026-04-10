@@ -9,24 +9,29 @@ metadata:
 ---
 # Troubleshooting
 
-Ask: "What's the symptom?" then follow the branch in `references/diagnosis-tree.md`,
-or run the matching `sk-why-*` script which walks the tree interactively.
+**This skill is self-contained.** Every command below works on a stock
+Ubuntu/Debian server with no additional tooling. The `sk-*` scripts in the
+**Optional fast path** section at the bottom are convenience wrappers —
+they are never required.
+
+Ask: "What's the symptom?" then follow the matching branch in
+`references/diagnosis-tree.md`.
 
 ## Symptom Index
 
-| Symptom | Script | Branch |
-|---|---|---|
-| High CPU or load average | `sk-load-investigate` → `sk-why-slow` | → Branch 1 |
-| Out of memory / OOM kill | `sk-why-slow` | → Branch 2 |
-| Disk full | `sk-disk-hogs` | → Branch 3 |
-| Service crashed / won't start | `sk-service-health <svc>` | → Branch 4 |
-| 502 or 504 from Nginx | `sk-why-500` | → Branch 5 |
-| Site is slow | `sk-why-slow` | → Branch 6 |
-| MySQL problems | `sk-why-500 --focus mysql` | → Branch 7 |
-| SSL expired or renewal failed | `sk-cert-status` → `sk-cert-renew` | → Branch 8 |
-| Backup failed | `sk-backup-verify` | → Branch 9 |
-| Site down after update-all-repos | `sk-why-500` | → Branch 10 |
-| Can't reach this server | `sk-why-cant-connect` | → Branch 11 |
+| Symptom | Branch |
+|---------|--------|
+| High CPU or load average | → Branch 1 |
+| Out of memory / OOM kill | → Branch 2 |
+| Disk full | → Branch 3 |
+| Service crashed / won't start | → Branch 4 |
+| 502 or 504 from Nginx | → Branch 5 |
+| Site is slow | → Branch 6 |
+| MySQL problems | → Branch 7 |
+| SSL expired or renewal failed | → Branch 8 |
+| Backup failed | → Branch 9 |
+| Site down after update-all-repos | → Branch 10 |
+| Can't reach this server | → Branch 11 |
 
 Full diagnosis commands for each: `references/diagnosis-tree.md`
 
@@ -35,9 +40,17 @@ Full diagnosis commands for each: `references/diagnosis-tree.md`
 ## Quick Triage (Run First For Any Issue)
 
 ```bash
-sudo sk-system-health             # single-screen overview
-sudo sk-service-health --failed   # only failed services
-sudo sk-journal-errors --since 1h # recent errors across all services
+# System health snapshot
+uptime && free -h && df -h
+
+# Failed services
+sudo systemctl list-units --type=service --state=failed
+
+# Recent errors across all services
+sudo journalctl -p err --since "1 hour ago" --no-pager | head -30
+
+# Nginx error log
+sudo tail -20 /var/log/nginx/error.log
 ```
 
 ---
@@ -45,22 +58,38 @@ sudo sk-journal-errors --since 1h # recent errors across all services
 ## Most Common Fixes
 
 ```bash
-# Service crashed → restart it safely
-sudo sk-service-restart <service>
+# Service crashed → restart it
+sudo systemctl restart <service>
 
 # Nginx config broken → find and fix
-sudo sk-nginx-test-reload
+sudo nginx -t
 
-# Disk full → interactive cleanup
-sudo sk-disk-cleanup
+# Disk full → clear apt cache and vacuum journal
+sudo apt clean && sudo journalctl --vacuum-size=500M
 
 # 502 → restart the upstream
-sudo sk-service-restart php8.3-fpm
-sudo sk-service-restart apache2
+sudo systemctl restart php8.3-fpm
+sudo systemctl restart apache2
 
 # SSL expired → force renew
-sudo sk-cert-renew --domain example.com
+sudo certbot renew --force-renewal
 ```
+
+---
+
+## Optional fast path (when sk-* scripts are installed)
+
+Running `sudo install-skills-bin linux-troubleshooting` gives you
+interactive decision-tree walkers for each symptom:
+
+| Symptom | Fast-path script |
+|---|---|
+| High CPU / slow site | `sudo sk-load-investigate` → `sudo sk-why-slow` |
+| 502 / 504 | `sudo sk-why-500` |
+| Can't reach server | `sudo sk-why-cant-connect` |
+
+These scripts wrap the manual commands above in a guided walkthrough.
+They are optional — the manual commands are always the source of truth.
 
 ## Scripts
 

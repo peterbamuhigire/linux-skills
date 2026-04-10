@@ -9,24 +9,36 @@ metadata:
 ---
 # Firewall & SSL Management
 
+**This skill is self-contained.** Every command below is a standard
+Ubuntu/Debian tool (`ufw`, `certbot`). The `sk-*` scripts in the **Optional
+fast path** section are convenience wrappers — never required.
+
 ## UFW Firewall
 
 ```bash
 sudo ufw status verbose                 # current rules
 sudo ufw status numbered                # numbered for easy deletion
 
-# Interactive profile picker (web-server / bastion / db / custom):
-sudo sk-ufw-reset
+# Standard web server rule set:
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow 22/tcp && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp
+sudo ufw enable
 
-# Audit current rules against a baseline:
-sudo sk-ufw-audit
-
-# Manual rule management:
+# Add a rule
 sudo ufw allow <port>/tcp
 sudo ufw allow from <ip> to any port 22   # restrict SSH to trusted IP
+
+# Remove a rule
+sudo ufw status numbered
 sudo ufw delete <number>
-sudo ufw limit 22/tcp                    # rate-limit brute force
-sudo ufw logging on && sudo tail -f /var/log/ufw.log
+
+# Rate limiting (brute-force protection)
+sudo ufw limit 22/tcp
+
+# Logging
+sudo ufw logging on
+sudo tail -f /var/log/ufw.log
 ```
 
 ---
@@ -34,18 +46,18 @@ sudo ufw logging on && sudo tail -f /var/log/ufw.log
 ## SSL Certificates (Certbot)
 
 ```bash
-# Quick status report:
-sudo sk-cert-status
-
 # Issue new cert (nginx plugin — modifies config automatically)
 sudo certbot --nginx -d example.com
 sudo certbot --nginx -d example.com -d www.example.com
 
-# Force renew + reload web server:
-sudo sk-cert-renew --domain example.com
+# Check all cert expiry
+sudo certbot certificates
 
 # Test auto-renewal
 sudo certbot renew --dry-run
+
+# Force renew
+sudo certbot renew --force-renewal
 
 # Add domain to existing cert
 sudo certbot --nginx --expand -d existing.com -d new.com
@@ -77,6 +89,22 @@ sudo journalctl -u certbot --no-pager | tail -30
 ```
 
 Full SSL parameters and cipher config: `references/ssl-config.md`
+
+---
+
+## Optional fast path (when sk-* scripts are installed)
+
+Running `sudo install-skills-bin linux-firewall-ssl` installs:
+
+| Task | Fast-path script |
+|---|---|
+| List certs, days-to-expiry, renewal timer | `sudo sk-cert-status` |
+| Interactive UFW profile picker + apply | `sudo sk-ufw-reset` |
+| Diff UFW rules against a baseline | `sudo sk-ufw-audit` |
+| Force-renew cert + reload web server | `sudo sk-cert-renew --domain <d>` |
+
+These are optional wrappers. The `ufw` and `certbot` commands above are the
+source of truth.
 
 ## Scripts
 

@@ -9,14 +9,11 @@ metadata:
 ---
 # Disk & Storage
 
+**This skill is self-contained.** Every command below is a standard
+Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
+are convenience wrappers — never required.
+
 ## Check Usage
-
-```bash
-sudo sk-disk-hogs          # top 20 dirs/files by size; warns on /var/log, /tmp
-sudo sk-inode-check        # find filesystems nearing inode exhaustion
-```
-
-Manual commands:
 
 ```bash
 df -h                           # filesystem overview (concern: > 85% used)
@@ -30,14 +27,6 @@ sudo find / -type f -size +100M 2>/dev/null | head -10
 ---
 
 ## Safe Cleanup (In Order Of Safety)
-
-Use the interactive script — it previews bytes-to-reclaim before acting:
-
-```bash
-sudo sk-disk-cleanup
-```
-
-Manual equivalents:
 
 ```bash
 # 1. APT cache (always safe)
@@ -55,7 +44,7 @@ sudo find /tmp /var/tmp -type f -mtime +7 -delete
 
 # 5. node_modules after successful Astro build
 # cd /var/www[/html]/<site> && rm -rf node_modules
-# (sk-update-all-repos will reinstall on next pull)
+# (update-all-repos will reinstall on next pull)
 ```
 
 ---
@@ -63,9 +52,13 @@ sudo find /tmp /var/tmp -type f -mtime +7 -delete
 ## Emergency Disk Full
 
 ```bash
-# Fast identification + safe cleanup
-sudo sk-disk-hogs /
-sudo sk-disk-cleanup --yes --safe-only
+# Fast identification
+df -h && du -sh /var/www/* /var/log/* ~/backups/* 2>/dev/null | sort -rh | head -10
+
+# Immediate wins (safe):
+sudo apt clean
+sudo journalctl --vacuum-size=200M
+sudo find /tmp /var/tmp -type f -mtime +7 -delete
 
 # Truncate an oversize log (safer than deleting):
 sudo truncate -s 0 /var/log/<oversize-log-file>
@@ -73,7 +66,7 @@ sudo truncate -s 0 /var/log/<oversize-log-file>
 
 ---
 
-## Inode Exhaustion (`sk-inode-check` shows 100%)
+## Inode Exhaustion (df -i shows 100%)
 
 ```bash
 # Find dir with most files:
@@ -100,6 +93,20 @@ free -h                   # verify Swap shows 2G
 ```
 
 Full cleanup targets and LVM reference: `references/storage-reference.md`
+
+---
+
+## Optional fast path (when sk-* scripts are installed)
+
+Running `sudo install-skills-bin linux-disk-storage` installs:
+
+| Task | Fast-path script |
+|---|---|
+| Top 20 consumers by dir/file | `sudo sk-disk-hogs [/path]` |
+| Interactive cleanup with preview | `sudo sk-disk-cleanup` |
+| Inode exhaustion detector | `sudo sk-inode-check` |
+
+These are optional wrappers around the commands above.
 
 ## Scripts
 

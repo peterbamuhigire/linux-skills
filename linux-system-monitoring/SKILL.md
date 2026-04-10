@@ -9,15 +9,22 @@ metadata:
 ---
 # System Monitoring
 
+**This skill is self-contained.** Every command below is a standard
+Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
+are convenience wrappers — never required.
+
 ## Quick Health Check
 
 ```bash
-sudo sk-system-health      # single-screen snapshot: load, CPU, mem, swap, disk, top procs
-sudo sk-open-ports         # ss -tulnp with per-port risk notes
-sudo sk-swap-check         # swap usage, swappiness, top swap consumers
+echo "=LOAD=" && uptime && \
+echo "=MEMORY=" && free -h && \
+echo "=DISK=" && df -h && \
+echo "=SERVICES=" && \
+  for s in nginx mysql php8.3-fpm apache2 fail2ban; do
+    printf "%-20s %s\n" $s $(systemctl is-active $s 2>/dev/null)
+  done && \
+echo "=LAST BACKUP=" && ls -lt ~/backups/ 2>/dev/null | head -3
 ```
-
-Manual equivalents below for reference.
 
 ---
 
@@ -49,18 +56,34 @@ sudo iotop -bod 5         # per-process I/O (requires: apt install iotop)
 ## Network
 
 ```bash
-sudo sk-open-ports        # preferred — pretty output + risk hints
 ss -tunapl                # all connections with process
 ss -tan | awk '{print $1}' | sort | uniq -c | sort -rn   # count by state
+ss -tlnp                  # listening services
 ```
 
 ## Backup Health
 
 ```bash
-sudo sk-backup-verify      # backup age + integrity + remote reachable
+crontab -l | grep -i backup                      # backup cron present?
+find ~/backups -name "*.gpg" -mtime -3 2>/dev/null | wc -l  # backups in 3 days
+rclone about gdrive: 2>/dev/null | head -2       # remote reachable?
 ```
 
 Full command reference with output interpretation: `references/monitoring-commands.md`
+
+---
+
+## Optional fast path (when sk-* scripts are installed)
+
+Running `sudo install-skills-bin linux-system-monitoring` installs:
+
+| Task | Fast-path script |
+|---|---|
+| One-screen health snapshot | `sudo sk-system-health` |
+| Listening ports with risk notes | `sudo sk-open-ports` |
+| Swap usage and swappiness check | `sudo sk-swap-check` |
+
+These wrap the manual commands above — optional.
 
 ## Scripts
 

@@ -9,15 +9,16 @@ metadata:
 ---
 # Server Provisioning
 
+**This skill is self-contained.** The 11-section manual procedure below uses
+only standard Ubuntu/Debian tools. The `sk-provision-fresh` script in the
+**Optional fast path** section is a convenience wrapper — never required.
+
 Sets up a fresh server. Ask first:
 1. **Hostname?**
 2. **Timezone?** (default: Africa/Nairobi)
 3. **Which stack?** (confirm: Nginx + Apache + PHP8.3 + MySQL + PostgreSQL + Redis)
 
 Work through sections in order. Full commands: `references/provisioning-steps.md`
-
-The fastest path is `sudo sk-provision-fresh` — a guided wizard that runs
-every section with interactive confirmations.
 
 ---
 
@@ -52,7 +53,7 @@ ss -tlnp | grep apache
 grep bind-address /etc/mysql/mysql.conf.d/mysqld.cnf
 
 # Final check:
-sudo sk-audit
+sudo bash ~/.claude/skills/scripts/server-audit.sh
 ```
 
 ---
@@ -74,6 +75,19 @@ sudo ufw status verbose
 
 Full step-by-step installation commands: `references/provisioning-steps.md`
 Next step after provisioning: `linux-server-hardening`
+
+---
+
+## Optional fast path (when sk-* scripts are installed)
+
+After the basic OS and linux-skills are in place, running
+`sudo install-skills-bin linux-server-provisioning` installs:
+
+| Task | Fast-path script |
+|---|---|
+| Guided wizard for sections 1–11 | `sudo sk-provision-fresh` |
+
+This is an optional wrapper around the 11 manual sections above.
 
 ## Scripts
 

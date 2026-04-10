@@ -9,14 +9,13 @@ metadata:
 ---
 # Log Management
 
+**This skill is self-contained.** Every command below is a standard
+Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
+are convenience wrappers — never required.
+
 ## journalctl
 
 ```bash
-# Fast paths via scripts:
-sudo sk-journal-errors --since 1h        # priority <= err, grouped by service
-sudo sk-journal-tail <service> --errors  # live tail with severity filter
-
-# Manual commands:
 sudo journalctl -u <service> -n 50 --no-pager       # last 50 lines
 sudo journalctl -u <service> -f                      # follow live
 sudo journalctl -u <service> --since "1 hour ago"
@@ -27,14 +26,9 @@ sudo journalctl --disk-usage                         # journal size
 
 ---
 
-## Nginx / Apache Logs
+## Nginx Logs
 
 ```bash
-# Structured reports:
-sudo sk-access-log-report --server nginx --top 20
-sudo sk-error-log-report --server nginx --since 1h
-
-# Manual:
 sudo tail -f /var/log/nginx/error.log
 sudo tail -f /var/log/nginx/access.log
 
@@ -70,9 +64,9 @@ sudo grep -E "\.(env|git|htaccess|sql|bak)" /var/log/nginx/access.log | tail -20
 ## fail2ban Log
 
 ```bash
-sudo sk-fail2ban-status              # jails, active bans, recent blocks
 sudo tail -f /var/log/fail2ban.log
 sudo grep "Ban" /var/log/fail2ban.log | tail -20
+sudo grep "$(date '+%Y-%m-%d')" /var/log/fail2ban.log | grep "Ban" | wc -l
 ```
 
 ---
@@ -99,13 +93,28 @@ tail -50 ~/backups/mysql/cron.log
 ## logrotate
 
 ```bash
-sudo sk-logrotate-check                          # verify config + last rotation per config
 ls /etc/logrotate.d/                             # existing configs
 sudo logrotate -f /etc/logrotate.d/nginx         # force rotate now
 sudo logrotate -f /etc/logrotate.d/apache2
 ```
 
 All log file locations: `references/log-locations.md`
+
+---
+
+## Optional fast path (when sk-* scripts are installed)
+
+Running `sudo install-skills-bin linux-log-management` installs:
+
+| Task | Fast-path script |
+|---|---|
+| Grouped recent errors from journal | `sudo sk-journal-errors --since 1h` |
+| Live tail with severity filter | `sudo sk-journal-tail <service>` |
+| Access log report (top IPs, 4xx/5xx, bots) | `sudo sk-access-log-report` |
+| Error log report (grouped) | `sudo sk-error-log-report` |
+| Logrotate config audit | `sudo sk-logrotate-check` |
+
+These are optional wrappers around the manual commands above.
 
 ## Scripts
 

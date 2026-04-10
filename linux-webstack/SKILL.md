@@ -9,6 +9,10 @@ metadata:
 ---
 # Web Stack Management
 
+**This skill is self-contained.** Every command below is a standard
+Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
+are convenience wrappers — never required.
+
 ```
 Client → Nginx (443/80)
            ├── Astro/static → /dist/ folders
@@ -22,8 +26,9 @@ Client → Nginx (443/80)
 ## Nginx
 
 ```bash
-sudo sk-nginx-test-reload                          # validate + graceful reload
-sudo systemctl restart nginx                       # full restart if needed
+sudo nginx -t                                      # test config (always first)
+sudo nginx -t && sudo systemctl reload nginx       # graceful reload
+sudo systemctl restart nginx                       # full restart
 
 # Enable / disable site
 sudo ln -s /etc/nginx/sites-available/<domain>.conf /etc/nginx/sites-enabled/
@@ -35,14 +40,12 @@ sudo tail -f /var/log/nginx/access.log
 
 ### Debug 502 Bad Gateway
 
-Use `sk-why-500` for the full decision tree, or manually:
-
 ```bash
 sudo tail -20 /var/log/nginx/error.log           # what upstream is failing?
-sudo sk-service-health php8.3-fpm                # PHP-FPM sites
-sudo sk-service-health apache2                   # Apache-proxied sites
+sudo systemctl status php8.3-fpm                 # PHP-FPM sites
+sudo systemctl status apache2                    # Apache-proxied sites
 ls -la /run/php/php8.3-fpm.sock                  # FPM socket present?
-sudo sk-service-restart php8.3-fpm              # fix
+sudo systemctl restart php8.3-fpm                # fix
 ```
 
 Config patterns and templates: `references/config-patterns.md`
@@ -52,7 +55,8 @@ Config patterns and templates: `references/config-patterns.md`
 ## Apache (Port 8080)
 
 ```bash
-sudo sk-apache-test-reload                        # validate + graceful reload
+sudo apache2ctl configtest                        # test config
+sudo apache2ctl configtest && sudo systemctl reload apache2
 sudo a2ensite <domain>.conf
 sudo a2dissite <domain>.conf
 sudo tail -f /var/log/apache2/error.log
@@ -72,10 +76,6 @@ sudo tail -f /var/log/php8.3-fpm.log
 ### Tune Workers
 
 ```bash
-# Generate a new pool from template:
-sudo sk-php-fpm-pool --site example.com
-
-# Or edit directly:
 sudo nano /etc/php/8.3/fpm/pool.d/www.conf
 # Key settings:
 # pm.max_children = 20  (RAM-dependent: (RAM_MB - 256) / avg_worker_MB)
@@ -88,23 +88,15 @@ sudo systemctl reload php8.3-fpm
 
 ---
 
-## MySQL tuning & audit
-
-```bash
-sudo sk-mysql-tune         # analyze config, suggest improvements (non-destructive)
-sudo sk-mysql-user-audit   # users, grants, flag anonymous/wildcard hosts
-```
-
----
-
 ## Node.js Services
 
 ```bash
-sudo sk-service-health <service-name>
-sudo sk-service-restart <service-name>
+sudo systemctl status <service-name>
+sudo journalctl -u <service-name> -n 50 --no-pager
+sudo systemctl restart <service-name>
 ```
 
-Create new Node.js systemd unit: see `references/config-patterns.md`
+Create new Node.js systemd unit: see `references/config-patterns.md`.
 
 ---
 
@@ -119,6 +111,23 @@ server_tokens off;         # hide version
 client_max_body_size 64M;  # upload limit
 gzip on;
 ```
+
+---
+
+## Optional fast path (when sk-* scripts are installed)
+
+Running `sudo install-skills-bin linux-webstack` installs wrappers for the
+most common workflows:
+
+| Task | Fast-path script |
+|---|---|
+| Validate + reload Nginx | `sudo sk-nginx-test-reload` |
+| Validate + reload Apache | `sudo sk-apache-test-reload` |
+| Generate a new PHP-FPM pool | `sudo sk-php-fpm-pool --site <domain>` |
+| Analyze MySQL config | `sudo sk-mysql-tune` |
+| Audit MySQL users & grants | `sudo sk-mysql-user-audit` |
+
+These are optional convenience wrappers around the manual commands above.
 
 ## Scripts
 

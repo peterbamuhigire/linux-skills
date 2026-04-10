@@ -9,6 +9,11 @@ metadata:
 ---
 # Linux Security Analysis
 
+**This skill is self-contained.** The 10 audit layers below work on a stock
+Ubuntu/Debian server using nothing but built-in tools. The `sk-audit` script
+in the **Optional fast path** section is a convenience wrapper — never
+required.
+
 **Read-only.** This skill observes and reports. It never modifies anything.
 Use `linux-server-hardening` to fix what this skill finds.
 
@@ -21,10 +26,11 @@ Levels: **CRITICAL** | **HIGH** | **MEDIUM** | **LOW** | **INFO** | **PASS**
 ## Quick Start
 
 ```bash
-# Lightweight audit script for a fast PASS/WARN/FAIL overview:
-sudo sk-audit
+# Optional: run the existing audit script first for a fast PASS/WARN/FAIL overview:
+sudo bash ~/.claude/skills/scripts/server-audit.sh
 
-# Then work through the 10 layers for the full deep analysis.
+# Then work through the 10 layers for the full deep analysis:
+less ~/.claude/skills/linux-security-analysis/references/audit-layers.md
 ```
 
 ## The 10 Layers
@@ -78,6 +84,18 @@ After all 10 layers, output:
 
 Recommended: Run linux-server-hardening to fix CRITICAL and HIGH items first.
 ```
+
+## Optional fast path (when sk-* scripts are installed)
+
+Running `sudo install-skills-bin linux-security-analysis` installs:
+
+| Task | Fast-path script |
+|---|---|
+| Full 14-section audit (same as the existing `server-audit.sh`) | `sudo sk-audit` |
+| AppArmor profile status + recent denials | `sudo sk-apparmor-status` |
+
+These are optional wrappers. The 10-layer manual procedure above is the
+source of truth.
 
 ## Scripts
 

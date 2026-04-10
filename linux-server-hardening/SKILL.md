@@ -9,6 +9,10 @@ metadata:
 ---
 # Linux Server Hardening
 
+**This skill is self-contained.** Every hardening step below uses standard
+Ubuntu/Debian tools. The `sk-*` scripts in the **Optional fast path** section
+are convenience wrappers — never required.
+
 Applies security fixes interactively. Runs the audit first — never applies
 a change without your confirmation.
 
@@ -19,7 +23,7 @@ a change without your confirmation.
 ## Step 1: Run The Audit
 
 ```bash
-sudo sk-audit
+sudo bash ~/.claude/skills/scripts/server-audit.sh
 ```
 
 Fix FAIL items first, then WARN. Use `references/hardening-checklist.md`
@@ -79,12 +83,26 @@ for the complete commands for each area.
 ## Verify After Hardening
 
 ```bash
-sudo sk-audit
+sudo bash ~/.claude/skills/scripts/server-audit.sh
 # All previous FAIL items should now be PASS
 ```
 
 Full configs and commands for each area: `references/hardening-checklist.md`
 Reference guide: `~/.claude/skills/notes/server-security.md`
+
+---
+
+## Optional fast path (when sk-* scripts are installed)
+
+Running `sudo install-skills-bin linux-server-hardening` installs:
+
+| Task | Fast-path script |
+|---|---|
+| Apply SSH hardening (backs up first, tests before reload) | `sudo sk-harden-ssh` |
+| Apply sysctl kernel hardening | `sudo sk-harden-sysctl` |
+| Apply PHP hardening | `sudo sk-harden-php` |
+
+These wrap the manual steps in `references/hardening-checklist.md`.
 
 ## Scripts
 
