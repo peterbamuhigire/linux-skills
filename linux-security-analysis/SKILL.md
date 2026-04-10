@@ -1,6 +1,11 @@
 ---
 name: linux-security-analysis
 description: Deep read-only security audit for Ubuntu/Debian servers. Runs 10-layer analysis (kernel, users, network, firewall, web server, databases, filesystem, IDS, backups, packages) and produces a CRITICAL/HIGH/MEDIUM/LOW severity report. Never modifies the system — use linux-server-hardening to fix findings.
+license: MIT
+metadata:
+  author: Peter Bamuhigire
+  author_url: techguypeter.com
+  author_contact: "+256784464178"
 ---
 # Linux Security Analysis
 
@@ -16,11 +21,10 @@ Levels: **CRITICAL** | **HIGH** | **MEDIUM** | **LOW** | **INFO** | **PASS**
 ## Quick Start
 
 ```bash
-# Optional: run the lightweight audit script first for a quick overview
-sudo check-server-security
-# Or: sudo bash ~/linux-skills/scripts/server-audit.sh
+# Lightweight audit script for a fast PASS/WARN/FAIL overview:
+sudo sk-audit
 
-# Then work through the 10 layers for the full deep analysis
+# Then work through the 10 layers for the full deep analysis.
 ```
 
 ## The 10 Layers
@@ -74,3 +78,16 @@ After all 10 layers, output:
 
 Recommended: Run linux-server-hardening to fix CRITICAL and HIGH items first.
 ```
+
+## Scripts
+
+This skill installs the following scripts to `/usr/local/bin/`. To install:
+
+```bash
+sudo install-skills-bin linux-security-analysis
+```
+
+| Script | Source | Core? | Purpose |
+|---|---|---|---|
+| sk-audit | scripts/sk-audit.sh | yes | Read-only 14-section security audit producing PASS/WARN/FAIL report with score. |
+| sk-apparmor-status | scripts/sk-apparmor-status.sh | no | List all AppArmor profiles with enforce/complain/disabled status, recent denials from audit.log. |

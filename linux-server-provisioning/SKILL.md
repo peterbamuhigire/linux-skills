@@ -1,6 +1,11 @@
 ---
 name: linux-server-provisioning
 description: Set up a fresh Ubuntu/Debian server from scratch for production web hosting. Interactive step-by-step. Covers hostname, timezone, admin user, SSH hardening, UFW, full stack installation (Nginx, Apache port 8080, PHP-FPM, MySQL 8, PostgreSQL, Redis, Node.js, fail2ban, certbot, rclone, msmtp), Nginx snippet setup, and post-install security verification.
+license: MIT
+metadata:
+  author: Peter Bamuhigire
+  author_url: techguypeter.com
+  author_contact: "+256784464178"
 ---
 # Server Provisioning
 
@@ -10,6 +15,9 @@ Sets up a fresh server. Ask first:
 3. **Which stack?** (confirm: Nginx + Apache + PHP8.3 + MySQL + PostgreSQL + Redis)
 
 Work through sections in order. Full commands: `references/provisioning-steps.md`
+
+The fastest path is `sudo sk-provision-fresh` — a guided wizard that runs
+every section with interactive confirmations.
 
 ---
 
@@ -26,7 +34,7 @@ Work through sections in order. Full commands: `references/provisioning-steps.md
 | 7 | Databases (MySQL, PostgreSQL, Redis) | 10 min |
 | 8 | Supporting tools (fail2ban, certbot, rclone, msmtp, Node.js) | 10 min |
 | 9 | Nginx snippets + catch-all config | 10 min |
-| 10 | Clone linux-skills + symlink scripts | 5 min |
+| 10 | Clone linux-skills + install sk-* scripts | 5 min |
 | 11 | Post-install security check | 5 min |
 
 ---
@@ -44,7 +52,7 @@ ss -tlnp | grep apache
 grep bind-address /etc/mysql/mysql.conf.d/mysqld.cnf
 
 # Final check:
-sudo check-server-security
+sudo sk-audit
 ```
 
 ---
@@ -66,3 +74,15 @@ sudo ufw status verbose
 
 Full step-by-step installation commands: `references/provisioning-steps.md`
 Next step after provisioning: `linux-server-hardening`
+
+## Scripts
+
+This skill installs the following scripts to `/usr/local/bin/`. To install:
+
+```bash
+sudo install-skills-bin linux-server-provisioning
+```
+
+| Script | Source | Core? | Purpose |
+|---|---|---|---|
+| sk-provision-fresh | scripts/sk-provision-fresh.sh | no | Guided fresh-server wizard covering hostname, timezone, admin user, SSH, UFW, fail2ban, unattended-upgrades, certbot, and linux-skills clone. |

@@ -1,6 +1,11 @@
 ---
 name: linux-service-management
 description: Manage systemd services on Ubuntu/Debian servers. Start, stop, restart, reload, enable/disable on boot, view status and logs via journalctl. Covers all web server services (nginx, apache2, mysql, postgresql, php-fpm, redis, fail2ban, certbot, cron, msmtp) and Node.js product services. Includes crashed-service diagnosis workflow.
+license: MIT
+metadata:
+  author: Peter Bamuhigire
+  author_url: techguypeter.com
+  author_contact: "+256784464178"
 ---
 # Service Management
 
@@ -15,12 +20,22 @@ sudo systemctl is-active <service>
 sudo systemctl is-enabled <service>
 ```
 
+For anything non-trivial, prefer the scripts — they test config before
+reloading and roll back on failure:
+
+```bash
+sudo sk-service-health <service>        # one-screen status + recent logs
+sudo sk-service-restart <service>       # safe restart with health check
+sudo sk-timer-list                      # all systemd timers with next/last run
+sudo sk-cron-audit                      # all crontabs, MAILTO, last run, syntax
+```
+
 ## Services Quick Reference
 
 | Service | Safe reload? | Notes |
 |---------|-------------|-------|
-| `nginx` | Yes | Always run `nginx -t` first |
-| `apache2` | Yes | Run `apache2ctl configtest` first |
+| `nginx` | Yes | Always run `nginx -t` first (or `sk-nginx-test-reload`) |
+| `apache2` | Yes | Run `apache2ctl configtest` first (or `sk-apache-test-reload`) |
 | `mysql` | No | Brief downtime on restart |
 | `postgresql` | Yes | reload re-reads postgresql.conf |
 | `php8.3-fpm` | Yes | reload finishes active requests |
@@ -39,25 +54,25 @@ sudo journalctl -u <service> -n 50 --no-pager     # last 50 lines
 sudo journalctl -u <service> -f                   # follow live
 sudo journalctl -u <service> --since "1 hour ago"
 sudo journalctl -u <service> -p err --no-pager    # errors only
+
+# Or use the script (color + filter shorthand):
+sudo sk-journal-tail <service> --errors --since 1h
 ```
 
 ## Diagnosing A Crashed Service
 
 ```bash
 # Step 1: Read exit code and recent logs
-sudo systemctl status <service> --no-pager
+sudo sk-service-health <service>
 
-# Step 2: Get full error context
-sudo journalctl -u <service> --since "5 min ago" --no-pager
-
-# Step 3: Test config (web servers)
+# Step 2: Test config (web servers)
 sudo nginx -t                    # nginx
 sudo apache2ctl configtest       # apache2
 sudo php-fpm8.3 -t              # php-fpm
 
-# Step 4: Check for disk full or port conflicts
-df -h
-sudo ss -tlnp | grep <port>
+# Step 3: Check for disk full or port conflicts
+sudo sk-disk-hogs /
+sudo sk-open-ports | grep <port>
 ```
 
 ## Check All Services At Once
@@ -71,10 +86,23 @@ sudo systemctl list-units --type=service --state=running | \
 ## Node.js Services (Product-Specific)
 
 ```bash
-# Any Node.js service registered in systemd:
-sudo systemctl status <service-name>
-sudo journalctl -u <service-name> -n 50 --no-pager
-sudo systemctl restart <service-name>    # after code update via update-all-repos
+sudo sk-service-health <service-name>
+sudo sk-service-restart <service-name>    # after code update via sk-update-all-repos
 ```
 
 For creating a new Node.js systemd unit, see `linux-webstack`.
+
+## Scripts
+
+This skill installs the following scripts to `/usr/local/bin/`. To install:
+
+```bash
+sudo install-skills-bin linux-service-management
+```
+
+| Script | Source | Core? | Purpose |
+|---|---|---|---|
+| sk-service-health | scripts/sk-service-health.sh | yes | Show state, last 20 journal lines, recent restart count, and failed dependencies for a systemd service. |
+| sk-cron-audit | scripts/sk-cron-audit.sh | yes | Enumerate all user + system crontabs, verify `MAILTO`, flag jobs that haven't run recently, validate syntax. |
+| sk-service-restart | scripts/sk-service-restart.sh | no | Safe restart: check health before, restart, wait, verify, show logs. Rollback hint on failure. |
+| sk-timer-list | scripts/sk-timer-list.sh | no | All systemd timers with next and last run, unit, state; flags timers that never fired. |
