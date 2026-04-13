@@ -9,6 +9,53 @@ metadata:
 ---
 # Disaster Recovery
 
+## Use when
+
+- Data has been lost, corrupted, or overwritten and a restore may be required.
+- You need to recover databases, application files, or config snapshots from backups.
+- You need an emergency recovery checklist during a production incident.
+
+## Do not use when
+
+- The problem is only a service outage or bad config that can be fixed in place; use `linux-service-management` or `linux-troubleshooting`.
+- The task is a routine backup review rather than an actual restore path.
+
+## Required inputs
+
+- The incident time window and affected data set.
+- The candidate backup location, timestamp, and encryption details.
+- Explicit confirmation that a destructive restore is acceptable.
+
+## Workflow
+
+1. Confirm this is true data loss or corruption, not a recoverable service issue.
+2. Locate the newest safe backup from before the incident.
+3. Follow the matching restore path and confirm destructive impact before execution.
+4. Verify service health, data integrity, and post-restore access before closing the incident.
+
+## Quality standards
+
+- Restore the smallest correct scope first when possible.
+- Use timestamps and incident facts to choose the backup, not guesswork.
+- Verification after restore is mandatory.
+
+## Anti-patterns
+
+- Restoring over live data without explicit confirmation.
+- Choosing the latest backup without checking whether it already contains the bad state.
+- Ending the incident after the restore command without service and data validation.
+
+## Outputs
+
+- The selected backup and restore path.
+- The recovery commands and confirmations required.
+- A post-restore verification summary with any remaining risk.
+
+## References
+
+- [`references/backup-strategy.md`](references/backup-strategy.md)
+- [`references/restore-procedures.md`](references/restore-procedures.md)
+
 **This skill is self-contained.** Every command below works on a stock
 Ubuntu/Debian server. The `sk-*` scripts in the **Optional fast path**
 section at the bottom are convenience wrappers — never required.

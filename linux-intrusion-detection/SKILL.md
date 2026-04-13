@@ -9,6 +9,53 @@ metadata:
 ---
 # Intrusion Detection
 
+## Use when
+
+- Managing fail2ban, AIDE, or auditd on Ubuntu/Debian servers.
+- Investigating bans, file-integrity alerts, or syscall audit trails.
+- Hardening host monitoring after repeated abuse or suspicious changes.
+
+## Do not use when
+
+- The task is perimeter firewalling or certificates; use `linux-firewall-ssl`.
+- The task is a broad read-only security audit; use `linux-security-analysis`.
+
+## Required inputs
+
+- Which subsystem is involved: fail2ban, AIDE, or auditd.
+- The host, jail, file path, or event pattern under investigation.
+- Whether the task is inspection, tuning, or first-time setup.
+
+## Workflow
+
+1. Confirm which detection layer matches the symptom.
+2. Inspect current status, logs, and configured watches or jails.
+3. Apply the minimum tuning or recovery change needed.
+4. Re-run the relevant check to prove the monitoring layer behaves as expected.
+
+## Quality standards
+
+- Changes must improve signal without creating blind spots.
+- Preserve evidence when investigating suspicious behavior.
+- Keep monitoring rules understandable and reviewable.
+
+## Anti-patterns
+
+- Disabling a noisy jail or audit rule without understanding why it fired.
+- Rebuilding AIDE baselines blindly after suspicious change.
+- Treating intrusion-detection tooling as a substitute for root-cause analysis.
+
+## Outputs
+
+- The status or finding for the selected detection layer.
+- The tuning or remediation step taken.
+- Verification that the jail, baseline, or audit rule now behaves correctly.
+
+## References
+
+- [`references/fail2ban-jails.md`](references/fail2ban-jails.md)
+- [`references/aide-and-auditd.md`](references/aide-and-auditd.md)
+
 **This skill is self-contained.** Every command below is a standard
 Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
 are convenience wrappers — never required.

@@ -1,9 +1,61 @@
 ---
 name: skill-safety-audit
 description: Scan new or updated skills for unsafe or malicious instructions (unknown tools, external installers, credential harvesting) before accepting them into the repository.
+license: MIT
+metadata:
+  author: Peter Bamuhigire
+  author_url: techguypeter.com
+  author_contact: "+256784464178"
 ---
 
 # Skill Safety Audit
+
+## Use when
+
+- A new skill is added to this repository or copied from another source.
+- An existing skill gains new scripts, external dependencies, or setup instructions.
+- You need a structured safety decision before accepting a skill change.
+
+## Do not use when
+
+- The task is general application code review rather than skill-package review.
+- The change is purely editorial and does not affect instructions, scripts, or dependencies.
+
+## Required inputs
+
+- The changed `SKILL.md` files and any bundled `scripts/`, `references/`, or assets.
+- The repo policy files that define acceptable behavior.
+- Any new tools, package sources, or network actions introduced by the skill.
+
+## Workflow
+
+1. Read the skill body and its bundled resources in full.
+2. Search for hidden execution paths, remote installers, credential handling, and policy bypasses.
+3. Check whether any new dependency or privileged action is justified and already approved by the repo.
+4. Report a clear safety status with findings and required remediation before merge.
+
+## Quality standards
+
+- Review both explicit instructions and hidden side effects in bundled files.
+- Treat unclear or unverifiable behavior as a real finding, not as safe-by-default.
+- Keep the output actionable so a maintainer can accept, revise, or reject quickly.
+
+## Anti-patterns
+
+- Auditing only the top-level `SKILL.md` and ignoring bundled scripts or references.
+- Accepting remote execution, secret collection, or privilege escalation without scrutiny.
+- Assuming a skill is safe because it looks well-written.
+
+## Outputs
+
+- A safety status of `Safe`, `Needs Review`, or `Unsafe`.
+- A concise findings list tied to concrete files or instructions.
+- The exact remediation or acceptance decision needed next.
+
+## References
+
+- [`CLAUDE.md`](../CLAUDE.md)
+- [`AGENTS.md`](../AGENTS.md)
 
 ## Overview
 
@@ -11,7 +63,7 @@ This skill ensures every new or modified skill is reviewed for unsafe or malicio
 
 ## When to Use
 
-- A new skill is created or added to `skills/`
+- A new skill is created or added to the repository
 - A skill is updated from a third-party source
 - A skill is copied in from another repository
 
@@ -86,7 +138,7 @@ Flag any instruction or script that:
 3. **Review bundled scripts and references** for hidden commands or prompt-injection content.
 4. **Check for new external dependencies** and verify they are approved.
 5. **Check for credential requests** or any data collection.
-6. **Confirm instructions align with project policies** in `CLAUDE.md` and `.github/copilot-instructions.md`.
+6. **Confirm instructions align with project policies** in `CLAUDE.md` and `AGENTS.md`.
 7. **Record outcome**:
    - ✅ Safe: no malicious or unsafe instructions.
    - ⚠️ Needs review: uncertain or questionable instructions.

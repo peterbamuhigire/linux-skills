@@ -9,6 +9,53 @@ metadata:
 ---
 # Service Management
 
+## Use when
+
+- Managing `systemd` services on a Linux server.
+- Investigating why a service failed, restarted, or will not enable correctly.
+- Performing controlled restarts or reloads after config changes.
+
+## Do not use when
+
+- The task is only log analysis; use `linux-log-management`.
+- The task is broad symptom-driven triage across multiple subsystems; use `linux-troubleshooting`.
+
+## Required inputs
+
+- The service name and symptom.
+- Whether the task is inspection, restart/reload, enablement, or diagnosis.
+- Any expected dependencies or recent changes affecting the service.
+
+## Workflow
+
+1. Inspect service status and recent logs before taking action.
+2. Apply the smallest restart, reload, or enablement change needed.
+3. Follow the crashed-service workflow when a normal restart is insufficient.
+4. Confirm the unit is healthy and serving traffic after the change.
+
+## Quality standards
+
+- Status and logs come before restart loops.
+- Prefer reloads when safe and supported.
+- Verification must include both unit state and real service behavior.
+
+## Anti-patterns
+
+- Repeatedly restarting a failed service without reading why it failed.
+- Assuming `active (running)` means the application is actually healthy.
+- Reloading config-dependent services without validating their config first.
+
+## Outputs
+
+- The service action or diagnosis.
+- The status and log evidence used to justify it.
+- Post-change verification for the live unit and dependent service path.
+
+## References
+
+- [`references/service-reference.md`](references/service-reference.md)
+- [`references/timers-and-cron.md`](references/timers-and-cron.md)
+
 **This skill is self-contained.** Every command below is a standard
 Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
 are convenience wrappers — never required.

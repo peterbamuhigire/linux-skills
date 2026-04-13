@@ -10,6 +10,55 @@ metadata:
 
 # Linux Bash Scripting — the meta-skill
 
+## Use when
+
+- Writing a new `sk-*` script in this repository.
+- Reviewing or refactoring an existing script under `scripts/`.
+- Checking whether a script matches the engine contract, flag model, and safety rules.
+
+## Do not use when
+
+- The task is a one-off shell command or an operational fix that will not become a repo script.
+- The implementation language is not Bash.
+
+## Required inputs
+
+- The target skill or script name.
+- The intended behavior, decision flags, and safety expectations.
+- Any relevant references in `docs/engine-design/` or `references/`.
+
+## Workflow
+
+1. Read the engine spec and the relevant script inventory entry.
+2. Start from the canonical template and the `common.sh` contract.
+3. Implement or review the script against standard flags, safety patterns, and interactive UX rules.
+4. Verify help text, dry-run behavior, idempotency expectations, and script manifest alignment.
+
+## Quality standards
+
+- Every script must be safe, idempotent by default, and compatible with human and agent callers.
+- `common.sh` is mandatory; do not reinvent shared behavior.
+- Help output, failure modes, and validation-before-reload rules must be explicit.
+
+## Anti-patterns
+
+- Writing ad-hoc Bash that bypasses `common.sh`.
+- Treating `--yes` as permission to invent defaults.
+- Shipping a script without a matching `## Scripts` manifest entry and verification path.
+
+## Outputs
+
+- A script or review decision that conforms to the engine contract.
+- The required decision flags, validation steps, and installation manifest entry.
+- Any follow-up test or lint action needed before ship.
+
+## References
+
+- [`references/script-template.sh`](references/script-template.sh)
+- [`references/common-sh-contract.md`](references/common-sh-contract.md)
+- [`references/interactive-ux.md`](references/interactive-ux.md)
+- [`docs/engine-design/spec.md`](../docs/engine-design/spec.md)
+
 This skill is the foundation every other script in `linux-skills` is built on.
 Before writing a new `sk-*` script, or reviewing an existing one, load this
 skill.

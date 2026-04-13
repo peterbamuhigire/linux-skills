@@ -10,6 +10,54 @@ metadata:
 
 # Linux Observability
 
+## Use when
+
+- Adding metrics collection, log shipping, or health endpoints to a server.
+- Making a host visible to Prometheus or a central logging pipeline.
+- Standardizing `/health` behavior for operational checks.
+
+## Do not use when
+
+- The task is reading local logs only; use `linux-log-management`.
+- The task is general performance triage without telemetry design work; use `linux-system-monitoring`.
+
+## Required inputs
+
+- The telemetry layer involved: metrics, logs, or health endpoint.
+- The target collector, Prometheus server, or log destination.
+- The service or vhost that needs instrumentation.
+
+## Workflow
+
+1. Choose the telemetry layer required by the task.
+2. Follow the matching setup or troubleshooting workflow below.
+3. Validate the exported metric, forwarded log, or `/health` response from the consumer side.
+4. Record any credentials, ports, or retention assumptions needed for operations.
+
+## Quality standards
+
+- Observability changes must be testable from the receiving system, not only from the host.
+- Keep health endpoints cheap, deterministic, and safe to expose.
+- Prefer standard, maintainable telemetry patterns over bespoke one-offs.
+
+## Anti-patterns
+
+- Declaring a system observable before checking the collector can actually scrape or receive it.
+- Shipping logs without understanding destination, transport, or retention.
+- Turning `/health` into a heavy application diagnostic endpoint.
+
+## Outputs
+
+- The metrics, logs, or health integration added or diagnosed.
+- The validation method used from the consumer side.
+- Any remaining operational prerequisites or exposure notes.
+
+## References
+
+- [`references/prometheus-setup.md`](references/prometheus-setup.md)
+- [`references/log-forwarding.md`](references/log-forwarding.md)
+- [`references/health-endpoint-pattern.md`](references/health-endpoint-pattern.md)
+
 **This skill is self-contained.** Every step below uses standard
 Ubuntu/Debian tools and released binaries. The `sk-*` scripts in the
 **Optional fast path** section are convenience wrappers — never required.

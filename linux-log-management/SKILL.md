@@ -9,6 +9,54 @@ metadata:
 ---
 # Log Management
 
+## Use when
+
+- Reading service, web, security, or database logs on a Linux server.
+- Investigating spikes in errors, attacks, or slow queries.
+- Reviewing log rotation or journal storage behavior.
+
+## Do not use when
+
+- The task is general incident routing without a clear symptom; use `linux-troubleshooting`.
+- The task is metrics collection or centralized observability setup; use `linux-observability`.
+
+## Required inputs
+
+- The service, path, or time window to inspect.
+- The symptom or event type you are trying to explain.
+- Any relevant retention or rotation concern.
+
+## Workflow
+
+1. Narrow the target service, path, and timeframe.
+2. Use the matching manual commands below to inspect logs and identify patterns.
+3. Follow suspicious findings into the owning service or skill.
+4. Verify whether the issue is ongoing, resolved, or requires rotation changes.
+
+## Quality standards
+
+- Use time-bounded inspection instead of dumping entire logs.
+- Prefer concrete log evidence over speculation.
+- Keep rotation and retention changes deliberate.
+
+## Anti-patterns
+
+- Grepping random logs without first identifying the service and timeframe.
+- Treating log volume as proof of cause without corroboration.
+- Changing rotation settings before understanding the growth source.
+
+## Outputs
+
+- The relevant log evidence and suspected cause.
+- Any service or rotation action required next.
+- A verification statement showing whether the issue is still reproducing.
+
+## References
+
+- [`references/journalctl-reference.md`](references/journalctl-reference.md)
+- [`references/log-analysis-patterns.md`](references/log-analysis-patterns.md)
+- [`references/log-locations.md`](references/log-locations.md)
+
 **This skill is self-contained.** Every command below is a standard
 Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
 are convenience wrappers — never required.

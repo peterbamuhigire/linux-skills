@@ -10,6 +10,54 @@ metadata:
 
 # Linux cloud-init
 
+## Use when
+
+- Designing or validating `cloud-init` user-data for first boot.
+- Debugging why a cloud-init or autoinstall run failed.
+- Bootstrapping a fresh Ubuntu server from declarative YAML rather than manual provisioning.
+
+## Do not use when
+
+- The server is already live and you only need manual provisioning changes; use `linux-server-provisioning`.
+- The task is ordinary network or package troubleshooting outside cloud-init execution.
+
+## Required inputs
+
+- The target YAML file, image type, or installer context.
+- The desired first-boot actions such as users, packages, SSH keys, or commands.
+- Any cloud platform constraints or failure symptoms.
+
+## Workflow
+
+1. Confirm whether the task is new authoring, validation, or post-failure debugging.
+2. Validate the YAML structure and cloud-init semantics before deployment.
+3. Follow the matching workflow below for user-data, autoinstall, or bootstrap scenarios.
+4. Inspect logs and rendered state after boot to prove the config applied as intended.
+
+## Quality standards
+
+- Keep configurations reproducible, explicit, and safe for unattended execution.
+- Validate before rollout, especially for multi-server deployments.
+- Treat logs and instance state as the source of truth when debugging.
+
+## Anti-patterns
+
+- Shipping unvalidated YAML to multiple servers.
+- Mixing cloud-init responsibilities with unrelated post-boot manual procedures.
+- Assuming a failed first-boot action ran without checking cloud-init status and logs.
+
+## Outputs
+
+- A validated cloud-init or autoinstall configuration.
+- A diagnosis of why a prior run failed.
+- The verification commands needed after first boot.
+
+## References
+
+- [`references/user-data-reference.md`](references/user-data-reference.md)
+- [`references/autoinstall-reference.md`](references/autoinstall-reference.md)
+- [`references/debugging.md`](references/debugging.md)
+
 **This skill is self-contained.** Every command below is a standard
 Ubuntu/Debian tool (`cloud-init`, `journalctl`, `yamllint`). The `sk-*`
 scripts in the **Optional fast path** section are convenience wrappers —

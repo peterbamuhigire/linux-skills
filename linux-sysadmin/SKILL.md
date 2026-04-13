@@ -9,6 +9,53 @@ metadata:
 ---
 # Linux Server Admin Hub
 
+## Use when
+
+- The user has a Linux server task but has not yet chosen the right specialist skill.
+- You need routing across provisioning, security, networking, operations, recovery, or script work.
+- You need the default repo-wide operating rules before entering a narrower workflow.
+
+## Do not use when
+
+- The task is already clearly scoped to a specialist skill below and you can move there directly.
+- The task is about authoring or reviewing `sk-*` scripts; load `linux-bash-scripting`.
+
+## Required inputs
+
+- The server role or symptom the user is dealing with.
+- Whether the task is read-only analysis or a system-changing action.
+- Any known constraints such as production impact, maintenance window, or missing access.
+
+## Workflow
+
+1. Classify the task using the routing table.
+2. Load the matching specialist skill and follow its manual workflow as the source of truth.
+3. Use the optional `sk-*` scripts only when they are installed and fit the task.
+4. Verify the result with service checks, config validation, or follow-up inspection before closing.
+
+## Quality standards
+
+- Route quickly and explicitly; do not leave the user in the hub longer than necessary.
+- Preserve the repo's safety rules: confirm destructive work, validate configs before reload, and prefer idempotent changes.
+- Keep script guidance aligned with `docs/engine-design/spec.md`.
+
+## Anti-patterns
+
+- Trying to solve every task from the hub instead of handing off to a specialist skill.
+- Guessing which skill applies without checking the routing table.
+- Assuming scripts are installed or that a task must use automation when manual steps are available.
+
+## Outputs
+
+- The selected specialist skill.
+- The next manual workflow or script entry point to run.
+- The verification step needed to prove the task is complete.
+
+## References
+
+- [`docs/engine-design/spec.md`](../docs/engine-design/spec.md)
+- [`docs/engine-design/script-inventory.md`](../docs/engine-design/script-inventory.md)
+
 ## Server Context
 
 This context applies to the primary managed server. Update when working on a

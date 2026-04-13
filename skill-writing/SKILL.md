@@ -1,15 +1,66 @@
 ---
 name: skill-writing
-description: Guide for creating effective skills that work across Claude Code, Gemini CLI, and all Agent Skills-compatible platforms. Use when creating a new skill or updating an existing skill.
+description: Guide for creating effective skills that work across Claude Code, Codex, Gemini CLI, and other portable skill systems. Use when creating a new skill or updating an existing skill for cross-agent reuse.
 license: Complete terms in LICENSE.txt
-compatibility: Designed for Claude Code and Gemini CLI (Agent Skills open standard)
+compatibility: Designed for Claude Code, Codex, and Gemini CLI with a portable SKILL.md plus repo-level instructions where needed
 ---
 
 # Skill Creator
 
+## Use when
+
+- Creating a new portable skill package.
+- Upgrading an existing `SKILL.md` to be clearer, smaller, and more cross-platform.
+- Deciding what belongs in `SKILL.md` versus `references/`, `scripts/`, or `assets/`.
+
+## Do not use when
+
+- The task is only to execute an existing skill rather than author one.
+- The change is repo-specific policy that belongs in `AGENTS.md` or `CLAUDE.md`, not in a skill package.
+
+## Required inputs
+
+- The skill name, target workflow, and likely trigger phrases.
+- Any scripts, references, assets, or templates the skill needs.
+- The platforms the skill must support and any non-portable features to avoid.
+
+## Workflow
+
+1. Define the skill boundary, trigger description, and expected outputs.
+2. Keep the active `SKILL.md` concise and move heavy detail into `references/`.
+3. Use only portable frontmatter fields unless a platform-specific extension is truly required.
+4. Validate naming, description quality, workflow clarity, and packaging before publishing.
+
+## Quality standards
+
+- The skill must be execution-oriented, not essay-like.
+- Discovery text should make activation obvious from natural user phrasing.
+- Supporting resources should be progressive: `SKILL.md` first, references/scripts on demand.
+
+## Anti-patterns
+
+- Packing large reference dumps into `SKILL.md`.
+- Mixing unrelated workflows into one skill.
+- Relying on one platform's proprietary fields when portability is a goal.
+
+## Outputs
+
+- A portable `SKILL.md` with clear activation guidance and workflow.
+- Any supporting `references/`, `scripts/`, or `assets/` that the workflow requires.
+- Packaging or validation steps for distribution.
+
+## References
+
+- [`references/generation-template.md`](references/generation-template.md)
+- [`references/skill-authoring-best-practices.md`](references/skill-authoring-best-practices.md)
+- [`references/output-patterns.md`](references/output-patterns.md)
+- [`references/workflows.md`](references/workflows.md)
+
 Skills are modular, self-contained packages that extend AI agent capabilities with specialized
-knowledge, workflows, and tools. They follow the **Agent Skills open standard** (agentskills.io),
-which is supported by Claude Code, Gemini CLI, Cursor, VS Code Copilot, and 20+ other tools.
+knowledge, workflows, and tools. The most portable form is a concise `SKILL.md` plus optional
+`references/`, `scripts/`, and `assets/`. Claude Code and Gemini CLI both align closely with the
+**Agent Skills open standard** (agentskills.io); Codex can use the same skill packages effectively
+when the repo also exposes clear routing and working rules through `AGENTS.md`.
 
 ---
 
@@ -163,6 +214,22 @@ To ensure a skill works on Claude Code **and** Gemini CLI:
 ✅ Keep SKILL.md under 500 lines  
 
 ❌ Don't use `disable-model-invocation`, `context: fork`, `$ARGUMENTS`, `` !`cmd` `` if targeting both platforms  
+
+## Codex Compatibility
+
+Codex is not hard-wired to the same discovery paths as Claude Code or Gemini CLI, so portability
+depends on instruction design more than folder names.
+
+To make a skill work well in Codex:
+
+✅ Keep the main execution contract in `SKILL.md`: use cases, required inputs, workflow, quality bar, anti-patterns, outputs  
+✅ Keep heavy reference content in `references/` and point to it explicitly  
+✅ Add or update a repo-level `AGENTS.md` so Codex knows the repo purpose, routing rules, and baseline expectations  
+✅ Avoid hidden assumptions that the repo must live under `~/.claude/skills` or `.agents/skills` unless that path is only an example for one platform  
+✅ Preserve any Claude-specific optimizations as optional layers, not as the only way the skill makes sense  
+
+For dual-compatible repos, treat `SKILL.md` as the portable unit and `AGENTS.md`/`CLAUDE.md` as the
+host-specific instruction layer.
 
 ---
 

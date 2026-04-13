@@ -9,6 +9,53 @@ metadata:
 ---
 # Access Control
 
+## Use when
+
+- Managing Linux users, groups, sudo access, SSH keys, or file permissions.
+- Auditing who can log in or who has elevated access on a server.
+- Fixing ownership or permission problems in web roots, home directories, or credential files.
+
+## Do not use when
+
+- The task is firewalling or TLS; use `linux-firewall-ssl`.
+- The task is broader security analysis or hardening; use `linux-security-analysis` or `linux-server-hardening`.
+
+## Required inputs
+
+- The target usernames, groups, paths, or key files.
+- Whether the action is audit-only or will change access.
+- Any expected ownership and permission state to enforce.
+
+## Workflow
+
+1. Identify the account or path being changed and inspect current state first.
+2. Apply the least-privilege change with the manual commands below.
+3. Re-check login access, sudo membership, and file ownership after the change.
+4. Use optional scripts only when they are installed and clearly match the task.
+
+## Quality standards
+
+- Prefer reversible, explicit changes over blanket permission fixes.
+- Preserve SSH access and validate the impact before removing keys or users.
+- Credential files must remain tightly permissioned.
+
+## Anti-patterns
+
+- Running recursive `chmod` or `chown` without scoping the target.
+- Granting sudo or shell access without an explicit need.
+- Deleting an account before confirming whether its data or keys are still required.
+
+## Outputs
+
+- The access change or audit result.
+- The exact commands or files touched.
+- A verification result showing the final access state.
+
+## References
+
+- [`references/users-sudoers-pam.md`](references/users-sudoers-pam.md)
+- [`references/permissions-reference.md`](references/permissions-reference.md)
+
 **This skill is self-contained.** Every command below is a standard
 Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
 are convenience wrappers — never required.

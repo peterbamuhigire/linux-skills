@@ -9,6 +9,54 @@ metadata:
 ---
 # Firewall & SSL Management
 
+## Use when
+
+- Managing UFW rules on a server.
+- Issuing, renewing, or debugging TLS certificates with certbot.
+- Verifying HTTPS posture, renewal state, or TLS config for a site.
+
+## Do not use when
+
+- The task is broader web stack tuning or 502 troubleshooting; use `linux-webstack`.
+- The task is user access or SSH key management; use `linux-access-control`.
+
+## Required inputs
+
+- The target ports, hostnames, or certificate names.
+- Whether the change affects firewall policy, certificate lifecycle, or both.
+- Any maintenance window or production-safety constraints.
+
+## Workflow
+
+1. Inspect the current UFW or certificate state before changing it.
+2. Apply the specific rule or certbot action needed.
+3. Validate renewal or HTTPS behavior after the change.
+4. Record any follow-up work such as DNS fixes, rate limits, or expired chains.
+
+## Quality standards
+
+- Keep firewall rules minimal and intentional.
+- Prefer validated, renewable TLS configurations over one-off fixes.
+- Verify the live result after every certificate or firewall change.
+
+## Anti-patterns
+
+- Opening broad firewall ranges without a clear requirement.
+- Renewing or reissuing certificates without understanding the failure mode.
+- Changing HTTPS state without verifying DNS and web server readiness.
+
+## Outputs
+
+- The UFW or TLS action taken.
+- The exact verification commands or checks performed.
+- Any remaining renewal or exposure risk.
+
+## References
+
+- [`references/ufw-reference.md`](references/ufw-reference.md)
+- [`references/certbot-reference.md`](references/certbot-reference.md)
+- [`references/ssl-config.md`](references/ssl-config.md)
+
 **This skill is self-contained.** Every command below is a standard
 Ubuntu/Debian tool (`ufw`, `certbot`). The `sk-*` scripts in the **Optional
 fast path** section are convenience wrappers — never required.

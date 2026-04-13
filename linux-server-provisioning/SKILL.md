@@ -9,6 +9,53 @@ metadata:
 ---
 # Server Provisioning
 
+## Use when
+
+- Building a fresh Ubuntu/Debian server for production use.
+- Standardizing a new host before application deployment.
+- Performing the baseline setup that later specialist skills depend on.
+
+## Do not use when
+
+- The host is already provisioned and you only need a narrower change.
+- The setup should be fully declarative from image boot; use `linux-cloud-init`.
+
+## Required inputs
+
+- Hostname, timezone, and target stack choices.
+- The admin access model and any required packages or services.
+- Any environment-specific requirements for backups, SSL, or deployment tooling.
+
+## Workflow
+
+1. Collect the required server identity and stack decisions up front.
+2. Work through the numbered provisioning sections in order.
+3. Validate access, package installs, services, and baseline security after each major stage.
+4. Finish with post-install verification before handing the host to deployment or operations work.
+
+## Quality standards
+
+- Provisioning should create a predictable baseline, not an improvised snowflake.
+- Security and access validation are part of provisioning, not follow-up chores.
+- Leave the server ready for repeatable operational workflows.
+
+## Anti-patterns
+
+- Skipping foundational steps such as SSH hardening, firewalling, or update policy.
+- Mixing ad-hoc application deployment into the base build before the platform is stable.
+- Ending the workflow before post-install verification passes.
+
+## Outputs
+
+- A provisioned server baseline.
+- The chosen host identity and stack decisions.
+- A verification checklist proving the build is operational and secure enough for next steps.
+
+## References
+
+- [`references/provisioning-steps.md`](references/provisioning-steps.md)
+- [`references/post-install-verification.md`](references/post-install-verification.md)
+
 **This skill is self-contained.** The 11-section manual procedure below uses
 only standard Ubuntu/Debian tools. The `sk-provision-fresh` script in the
 **Optional fast path** section is a convenience wrapper — never required.

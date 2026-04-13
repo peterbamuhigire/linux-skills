@@ -9,6 +9,54 @@ metadata:
 ---
 # Web Stack Management
 
+## Use when
+
+- Managing Nginx, Apache, PHP-FPM, or Node.js services in the standard web stack.
+- Debugging reverse-proxy behavior, upstream failures, or PHP worker tuning.
+- Validating config changes before reloading live web services.
+
+## Do not use when
+
+- The task is a brand-new site rollout; use `linux-site-deployment`.
+- The task is certificate lifecycle or firewall policy; use `linux-firewall-ssl`.
+
+## Required inputs
+
+- The site, vhost, or service involved.
+- Which layer is failing: Nginx, Apache, PHP-FPM, or Node.js.
+- Any recent config or deployment changes that could explain the symptom.
+
+## Workflow
+
+1. Identify the failing web-stack layer and inspect its current config and status.
+2. Apply the matching workflow below for reverse proxy, Apache backend, PHP-FPM, or Node.js.
+3. Validate config before any reload or restart.
+4. Confirm end-to-end request flow after the change.
+
+## Quality standards
+
+- Validate configs before reload every time.
+- Keep responsibility boundaries clear across Nginx, Apache, PHP-FPM, and Node.js.
+- Verify with real request behavior, not just successful daemon restarts.
+
+## Anti-patterns
+
+- Restarting multiple web services at once without isolating the failing layer.
+- Editing configs without a validation step.
+- Treating a 502 as only an Nginx problem when the upstream may be down or misconfigured.
+
+## Outputs
+
+- The web-stack diagnosis or change.
+- The config tests and service checks performed.
+- Confirmation of restored request flow or the next subsystem to inspect.
+
+## References
+
+- [`references/nginx-directives.md`](references/nginx-directives.md)
+- [`references/config-patterns.md`](references/config-patterns.md)
+- [`references/php-fpm-tuning.md`](references/php-fpm-tuning.md)
+
 **This skill is self-contained.** Every command below is a standard
 Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
 are convenience wrappers — never required.

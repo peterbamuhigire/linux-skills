@@ -9,6 +9,53 @@ metadata:
 ---
 # System Monitoring
 
+## Use when
+
+- Checking overall host health across CPU, memory, disk, and network.
+- Looking for warning signs before or during an incident.
+- Verifying backup health as part of routine operations.
+
+## Do not use when
+
+- The task is a specific incident diagnosis with a known symptom; use `linux-troubleshooting`.
+- The task is telemetry system design rather than local host inspection; use `linux-observability`.
+
+## Required inputs
+
+- The host and timeframe of interest.
+- Any symptom or suspected pressure area.
+- Whether the goal is a quick health snapshot or a deeper subsystem review.
+
+## Workflow
+
+1. Capture a quick health snapshot first.
+2. Drill into the resource area showing abnormal behavior.
+3. Compare the observed metrics to the warning signs reference.
+4. Hand off to the owning skill when the issue becomes service-, storage-, or network-specific.
+
+## Quality standards
+
+- Start broad, then narrow based on evidence.
+- Distinguish transient spikes from sustained pressure.
+- End with a clear operational conclusion, not just raw command output.
+
+## Anti-patterns
+
+- Jumping into deep tuning before a basic health snapshot.
+- Treating one abnormal metric as the whole story.
+- Ignoring backup-health checks during routine host reviews.
+
+## Outputs
+
+- A host-health snapshot and identified pressure points.
+- The commands used to confirm or rule out resource contention.
+- The next owning skill or remediation direction when deeper work is needed.
+
+## References
+
+- [`references/monitoring-commands.md`](references/monitoring-commands.md)
+- [`references/warning-signs.md`](references/warning-signs.md)
+
 **This skill is self-contained.** Every command below is a standard
 Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
 are convenience wrappers — never required.

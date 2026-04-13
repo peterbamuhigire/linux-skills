@@ -9,6 +9,54 @@ metadata:
 ---
 # Site Deployment
 
+## Use when
+
+- Deploying a new website to the standard Nginx plus Apache server model in this repo.
+- Adding a static site, PHP app, or Astro/PHP hybrid to an existing host.
+- Issuing TLS and registering the repo in the repo-update workflow as part of deployment.
+
+## Do not use when
+
+- The server itself is not yet provisioned; use `linux-server-provisioning`.
+- The task is generic web stack debugging rather than a new deployment; use `linux-webstack`.
+
+## Required inputs
+
+- The domain name.
+- The site type and repo location.
+- Any build, Apache backend, or deployment-path details needed for the chosen site model.
+
+## Workflow
+
+1. Collect deployment inputs up front: domain, site type, repo, and build needs.
+2. Follow the eight deployment steps in order.
+3. Validate web server config and TLS before making the site live.
+4. Verify the final site response and repo registration state after deployment.
+
+## Quality standards
+
+- Deployment should leave the site reachable, renewable, and maintainable.
+- Nginx validation and repo-registration steps are mandatory.
+- Final verification must prove both HTTP behavior and operational update path.
+
+## Anti-patterns
+
+- Skipping `nginx -t` before reload.
+- Deploying a site without registering its repo in the update workflow.
+- Treating certificate issuance as optional for a production deployment.
+
+## Outputs
+
+- A deployed site with the correct vhost pattern.
+- The config, TLS, and repo-registration actions taken.
+- Verification that the site resolves and serves as expected.
+
+## References
+
+- [`references/deployment-checklist.md`](references/deployment-checklist.md)
+- [`references/nginx-templates.md`](references/nginx-templates.md)
+- [`references/apache-backend.md`](references/apache-backend.md)
+
 This skill is self-contained. Every step below works with only the tools
 that ship with Ubuntu/Debian. The `sk-*` scripts listed in the Scripts
 manifest are an **optional fast path** that wraps the same steps — install

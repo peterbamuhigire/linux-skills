@@ -10,6 +10,54 @@ metadata:
 
 # Linux Package Management
 
+## Use when
+
+- Installing, upgrading, holding, pinning, or auditing packages.
+- Managing `snap` lifecycle or unattended-upgrades behavior.
+- Investigating package-source or dependency issues on Ubuntu/Debian.
+
+## Do not use when
+
+- The task is application deployment rather than package lifecycle management.
+- The task is security hardening beyond package hygiene; use `linux-server-hardening`.
+
+## Required inputs
+
+- The package names or repo sources involved.
+- Whether the task is install, upgrade, hold, cleanup, or unattended-upgrades review.
+- Any maintenance-window constraints for disruptive upgrades.
+
+## Workflow
+
+1. Inspect current package state, holds, and candidate versions.
+2. Apply the smallest package operation that satisfies the goal.
+3. Follow the matching workflow below for maintenance, held packages, unattended-upgrades, or third-party repos.
+4. Verify package state and service impact after the change.
+
+## Quality standards
+
+- Prefer official repositories and explicit package intent.
+- Keep upgrades observable and reversible where possible.
+- Verify both package state and runtime health after updates.
+
+## Anti-patterns
+
+- Running broad upgrades without checking held packages or service impact.
+- Adding third-party repos casually.
+- Treating unattended-upgrades as configured without checking whether it actually ran.
+
+## Outputs
+
+- The package action or package-state diagnosis.
+- The commands used to confirm candidate and installed versions.
+- Any follow-up verification or reboot/service note required.
+
+## References
+
+- [`references/apt-reference.md`](references/apt-reference.md)
+- [`references/snap-reference.md`](references/snap-reference.md)
+- [`references/unattended-upgrades-reference.md`](references/unattended-upgrades-reference.md)
+
 **This skill is self-contained.** Every command below is a standard
 Ubuntu/Debian tool (`apt`, `apt-get`, `apt-mark`, `apt-cache`, `snap`,
 `unattended-upgrade`, `dpkg`). The `sk-*` scripts in the **Optional fast

@@ -10,6 +10,54 @@ metadata:
 
 # Linux Secrets
 
+## Use when
+
+- Scanning for leaked secrets in repos or filesystems.
+- Encrypting sensitive config with `age` or `sops`.
+- Rotating credentials or auditing credential file permissions.
+
+## Do not use when
+
+- The task is generic filesystem permissions without secret material; use `linux-access-control`.
+- The task is a full security posture review rather than secret hygiene; use `linux-security-analysis`.
+
+## Required inputs
+
+- The repo, path, or credential set involved.
+- Whether the task is scan, encryption, rotation, or permission audit.
+- Any uptime or coordination constraints for credential rotation.
+
+## Workflow
+
+1. Determine whether the task is detection, encryption at rest, or live credential change.
+2. Inspect current storage and exposure state before modifying anything.
+3. Follow the matching workflow below for scanning, encrypting, rotating, or auditing permissions.
+4. Verify both technical success and operational follow-through, such as dependent service updates.
+
+## Quality standards
+
+- Minimize plaintext exposure and document the final storage model.
+- Rotations should be coordinated, verified, and logged.
+- Secret handling must remain least-privilege and reviewable.
+
+## Anti-patterns
+
+- Rotating credentials without updating every dependent service.
+- Declaring a secret encrypted without testing decryption and usage.
+- Scanning for secrets but leaving confirmed leaks uncontained.
+
+## Outputs
+
+- The scan finding, encryption state, or rotation result.
+- The commands and files involved in the change.
+- Verification that the new secret state is both secure and usable.
+
+## References
+
+- [`references/secret-scanning.md`](references/secret-scanning.md)
+- [`references/age-and-sops.md`](references/age-and-sops.md)
+- [`references/rotation-playbook.md`](references/rotation-playbook.md)
+
 **This skill is self-contained.** Every command below is a standard tool
 (`trufflehog`, `gitleaks`, `age`, `sops`, `gpg`, `stat`, `find`). The
 `sk-*` scripts in the **Optional fast path** section are convenience

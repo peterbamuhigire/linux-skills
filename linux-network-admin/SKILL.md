@@ -10,6 +10,53 @@ metadata:
 
 # Linux Network Administration
 
+## Use when
+
+- Managing interfaces, routes, netplan, DNS resolution, NTP, or reachability from the server side.
+- Diagnosing why a host cannot reach another host, port, or resolver.
+- Making non-firewall network changes on Ubuntu/Debian servers.
+
+## Do not use when
+
+- The task is firewall policy or TLS; use `linux-firewall-ssl`.
+- The task is authoritative DNS service configuration; use `linux-dns-server`.
+
+## Required inputs
+
+- The interface, address, route, VLAN, host, or port involved.
+- Whether the task is read-only diagnosis or a persistent config change.
+- Any downtime constraints before applying netplan or route changes.
+
+## Workflow
+
+1. Inspect current interface, route, DNS, and reachability state first.
+2. Choose the matching workflow below for connectivity, port reachability, VLAN, or time-sync work.
+3. Apply the smallest safe change and validate immediately.
+4. Confirm the network path behaves as expected after the change.
+
+## Quality standards
+
+- Prefer observation before mutation.
+- Treat persistent network changes as high-risk and validate them carefully.
+- Distinguish local host issues from remote service issues.
+
+## Anti-patterns
+
+- Applying netplan without verifying the exact target interface and route.
+- Debugging with only `ping` when port-level or DNS-level evidence is needed.
+- Mixing firewall and non-firewall networking changes in one step.
+
+## Outputs
+
+- The network diagnosis or change plan.
+- The exact commands used to validate state.
+- Post-change verification for reachability, resolution, or sync state.
+
+## References
+
+- [`references/netplan-reference.md`](references/netplan-reference.md)
+- [`references/diagnostics-tree.md`](references/diagnostics-tree.md)
+
 **This skill is self-contained.** Every command below is a standard
 Ubuntu/Debian tool (`ip`, `ss`, `netplan`, `dig`, `ping`, `mtr`,
 `resolvectl`, `chronyc`). The `sk-*` scripts in the **Optional fast path**

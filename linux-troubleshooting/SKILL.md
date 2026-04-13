@@ -9,6 +9,52 @@ metadata:
 ---
 # Troubleshooting
 
+## Use when
+
+- A server incident needs symptom-driven diagnosis.
+- You know the symptom but not yet the owning subsystem.
+- You need a structured triage flow before making changes.
+
+## Do not use when
+
+- The problem is already clearly scoped to one specialist skill.
+- The task is proactive monitoring or audit rather than incident response.
+
+## Required inputs
+
+- The observed symptom.
+- The affected host, service, or user-visible impact.
+- Any recent change or deployment that may have triggered the issue.
+
+## Workflow
+
+1. Ask for the symptom and pick the matching branch from the diagnosis tree.
+2. Run the quick triage commands before narrowing to a branch.
+3. Follow the branch until the likely owning subsystem is clear.
+4. Hand off to the responsible specialist skill or apply the validated fix.
+
+## Quality standards
+
+- Diagnose from evidence, not intuition.
+- Separate triage from final remediation until the failure mode is clear.
+- Keep the path short and explicit so incidents stay understandable under pressure.
+
+## Anti-patterns
+
+- Restarting services or deleting files before a basic triage snapshot.
+- Mixing multiple symptom branches without a reason.
+- Closing the incident on a guess without reproducing or verifying the fix.
+
+## Outputs
+
+- The likely failure domain and supporting evidence.
+- The next commands or specialist skill required.
+- A verification step showing whether the symptom is gone.
+
+## References
+
+- [`references/diagnosis-tree.md`](references/diagnosis-tree.md)
+
 **This skill is self-contained.** Every command below works on a stock
 Ubuntu/Debian server with no additional tooling. The `sk-*` scripts in the
 **Optional fast path** section at the bottom are convenience wrappers —

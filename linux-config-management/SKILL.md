@@ -10,6 +10,54 @@ metadata:
 
 # Linux Configuration Management
 
+## Use when
+
+- Converting manual server state into repeatable Ansible or git-tracked configuration.
+- Checking for configuration drift or validating idempotency.
+- Establishing a safer operating model for `/etc` and other managed assets.
+
+## Do not use when
+
+- The task is a one-off emergency fix where full automation is unnecessary.
+- The task is container or virtualization lifecycle work; use `linux-virtualization`.
+
+## Required inputs
+
+- The target host or config scope.
+- Any playbooks, inventories, or `/etc` tracking repo involved.
+- Whether the goal is adoption, drift detection, remediation, or idempotency review.
+
+## Workflow
+
+1. Establish the declared state source: playbooks, inventory, or tracked config.
+2. Inspect the current live state and compare it to the declared baseline.
+3. Run the matching workflow below for adoption, drift checks, or remediation.
+4. Verify idempotency and capture what changed versus what remains unmanaged.
+
+## Quality standards
+
+- Prefer declarative, reviewable state over manual snowflake fixes.
+- Make drift visible before changing production.
+- Leave a clear path for repeatable re-application.
+
+## Anti-patterns
+
+- Using Ansible as a wrapper for ad-hoc shell without a declared target state.
+- Applying changes without a dry-run or diff when one is available.
+- Tracking config in git without excluding secrets or generated noise.
+
+## Outputs
+
+- A drift finding, remediation plan, or updated automation baseline.
+- The commands or playbooks used to validate state.
+- A verification result showing whether the system is now in lockstep.
+
+## References
+
+- [`references/ansible-patterns.md`](references/ansible-patterns.md)
+- [`references/drift-detection.md`](references/drift-detection.md)
+- [`references/idempotency-guide.md`](references/idempotency-guide.md)
+
 **This skill is self-contained.** Every command below is a standard tool
 (`ansible`, `ansible-playbook`, `git`, `etckeeper`, `dpkg`, `diff`). The
 `sk-*` scripts in the **Optional fast path** section are convenience

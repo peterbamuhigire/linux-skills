@@ -10,6 +10,53 @@ metadata:
 
 # Linux DNS Server
 
+## Use when
+
+- Managing authoritative DNS zones, records, serials, or server reloads.
+- Validating zone files or setting up reverse DNS on Ubuntu/Debian.
+- Debugging BIND9 or unbound behavior on a server that owns DNS service.
+
+## Do not use when
+
+- The task is client-side DNS resolution from an application host; use `linux-network-admin`.
+- The task is mail authentication policy only; use `linux-mail-server`.
+
+## Required inputs
+
+- The zone name, record set, or reverse subnet involved.
+- Whether the server uses BIND9, unbound, or a master/slave arrangement.
+- The desired DNS change and any propagation or serial constraints.
+
+## Workflow
+
+1. Identify the zone and the authoritative server role before editing.
+2. Make the smallest correct record or config change and validate syntax first.
+3. Reload the service only after passing the relevant checks.
+4. Query the authoritative server directly to verify the expected answer.
+
+## Quality standards
+
+- Validate zone syntax before reload every time.
+- Keep serial management explicit and predictable.
+- Verify from the authoritative source, not only from cached resolvers.
+
+## Anti-patterns
+
+- Editing zone files without incrementing serials where required.
+- Reloading named blindly without validation.
+- Confusing authoritative DNS management with client resolver troubleshooting.
+
+## Outputs
+
+- The DNS change or diagnosis.
+- The validation and reload commands required.
+- A direct query proving the authoritative answer.
+
+## References
+
+- [`references/bind9-reference.md`](references/bind9-reference.md)
+- [`references/zone-file-syntax.md`](references/zone-file-syntax.md)
+
 **This skill is self-contained.** Every command below is a standard
 Ubuntu/Debian tool (`named`, `rndc`, `named-checkconf`, `named-checkzone`,
 `dig`). The `sk-*` scripts in the **Optional fast path** section are

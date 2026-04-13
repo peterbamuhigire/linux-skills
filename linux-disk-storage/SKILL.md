@@ -9,6 +9,53 @@ metadata:
 ---
 # Disk & Storage
 
+## Use when
+
+- Investigating disk pressure, inode exhaustion, or storage-related outages.
+- Cleaning up safe space hogs on a server.
+- Adding swap on a host that is currently running without one.
+
+## Do not use when
+
+- The issue is mainly application slowness or CPU pressure; use `linux-system-monitoring` or `linux-troubleshooting`.
+- The task is filesystem permissions or user access; use `linux-access-control`.
+
+## Required inputs
+
+- The filesystem or path under pressure.
+- Whether the task is emergency cleanup, root-cause analysis, or swap provisioning.
+- Any retention rules for logs, backups, or build artifacts before deletion.
+
+## Workflow
+
+1. Measure filesystem and inode usage before changing anything.
+2. Identify the largest consumers and follow the safest cleanup steps first.
+3. Escalate to emergency recovery or swap creation only when the evidence supports it.
+4. Re-check free space and service health after the change.
+
+## Quality standards
+
+- Prefer reversible cleanup before destructive deletion.
+- Quantify the largest consumers instead of guessing.
+- Verify reclaimed space and confirm the root cause so the problem does not recur immediately.
+
+## Anti-patterns
+
+- Deleting broad directory trees without measuring them first.
+- Treating `apt clean` or journal cleanup as a substitute for root-cause analysis.
+- Creating swap without checking disk capacity and intended permanence.
+
+## Outputs
+
+- The storage diagnosis and the paths consuming space.
+- The cleanup or swap actions taken.
+- A verification snapshot of post-change disk and inode usage.
+
+## References
+
+- [`references/storage-reference.md`](references/storage-reference.md)
+- [`references/cleanup-patterns.md`](references/cleanup-patterns.md)
+
 **This skill is self-contained.** Every command below is a standard
 Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
 are convenience wrappers — never required.

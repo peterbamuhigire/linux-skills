@@ -10,6 +10,53 @@ metadata:
 
 # Linux Virtualization
 
+## Use when
+
+- Managing LXD, Docker/Podman, or KVM/libvirt workloads on a host.
+- Investigating container or VM lifecycle failures.
+- Taking snapshots or backups before risky changes.
+
+## Do not use when
+
+- The task is configuration management for the host itself; use `linux-config-management`.
+- The task is ordinary application service management outside the container or VM layer.
+
+## Required inputs
+
+- The virtualization layer involved: LXD, Docker/Podman, or KVM/libvirt.
+- The guest, container, or image name.
+- Whether the task is inspection, lifecycle management, snapshotting, or troubleshooting.
+
+## Workflow
+
+1. Identify the owning virtualization layer and target workload.
+2. Inspect current state before changing it.
+3. Apply the matching workflow below for lifecycle, snapshot, backup, or startup diagnosis.
+4. Verify the guest or container state and host-level impact after the action.
+
+## Quality standards
+
+- Keep host and guest responsibilities distinct.
+- Snapshot or back up before risky mutations when possible.
+- Validate both orchestration state and actual workload health.
+
+## Anti-patterns
+
+- Treating all container technologies as interchangeable.
+- Deleting or pruning workloads before identifying what they belong to.
+- Debugging a guest failure without checking host-level status and logs.
+
+## Outputs
+
+- The container or VM diagnosis or action taken.
+- The host- and guest-level checks used to validate it.
+- Any backup, snapshot, or cleanup follow-up required.
+
+## References
+
+- [`references/lxd-reference.md`](references/lxd-reference.md)
+- [`references/docker-reference.md`](references/docker-reference.md)
+
 **This skill is self-contained.** Every command below uses standard
 Ubuntu/Debian tools (`lxc`, `docker`, `virsh`). The `sk-*` scripts in the
 **Optional fast path** section are convenience wrappers — never required.

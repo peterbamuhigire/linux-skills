@@ -9,6 +9,52 @@ metadata:
 ---
 # Linux Security Analysis
 
+## Use when
+
+- Performing a deep, read-only security audit of an Ubuntu/Debian server.
+- Building a prioritized findings list before hardening work.
+- Re-checking security posture after provisioning or major changes.
+
+## Do not use when
+
+- The task requires making changes; use `linux-server-hardening`.
+- The task is limited to one narrower area such as secrets, firewalling, or access control.
+
+## Required inputs
+
+- The target host and its role.
+- The desired scope or urgency of the audit.
+- Any known concerns that should receive extra scrutiny during the ten-layer review.
+
+## Workflow
+
+1. Confirm the audit is read-only and gather the target server context.
+2. Run the fast-path audit if useful, then work through all ten layers.
+3. Record findings with severity and concrete evidence.
+4. Hand off remediation items to `linux-server-hardening` or the relevant specialist skill.
+
+## Quality standards
+
+- Evidence must be concrete, reproducible, and severity-ranked.
+- Keep audit and remediation separate.
+- Cover every layer even if an early layer already exposes serious issues.
+
+## Anti-patterns
+
+- Mixing fixes into the audit workflow.
+- Reporting vague risk without command output or config evidence.
+- Declaring a host secure after checking only one or two layers.
+
+## Outputs
+
+- A CRITICAL/HIGH/MEDIUM/LOW security report with evidence.
+- The highest-priority remediation targets.
+- A clear handoff to the skill that should fix each class of issue.
+
+## References
+
+- [`references/audit-layers.md`](references/audit-layers.md)
+
 **This skill is self-contained.** The 10 audit layers below work on a stock
 Ubuntu/Debian server using nothing but built-in tools. The `sk-audit` script
 in the **Optional fast path** section is a convenience wrapper — never

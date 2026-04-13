@@ -10,6 +10,54 @@ metadata:
 
 # Linux Mail Server
 
+## Use when
+
+- Managing Postfix, Exim, Dovecot, queue behavior, or SMTP testing.
+- Debugging delivery failures, spam-folder placement, or TLS/authentication issues.
+- Updating SPF, DKIM, or DMARC-related server-side behavior.
+
+## Do not use when
+
+- The task is general DNS hosting unrelated to mail service; use `linux-dns-server`.
+- The task is generic network reachability without a mail-specific angle; use `linux-network-admin`.
+
+## Required inputs
+
+- The mail stack in use and the affected domain or hostname.
+- The symptom: queue growth, spam placement, auth failure, TLS issue, or delivery failure.
+- Any target destination, sender identity, or test recipient involved.
+
+## Workflow
+
+1. Identify whether the issue is configuration, queueing, transport, or authentication.
+2. Inspect current config, queue state, and relevant logs.
+3. Apply the matching workflow below for reputation, submission, queue, or domain changes.
+4. Re-test SMTP flow and authentication to confirm the result.
+
+## Quality standards
+
+- Verify with real SMTP tests and queue inspection, not assumption.
+- Keep authentication records and mail config aligned.
+- Separate transport problems from reputation and policy problems.
+
+## Anti-patterns
+
+- Treating spam-folder placement as only an SMTP connectivity issue.
+- Flushing or deleting queue entries before inspecting why they accumulated.
+- Mixing DNS, TLS, and relay changes without verifying each layer independently.
+
+## Outputs
+
+- The mail-path diagnosis or change.
+- The commands used to verify queue, auth, or delivery state.
+- Any remaining reputation, DNS, or relay follow-up needed.
+
+## References
+
+- [`references/postfix-reference.md`](references/postfix-reference.md)
+- [`references/email-authentication.md`](references/email-authentication.md)
+- [`references/debugging-delivery.md`](references/debugging-delivery.md)
+
 **This skill is self-contained.** Every command below is a standard
 Ubuntu/Debian tool (`postfix`, `postqueue`, `postconf`, `swaks`,
 `openssl`, `dig`). The `sk-*` scripts in the **Optional fast path** section

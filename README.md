@@ -7,6 +7,10 @@ repo is a curated knowledge base of **24 specialist skills**, a detailed
 engine specification, and (soon) a suite of ~88 interactive, secure
 `sk-*` scripts that wrap the skills in command-line form.
 
+The repository is designed to remain fully usable in **Claude Code** while
+also working cleanly in **Codex**. `SKILL.md` is the portable unit; `CLAUDE.md`
+and [`AGENTS.md`](AGENTS.md) provide host-specific guidance layered on top.
+
 ## Structure
 
 ```
@@ -26,7 +30,10 @@ notes/                   Setup guides and troubleshooting
    [`docs/engine-design/script-inventory.md`](docs/engine-design/script-inventory.md).
 2. **Use `linux-sysadmin` as the routing hub.** It's the entry point that
    maps "what do you want to do?" to the right specialist skill.
-3. **Install on a fresh server** with
+3. **For Codex or other non-Claude agents, read [`AGENTS.md`](AGENTS.md).**
+   It explains repo purpose, routing, and working rules without changing the
+   existing layout.
+4. **Install on a fresh server** with
    [`scripts/setup-claude-code.sh`](scripts/setup-claude-code.sh), then
    `sudo install-skills-bin core` (once the installer ships).
 

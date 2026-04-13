@@ -9,6 +9,53 @@ metadata:
 ---
 # Linux Server Hardening
 
+## Use when
+
+- Applying security fixes after an audit or known hardening gap.
+- Locking down SSH, UFW, fail2ban, sysctl, web stack, database, or file-permission posture.
+- Converting audit findings into confirmed, staged changes on a live server.
+
+## Do not use when
+
+- You only need a read-only findings report; use `linux-security-analysis`.
+- The task is a narrow, non-security operational change better handled by a specialist skill.
+
+## Required inputs
+
+- The audit findings or specific hardening goal.
+- The target server role and any uptime constraints.
+- Explicit confirmation for each change that can affect connectivity or service behavior.
+
+## Workflow
+
+1. Start from an audit result or a clearly defined hardening gap.
+2. Work through the priority order below, confirming each change before applying it.
+3. Validate service and access behavior after every material change.
+4. Re-run the audit or targeted checks to confirm the finding is closed.
+
+## Quality standards
+
+- Every hardening step must be deliberate, reversible, and verified.
+- Preserve operator access while tightening controls.
+- Close findings with evidence, not intention.
+
+## Anti-patterns
+
+- Hardening blind without a prior audit or explicit target.
+- Making multiple high-risk security changes without intermediate validation.
+- Considering a control fixed before re-checking the live state.
+
+## Outputs
+
+- The hardening changes applied or deferred.
+- The validation steps proving each change is safe.
+- The residual findings that still need follow-up.
+
+## References
+
+- [`references/hardening-checklist.md`](references/hardening-checklist.md)
+- [`references/sysctl-reference.md`](references/sysctl-reference.md)
+
 **This skill is self-contained.** Every hardening step below uses standard
 Ubuntu/Debian tools. The `sk-*` scripts in the **Optional fast path** section
 are convenience wrappers — never required.
