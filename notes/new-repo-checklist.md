@@ -24,6 +24,10 @@ If the repo needs a post-update build step (like npm build), add it as the third
     "My New Repo|/path/to/repo|npm install && npm run build"
 ```
 
+The post-update field supports a constrained `&&` command chain only. It does
+not support pipes, redirects, command substitution, or inline shell syntax.
+For complex logic, point it at an executable script instead.
+
 The new repo will automatically get the next number in the menu. No other changes are needed.
 
 ### Quick Edit Command

@@ -64,6 +64,11 @@ For each repository listed in the `REPO_LIST` array, the script:
 5. **Fixes `node_modules/.bin/` permissions** — if the repo has a `node_modules/.bin/` directory, any files missing the execute bit are automatically fixed with `chmod +x`. This prevents `Permission denied` errors when running tools like `astro`, `vite`, etc.
 6. Runs the post-update build command (e.g., `npm run build`) if changes were detected
 
+The post-update field supports a constrained `&&` command chain such as
+`npm install --production && npm run build`. It does **not** support pipes,
+redirects, command substitution, or other general shell features. For more
+complex deploy logic, register an executable script as the third field.
+
 Untracked files (like user uploads in `/uploads/` directories) are **not** affected.
 
 ### Astro / Node.js Permission Fix

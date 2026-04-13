@@ -46,13 +46,21 @@ Usage: sk-update-all-repos [OPTIONS]
 Pull every registered git repo on this server.
 
 Reads /etc/linux-skills/repos.conf with lines of the form:
-    Name|/path/to/repo|optional post-pull command
+    Name|/path/to/repo|optional post-pull command chain
 
 Interactive by default — shows a numbered menu. Use flags for cron or
 Claude Code invocation.
 
 WARNING: runs `git reset --hard` and `git clean -fd` before pulling.
 Local changes in tracked files are destroyed. Untracked files are removed.
+
+POST-PULL COMMANDS:
+    The third registry field is optional. It supports a constrained `&&`
+    command chain such as:
+        npm install --production && npm run build
+    Each command is tokenized and executed directly — no shell evaluation,
+    pipes, redirects, command substitution, or inline environment assignment.
+    For complex logic, point the field at a checked-in executable script.
 
 DECISION FLAGS (one is required under --yes):
     --all                       Update every registered repo
@@ -101,6 +109,69 @@ load_registry() {
 get_name()  { printf '%s' "$1" | cut -d'|' -f1; }
 get_path()  { printf '%s' "$1" | cut -d'|' -f2; }
 get_post()  { printf '%s' "$1" | cut -d'|' -f3; }
+
+contains_unsafe_shell_chars() {
+    local s="$1"
+    [[ "$s" == *"|"* ]] && return 0
+    [[ "$s" == *";"* ]] && return 0
+    [[ "$s" == *">"* ]] && return 0
+    [[ "$s" == *"<"* ]] && return 0
+    [[ "$s" == *"`"* ]] && return 0
+    [[ "$s" == *"$("* ]] && return 0
+    [[ "$s" == *"\${"* ]] && return 0
+    [[ "$s" == *"="* && "$s" != *=*/* && "$s" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] && return 0
+    return 1
+}
+
+run_post_chain() {
+    local post="$1"
+    local name="$2"
+    local path="$3"
+    local segments=()
+    local rest="$post"
+
+    while [[ "$rest" == *"&&"* ]]; do
+        segments+=("${rest%%&&*}")
+        rest="${rest#*&&}"
+    done
+    segments+=("$rest")
+
+    local segment trimmed
+    for segment in "${segments[@]}"; do
+        trimmed="$(printf '%s' "$segment" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
+        [[ -z "$trimmed" ]] && continue
+
+        if contains_unsafe_shell_chars "$trimmed"; then
+            fail "unsafe post-pull command for $name: $trimmed"
+            info "allowed: simple argv commands, optionally chained with &&"
+            info "for complex logic, use an executable script path in the registry"
+            return 1
+        fi
+
+        local cmd=()
+        # shellcheck disable=SC2206
+        cmd=($trimmed)
+        if (( ${#cmd[@]} == 0 )); then
+            continue
+        fi
+
+        # Treat relative script paths as repo-relative for predictable deploy hooks
+        if [[ "${cmd[0]}" == ./* ]]; then
+            cmd[0]="$path/${cmd[0]#./}"
+        fi
+
+        if [[ "${cmd[0]}" == /* || "${cmd[0]}" == ./* ]]; then
+            [[ -x "${cmd[0]}" ]] || { fail "post-pull executable missing or not executable: ${cmd[0]}"; return 1; }
+        fi
+
+        if ! run "${cmd[@]}"; then
+            fail "post-pull command failed for $name: $trimmed"
+            return 1
+        fi
+    done
+
+    return 0
+}
 
 update_one_repo() {
     local name="$1"
@@ -157,10 +228,9 @@ update_one_repo() {
     if [[ -n "$post" ]]; then
         if [[ "$before" != "$after" ]]; then
             header "post-pull: $post"
-            if eval "$post"; then
+            if run_post_chain "$post" "$name" "$path"; then
                 pass "build complete for $name"
             else
-                fail "post-pull command failed for $name"
                 return 1
             fi
         else

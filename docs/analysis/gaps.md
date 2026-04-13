@@ -326,6 +326,18 @@ test, with a reasonable upper bound. Deferred until the scripts exist.
 
 ## Closed since last analysis
 
+### ✅ C5. `sk-update-all-repos` no longer uses `eval` on post-pull hooks — CLOSED
+
+The migrated repo-update script originally executed the third registry field as
+arbitrary shell. That violated the engine rule in `spec.md` that forbids
+`eval` on untrusted input. The script now executes post-pull hooks through a
+constrained direct-command runner that supports simple argv commands and `&&`
+chains without general shell evaluation.
+
+**What remains open:** the workflow is still destructive by design
+(`git reset --hard`, `git clean -fd`), so rollback verification and safer
+operator discipline remain active concerns under H3.
+
 **Session 2 (2026-04-10) — foundation build:**
 
 ### ✅ C2. `scripts/lib/common.sh` — CLOSED

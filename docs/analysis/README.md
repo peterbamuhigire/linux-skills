@@ -140,6 +140,7 @@ See [`build-order.md`](build-order.md) for the detailed plan.
 |---|---|---|---|
 | 2026-04-10 | #1 — initial analysis | Peter Bamuhigire + Claude | First analysis after skill-layer completion. 24 skills written, 30k+ lines of references, engine spec complete. Scripts unwritten. Readiness **6.5/10**. Cleared to begin script generation with the foundation-first build order. |
 | 2026-04-10 | #2 — foundation built | Peter Bamuhigire + Claude | Foundation complete: `common.sh` (~440 lines), `install-skills-bin` (~350 lines), LXD test harness with 2 test files. Three legacy scripts migrated to spec: `sk-audit`, `sk-update-all-repos`, `sk-mysql-backup`. `setup-claude-code.sh` rewritten to install common.sh and call `install-skills-bin core`. Closed C2, C3, C4 from gaps.md. Readiness **7.5/10** (+1.0). Next: run test harness on Linux, build scripts 4-5 (`sk-new-script`, `sk-lint`) and script 5 (`sk-system-health`), then tier-1 remainder. |
+| 2026-04-13 | #3 — spec-alignment pass | Peter Bamuhigire + Codex | Corrected a concrete spec mismatch in `sk-update-all-repos` by removing `eval` from post-pull hook execution and tightening docs around the supported hook model. This improves script safety, but the bigger blockers are unchanged: Linux-side smoke testing, rollback proof, and broader script coverage. |
 
 *Append a new row after each session that meaningfully changes the
 readiness picture. Never delete rows — the trend matters as much as the
