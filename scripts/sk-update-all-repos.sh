@@ -3,9 +3,10 @@
 #: Synopsis:    sk-update-all-repos [--yes] [--all|--repo <name>|--dry-run]
 #: Description: Pull every registered git repo on this server. Supports an
 #:              interactive menu (human use) and non-interactive --all / --repo
-#:              flags (Claude Code / cron use). Runs `git reset --hard` before
-#:              pulling — local changes are destroyed. Optional per-repo
-#:              post-pull build step (e.g. `npm run build`).
+#:              flags (Claude Code / cron use). Uses `git pull --rebase
+#:              --autostash` and a porcelain dirty-check — local changes are
+#:              PRESERVED, never discarded. Optional per-repo post-pull build
+#:              step (e.g. `npm run build`). See the linux-repo-sync skill.
 #: Author:      Peter Bamuhigire <techguypeter.com>
 #: Contact:     +256784464178
 #: Version:     0.2.0
@@ -51,8 +52,11 @@ Reads /etc/linux-skills/repos.conf with lines of the form:
 Interactive by default — shows a numbered menu. Use flags for cron or
 Claude Code invocation.
 
-WARNING: runs `git reset --hard` and `git clean -fd` before pulling.
-Local changes in tracked files are destroyed. Untracked files are removed.
+LOCAL WORK IS PRESERVED: pulls with `git pull --rebase --autostash` and warns
+on a dirty working tree (`git status --porcelain`). Never runs `git reset
+--hard` or `git clean -fd`. Uncommitted edits are stashed and re-applied;
+untracked files are left in place. On a rebase conflict the script stops and
+prints the recovery path instead of discarding work.
 
 POST-PULL COMMANDS:
     The third registry field is optional. It supports a constrained `&&`
@@ -187,7 +191,7 @@ update_one_repo() {
     fi
 
     if [[ "$DRY_RUN" == "1" ]]; then
-        info "DRY-RUN: would reset, clean, and pull $path"
+        info "DRY-RUN: would pull --rebase --autostash $path (local work preserved)"
         [[ -n "$post" ]] && info "DRY-RUN: would run post-pull: $post"
         return 0
     fi
@@ -195,16 +199,22 @@ update_one_repo() {
     cd "$path" || { fail "cannot enter $path"; return 1; }
     git config --global --add safe.directory "$path" 2>/dev/null || true
 
-    info "resetting local changes (tracked + untracked)"
-    run git reset --hard HEAD
-    run git clean -fd
+    # Detect a dirty working tree — warn the operator, never discard.
+    if [[ -n "$(git status --porcelain)" ]]; then
+        warn "$name has local changes; they will be stashed and re-applied (not discarded)"
+    fi
 
     local before after
     before=$(git rev-parse HEAD)
 
-    info "pulling latest"
-    if ! git pull --rebase; then
-        fail "git pull failed for $name"
+    # Pull with rebase + autostash so local work is preserved. NEVER reset
+    # --hard / clean -fd — see the linux-repo-sync skill.
+    info "pulling latest (rebase + autostash)"
+    if ! git pull --rebase --autostash; then
+        fail "git pull/rebase hit a conflict in $name — local work is NOT lost"
+        info "  resolve the files, then:  git -C \"$path\" rebase --continue"
+        info "  or roll back the pull:     git -C \"$path\" rebase --abort"
+        info "  your stashed local work:   git -C \"$path\" stash list  (recover: git stash pop)"
         return 1
     fi
     after=$(git rev-parse HEAD)

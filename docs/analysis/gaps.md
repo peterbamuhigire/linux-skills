@@ -334,9 +334,11 @@ arbitrary shell. That violated the engine rule in `spec.md` that forbids
 constrained direct-command runner that supports simple argv commands and `&&`
 chains without general shell evaluation.
 
-**What remains open:** the workflow is still destructive by design
-(`git reset --hard`, `git clean -fd`), so rollback verification and safer
-operator discipline remain active concerns under H3.
+**Resolved (2026-05):** the destructive pre-pull step
+(`git reset --hard` + `git clean -fd`) has been removed. The script now uses
+`git pull --rebase --autostash` with a `git status --porcelain` dirty-check,
+so local work is preserved and conflicts surface a recovery path instead of a
+silent wipe. The binding standard lives in the new `linux-repo-sync` skill.
 
 **Session 2 (2026-04-10) — foundation build:**
 

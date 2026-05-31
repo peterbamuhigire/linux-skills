@@ -3,7 +3,7 @@
 **Author:** Peter Bamuhigire · [techguypeter.com](https://techguypeter.com) · +256 784 464 178
 
 A Linux server management engine for Ubuntu/Debian production servers. This
-repo is a curated knowledge base of **24 specialist skills**, a detailed
+repo is a curated knowledge base of **25 specialist skills**, a detailed
 engine specification, and (soon) a suite of ~88 interactive, secure
 `sk-*` scripts that wrap the skills in command-line form.
 
@@ -37,7 +37,7 @@ notes/                   Setup guides and troubleshooting
    [`scripts/setup-claude-code.sh`](scripts/setup-claude-code.sh), then
    `sudo install-skills-bin core` (once the installer ships).
 
-## The 24 skills
+## The 25 skills
 
 **Foundation**
 - [`linux-bash-scripting`](linux-bash-scripting/SKILL.md) — meta-skill. The
@@ -65,6 +65,9 @@ notes/                   Setup guides and troubleshooting
   Ubuntu autoinstall.
 - [`linux-site-deployment`](linux-site-deployment/SKILL.md) — deploy sites
   (static, PHP, Astro).
+- [`linux-repo-sync`](linux-repo-sync/SKILL.md) — safe git updates: never
+  destroy uncommitted work. `pull --rebase --autostash`, never
+  `reset --hard`.
 - [`linux-service-management`](linux-service-management/SKILL.md) — systemd.
 - [`linux-webstack`](linux-webstack/SKILL.md) — Nginx + Apache + PHP-FPM +
   Node.js.

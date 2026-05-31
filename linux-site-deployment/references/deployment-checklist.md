@@ -217,7 +217,7 @@ Build commands by pattern:
 - **D** (Astro + PHP hybrid): `composer install --no-dev --optimize-autoloader && npm install --production && npm run build`
 - **E** (Node.js API): `npm install --production && npm run build && sudo systemctl restart <service-name>`
 
-**WARNING:** `update-all-repos` runs `git reset --hard` before pulling. Any uncommitted server-side changes in the repo will be destroyed. Commit and push anything you want kept before running it.
+**Local work is preserved.** `update-all-repos` uses `git pull --rebase --autostash` with a `git status --porcelain` dirty-check — it never runs `git reset --hard` or `git clean -fd`. Uncommitted edits to tracked files are stashed and re-applied; untracked files are left in place. On a rebase conflict it stops and reports the recovery path. See the `linux-repo-sync` skill for the binding doctrine.
 
 Per `~/.claude/skills/notes/new-repo-checklist.md`, this step is **not optional** — if the repo is not in `update-all-repos` it will silently stop getting updates.
 
