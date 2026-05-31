@@ -132,8 +132,12 @@ Per `~/.claude/skills/notes/new-repo-checklist.md` — this step is never option
 - B (PHP): *(leave empty)*
 - C (Astro+PHP): `composer install --no-dev && npm install --production && npm run build`
 
-**WARNING:** `update-all-repos` runs `git reset --hard`. Commit any server-side
-changes to git before running it — they will be destroyed otherwise.
+**Local work is preserved.** `update-all-repos` uses
+`git pull --rebase --autostash` and a `git status --porcelain` dirty-check; it
+never runs `git reset --hard` or `git clean -fd`. Uncommitted edits are
+stashed and re-applied, untracked files are left in place. On a rebase
+conflict it stops and reports the recovery path rather than discarding work.
+See the `linux-repo-sync` skill for the binding doctrine.
 
 ---
 

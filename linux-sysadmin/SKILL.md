@@ -68,7 +68,7 @@ DBs:       MySQL 8 | PostgreSQL 15 | Redis
 Security:  UFW (22/80/443 only), fail2ban, SSH keys-only, certbot ECDSA certs
 Backups:   Cron → backup-alert.sh → GPG AES256 → rclone → Google Drive
            Local: 7 days | Remote: 3 days | Credentials: mode 600
-Deployment:sk-update-all-repos (git reset --hard + optional build)
+Deployment:sk-update-all-repos (pull --rebase --autostash + optional build)
 Admin:     /home/administrator | Web: /var/www/html/ and /var/www/
 Nginx cfg: /etc/nginx/sites-available/*.conf | snippets: /etc/nginx/snippets/
 Toolkit:   /usr/local/bin/sk-* (installed by install-skills-bin)
@@ -98,6 +98,7 @@ Linux Server Management
    2.  Bootstrap with cloud-init / autoinstall YAML
    3.  Deploy a new website
   14.  Manage packages (apt, snap, unattended-upgrades)
+  24.  Safely update git repos (never destroy local work)
 
   SECURITY
    4.  Security analysis (deep read-only audit + severity report)
@@ -159,6 +160,7 @@ Linux Server Management
 | 21 | linux-observability |
 | 22 | linux-troubleshooting |
 | 23 | linux-disaster-recovery |
+| 24 | linux-repo-sync |
 
 ## Standing Rules
 
@@ -168,7 +170,10 @@ Linux Server Management
 - Run `sudo nginx -t` (or `sk-nginx-test-reload`) before every Nginx reload — never skip.
 - Every new repo on the server MUST be registered in
   `/usr/local/bin/update-all-repos`.
-- `update-all-repos` runs `git reset --hard` — local changes are destroyed on pull.
+- Repo-update scripts MUST preserve local work. Use
+  `git pull --rebase --autostash` plus a `git status --porcelain` dirty-check;
+  NEVER `git reset --hard` or `git clean -fd` in an automated/menu updater.
+  See `linux-repo-sync` — this is a binding standard on every server.
 - Backup credential files must always be mode 600.
 - Every `sk-*` script follows the conventions in
   [`docs/engine-design/spec.md`](../docs/engine-design/spec.md) and sources

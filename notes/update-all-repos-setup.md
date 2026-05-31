@@ -58,8 +58,10 @@ No `.sh` extension needed — `/usr/local/bin` is in the system PATH, so it work
 For each repository listed in the `REPO_LIST` array, the script:
 
 1. Checks that the directory is a valid Git repo
-2. Runs `git reset --hard HEAD` and `git clean -fd` to discard local changes
-3. Runs `git pull --rebase` to fetch and apply the latest changes
+2. Detects a dirty working tree with `git status --porcelain` and warns the
+   operator — local changes are **preserved**, never discarded
+3. Runs `git pull --rebase --autostash` — local edits are stashed, the rebase
+   runs, then the edits are re-applied on top
 4. Reports the current branch and latest commit
 5. **Fixes `node_modules/.bin/` permissions** — if the repo has a `node_modules/.bin/` directory, any files missing the execute bit are automatically fixed with `chmod +x`. This prevents `Permission denied` errors when running tools like `astro`, `vite`, etc.
 6. Runs the post-update build command (e.g., `npm run build`) if changes were detected
@@ -85,7 +87,12 @@ Untracked files (like user uploads in `/uploads/` directories) are **not** affec
   # Run every day at 2 AM
   0 2 * * * /usr/local/bin/update-all-repos >> /var/log/repo-updates.log 2>&1
   ```
-- **Production warning**: The script resets tracked changes. Any manual edits to tracked files on the server will be lost.
+- **Local work is preserved**: the script uses `git pull --rebase --autostash`
+  and never `git reset --hard` / `git clean -fd`. Manual edits to tracked
+  files are stashed and re-applied; untracked files are left in place. On a
+  rebase conflict the script stops and tells you how to recover
+  (`git rebase --continue` / `--abort`, `git stash list`). This is a binding
+  standard — see the `linux-repo-sync` skill.
 
 ## Server Setup Requirement
 
