@@ -1,6 +1,6 @@
 ---
 name: linux-log-management
-description: Read and manage logs on Ubuntu/Debian servers. journalctl by service/time/priority. Nginx and Apache log analysis (4xx/5xx spikes, attack patterns, top IPs). fail2ban ban log. MySQL slow queries. PHP errors. Backup cron log. logrotate management. Reference-style with ready-to-run commands.
+description: Read and manage logs on Linux servers across both the Debian/Ubuntu and RHEL families (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). journalctl/journald is identical on both; only the legacy /var/log/* file paths differ. journalctl by service/time/priority. Nginx and Apache log analysis (4xx/5xx spikes, attack patterns, top IPs). fail2ban ban log. MySQL slow queries. PHP errors. Backup cron log. logrotate management. Reference-style with ready-to-run commands.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -8,6 +8,32 @@ metadata:
   author_contact: "+256784464178"
 ---
 # Log Management
+
+## Distro support
+
+`journalctl` and the systemd journal are **identical** on both families. The
+differences are the legacy `/var/log/*` text-file names and the package
+manager. The body uses Debian/Ubuntu paths; the **RHEL family** (Fedora, RHEL,
+CentOS Stream, Rocky, Alma, Oracle) equivalents are in the matrix.
+
+| Log / concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| System log (legacy) | `/var/log/syslog` | `/var/log/messages` |
+| Auth / sudo / SSH | `/var/log/auth.log` | `/var/log/secure` |
+| Mail | `/var/log/mail.log` | `/var/log/maillog` |
+| Web (Apache) | `/var/log/apache2/` | `/var/log/httpd/` |
+| Cron | `/var/log/syslog` (CRON tag) | `/var/log/cron` |
+| systemd journal | `journalctl …` | identical |
+| logrotate configs | `/etc/logrotate.d/` | same |
+| Package install | `apt install <pkg>` | `dnf install <pkg>` |
+
+**RHEL-family note:** minimal RHEL/Fedora installs may not ship `rsyslog`, so
+the legacy `/var/log/*` files may be absent — the journal (`journalctl`) is the
+primary source. `journalctl -u <unit>`, `-p err`, `--since` all work the same.
+
+In `sk-*` scripts, prefer `journalctl` (portable) and resolve unit names via
+`svc_name` from `common.sh`. See [`linux-bash-scripting`](../linux-bash-scripting/SKILL.md)
+and [`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -57,9 +83,10 @@ metadata:
 - [`references/log-analysis-patterns.md`](references/log-analysis-patterns.md)
 - [`references/log-locations.md`](references/log-locations.md)
 
-**This skill is self-contained.** Every command below is a standard
-Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
-are convenience wrappers — never required.
+**This skill is self-contained.** Every command below is a standard tool on
+both the Debian/Ubuntu and RHEL families (only the legacy `/var/log/*` paths
+differ — see **Distro support** above). The `sk-*` scripts in the **Optional
+fast path** section are convenience wrappers — never required.
 
 ## journalctl
 

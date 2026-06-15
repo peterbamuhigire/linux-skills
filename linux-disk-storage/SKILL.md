@@ -1,6 +1,6 @@
 ---
 name: linux-disk-storage
-description: Manage disk space on Ubuntu/Debian servers. Check usage, find space hogs, safe cleanup (apt cache, journal, old logs, old backups, node_modules), inode exhaustion, and emergency disk-full recovery. Includes swapfile creation for servers running without swap.
+description: Manage disk space on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Core tools (df, du, lsblk) are identical on both; package-cache cleanup (apt vs dnf) and the default root filesystem (ext4 vs xfs) differ. Check usage, find space hogs, safe cleanup (package cache, journal, old logs, old backups, node_modules), inode exhaustion, and emergency disk-full recovery. Includes swapfile creation for servers running without swap.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -8,6 +8,32 @@ metadata:
   author_contact: "+256784464178"
 ---
 # Disk & Storage
+
+## Distro support
+
+Core tools (`df`, `du`, `lsblk`, `ncdu`, `findmnt`, `fdisk`) are **identical**
+on both families. The differences are package-cache cleanup, sandboxed-package
+storage, and the default root filesystem. Body uses Debian/Ubuntu; the **RHEL
+family** (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) equivalents are in
+the matrix.
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Package cache cleanup | `apt clean` / `apt autoclean` | `dnf clean all` |
+| Remove orphan pkgs | `apt autoremove` | `dnf autoremove` |
+| Journal disk usage | `journalctl --disk-usage` / `--vacuum-size` | same |
+| Sandboxed apps storage | `/var/lib/snapd`, `snap` revisions | `flatpak` / none on servers |
+| Default root FS | usually `ext4` | usually `xfs` |
+| df / du / lsblk / ncdu | identical | identical |
+
+**RHEL-family gotcha:** the default root filesystem is usually **XFS**, which
+**cannot be shrunk** (only grown with `xfs_growfs`). On Debian/Ubuntu it is
+usually ext4 (shrinkable). Plan partition resizes accordingly. LVM operations
+are identical on both.
+
+In `sk-*` scripts use the `common.sh` package primitives (`pkg_update`, etc.)
+rather than hardcoding apt/dnf. See [`linux-bash-scripting`](../linux-bash-scripting/SKILL.md)
+and [`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -56,9 +82,10 @@ metadata:
 - [`references/storage-reference.md`](references/storage-reference.md)
 - [`references/cleanup-patterns.md`](references/cleanup-patterns.md)
 
-**This skill is self-contained.** Every command below is a standard
-Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
-are convenience wrappers — never required.
+**This skill is self-contained.** Every command below is a standard tool on
+both families (the body shows Debian/Ubuntu; see **Distro support** above for
+RHEL-family equivalents). The `sk-*` scripts in the **Optional fast path**
+section are convenience wrappers — never required.
 
 ## Check Usage
 

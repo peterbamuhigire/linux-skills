@@ -1,6 +1,6 @@
 ---
 name: linux-mail-server
-description: Manage Ubuntu/Debian mail servers — Postfix, Exim, Dovecot, SPF/DKIM/DMARC email authentication, queue inspection, SMTP testing, TLS. Use for outbound relay servers, full mailboxes, and debugging mail delivery.
+description: Manage mail servers on Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) — Postfix, Exim, Dovecot, SPF/DKIM/DMARC email authentication, queue inspection, SMTP testing, TLS. Postfix/Dovecot are portable and config paths (/etc/postfix, /etc/dovecot) are largely identical across both families; opendkim packaging (EPEL), SELinux, and the mail log path differ. Use for outbound relay servers, full mailboxes, and debugging mail delivery.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -9,6 +9,37 @@ metadata:
 ---
 
 # Linux Mail Server
+
+## Distro support
+
+Postfix and Dovecot run on both families and their config layout
+(`/etc/postfix/main.cf`, `/etc/dovecot/`) is **largely identical**;
+`postconf`, `postmap`, `postqueue`, `newaliases` behave the same. The
+differences are a few package names, the mail log path, and SELinux. Body uses
+Debian/Ubuntu; the **RHEL family** (Fedora, RHEL, CentOS Stream, Rocky, Alma,
+Oracle) equivalents are in the matrix.
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Postfix package / unit | `postfix` | `postfix` (same) |
+| Default MTA | sometimes `exim4` | `postfix` |
+| Dovecot | `dovecot-core`, `dovecot-imapd` | `dovecot` |
+| DKIM | `opendkim` (main) | `opendkim` (**EPEL**) |
+| Mail log | `/var/log/mail.log` | `/var/log/maillog` |
+| Config paths | `/etc/postfix`, `/etc/dovecot` | same |
+| Tools | `postconf`, `postmap`, `postqueue`, `newaliases` | identical |
+
+**RHEL-family gotchas:** `opendkim` (and some milters) come from **EPEL**
+(`ensure_epel`) on RHEL/Rocky/Alma, but ship in main on Fedora. SELinux governs
+Postfix/Dovecot — non-default mail-spool or maildir paths need the right
+contexts (`restorecon`, `semanage fcontext`) and some integrations need
+booleans. Mail logs are in `/var/log/maillog` (cross-ref `linux-log-management`).
+Deep SELinux coverage is in `linux-server-hardening` / Phase 2.
+
+In `sk-*` scripts use the `common.sh` primitives (`pkg_install`, `ensure_epel`,
+`svc_name`) instead of hardcoding the family. See
+[`linux-bash-scripting`](../linux-bash-scripting/SKILL.md) and
+[`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -58,12 +89,14 @@ metadata:
 - [`references/email-authentication.md`](references/email-authentication.md)
 - [`references/debugging-delivery.md`](references/debugging-delivery.md)
 
-**This skill is self-contained.** Every command below is a standard
-Ubuntu/Debian tool (`postfix`, `postqueue`, `postconf`, `swaks`,
-`openssl`, `dig`). The `sk-*` scripts in the **Optional fast path** section
+**This skill is self-contained.** Every command below is a standard mail
+tool (`postfix`, `postqueue`, `postconf`, `swaks`, `openssl`, `dig`) present on
+both Debian/Ubuntu and the RHEL family; body examples use Debian/Ubuntu
+syntax, with RHEL-family differences in the **Distro support** matrix above.
+The `sk-*` scripts in the **Optional fast path** section
 are convenience wrappers — never required.
 
-This skill covers running and debugging mail on a Debian/Ubuntu server:
+This skill covers running and debugging mail on a Debian/Ubuntu or RHEL-family server:
 Postfix (default), Exim (alternative), Dovecot for IMAP, and the three
 pillars of email authentication — SPF, DKIM, DMARC.
 

@@ -1,6 +1,6 @@
 ---
 name: linux-package-management
-description: Manage packages on Ubuntu/Debian — apt with safe update/upgrade patterns, held packages, PPAs, snap lifecycle, unattended-upgrades configuration. Use for any package installation, upgrade, or pinning operation.
+description: Manage packages on Debian/Ubuntu (apt, snap, unattended-upgrades) and the RHEL family — Fedora, RHEL, Rocky, Alma (dnf, flatpak, dnf-automatic) — with safe update/upgrade patterns, held packages, third-party repos, and automatic security updates. Use for any package installation, upgrade, or pinning operation on either family.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -9,6 +9,42 @@ metadata:
 ---
 
 # Linux Package Management
+
+## Distro support
+
+This skill covers **both supported families**. The `apt`/`snap`/`unattended-upgrades`
+commands below are the **Debian/Ubuntu** column; the **RHEL family** (Fedora,
+RHEL, CentOS Stream, Rocky, Alma, Oracle) equivalents are in the matrix and the
+[dnf quick reference](#rhel-family--dnf-quick-reference) further down.
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Package manager | `apt` / `apt-get` | `dnf` (`yum` on EL7) |
+| Low-level DB | `dpkg` | `rpm` |
+| Install / remove | `apt install` / `apt remove` | `dnf install` / `dnf remove` |
+| Refresh metadata | `apt update` | `dnf makecache` (auto on most ops) |
+| Upgrade all | `apt upgrade` / `full-upgrade` | `dnf upgrade` |
+| Remove orphans | `apt autoremove` | `dnf autoremove` |
+| Search / info | `apt search` / `apt show` | `dnf search` / `dnf info` |
+| Which repo / policy | `apt-cache policy` | `dnf --showduplicates list`, `dnf repolist` |
+| File → package | `dpkg -S <file>` | `rpm -qf <file>` / `dnf provides <file>` |
+| Package → files | `dpkg -L <pkg>` | `rpm -ql <pkg>` |
+| Hold / pin | `apt-mark hold` | `dnf versionlock` (plugin) / `exclude=` |
+| Pending reboot | `/var/run/reboot-required` | `dnf needs-restarting -r` |
+| Auto security updates | `unattended-upgrades` | `dnf-automatic` |
+| Sandboxed apps | `snap` | `flatpak` (desktop) / native dnf (server) |
+| Extra repos | PPA / `.sources` in `sources.list.d` | `.repo` in `/etc/yum.repos.d/`, **EPEL** |
+
+In `sk-*` scripts, **do not hardcode either column** — call the `common.sh`
+primitives (`pkg_install`, `pkg_update`, `pkg_is_installed`, `ensure_epel`,
+`svc_name`) which resolve to the right command for the detected family. See
+[`linux-bash-scripting`](../linux-bash-scripting/SKILL.md) and
+[`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
+
+**RHEL-family gotchas:** EPEL must be enabled (`ensure_epel`) for many extra
+packages on RHEL/Rocky/Alma — but **not** on Fedora, which ships them in the
+main repos. Fedora 41+ uses **dnf5**; RHEL 9 and rebuilds use dnf4 (command
+surface is the same for everything here).
 
 ## Use when
 
@@ -58,14 +94,15 @@ metadata:
 - [`references/snap-reference.md`](references/snap-reference.md)
 - [`references/unattended-upgrades-reference.md`](references/unattended-upgrades-reference.md)
 
-**This skill is self-contained.** Every command below is a standard
-Ubuntu/Debian tool (`apt`, `apt-get`, `apt-mark`, `apt-cache`, `snap`,
-`unattended-upgrade`, `dpkg`). The `sk-*` scripts in the **Optional fast
-path** section are convenience wrappers — never required.
+**This skill is self-contained.** Every command below is a standard tool on
+its family — Debian/Ubuntu (`apt`, `apt-get`, `apt-mark`, `apt-cache`, `snap`,
+`unattended-upgrade`, `dpkg`) or RHEL (`dnf`, `rpm`, `dnf-automatic`,
+`flatpak`). The `sk-*` scripts in the **Optional fast path** section are
+convenience wrappers — never required.
 
-This skill owns package operations on Ubuntu/Debian: **apt** (Debian
-native), **snap** (Canonical's sandboxed packages), and
-**unattended-upgrades** (the background security-patch daemon).
+This skill owns package operations on both families: **apt + snap +
+unattended-upgrades** on Debian/Ubuntu, and **dnf + flatpak + dnf-automatic**
+on the RHEL family.
 
 It does **not** own:
 
@@ -231,6 +268,64 @@ Full unattended-upgrades reference (Allowed-Origins syntax, mail
 notifications, automatic-reboot config, package blacklist, complete
 production example) — see
 [`references/unattended-upgrades-reference.md`](references/unattended-upgrades-reference.md).
+
+### RHEL family — dnf quick reference
+
+```bash
+# Update the metadata cache (most ops do this automatically)
+sudo dnf makecache
+
+# What's upgradable? (safe — no changes)
+dnf check-update                  # exit 100 if updates exist, 0 if none
+
+# Security-only updates (RHEL/Rocky/Alma; needs dnf-plugins; Fedora rolls fast)
+sudo dnf upgrade --security
+
+# Show info / which versions are available
+dnf info nginx
+dnf --showduplicates list nginx   # all available versions
+dnf repolist                      # enabled repos
+dnf provides /usr/sbin/nginx      # which package owns a path/file
+
+# What files does an installed package own?
+rpm -ql nginx
+rpm -qf /etc/nginx/nginx.conf      # file -> owning package
+
+# Install / upgrade / remove
+sudo dnf install <pkg>
+sudo dnf upgrade                   # upgrade everything
+sudo dnf remove <pkg>
+sudo dnf autoremove                # remove unneeded dependencies
+sudo dnf clean all                 # clear caches
+
+# Pin / exclude a version
+sudo dnf install python3-dnf-plugin-versionlock   # once
+sudo dnf versionlock add nginx
+sudo dnf versionlock delete nginx
+
+# Reinstall cleanly
+sudo dnf reinstall nginx
+
+# Pending reboot after kernel/core lib update
+dnf needs-restarting -r ; echo "exit $? (1 = reboot recommended)"
+
+# Enable EPEL (RHEL/CentOS/Rocky/Alma — NOT needed on Fedora)
+sudo dnf install -y epel-release
+```
+
+**dnf-automatic** (the RHEL equivalent of unattended-upgrades):
+
+```bash
+sudo dnf install -y dnf-automatic
+sudoedit /etc/dnf/automatic.conf      # set apply_updates = yes; upgrade_type = security
+sudo systemctl enable --now dnf-automatic.timer
+systemctl list-timers dnf-automatic.timer
+journalctl -u dnf-automatic -n 50     # did it run?
+```
+
+**Third-party repos** live in `/etc/yum.repos.d/*.repo` (analogous to
+`sources.list.d`). Add with `dnf config-manager --add-repo <url>` or
+`dnf install` of a release RPM; import keys with `rpm --import`.
 
 ---
 

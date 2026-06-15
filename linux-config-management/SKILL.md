@@ -1,6 +1,6 @@
 ---
 name: linux-config-management
-description: Keep Ubuntu/Debian servers in lockstep with declared state using Ansible and git-tracked config. Use for drift detection, dry-running playbooks, snapshotting /etc, and shifting from pet-server management to reproducible automation.
+description: Keep Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) in lockstep with declared state using Ansible and git-tracked config. Ansible is cross-platform — write family-neutral playbooks (use ansible.builtin.package or branch on os_family/pkg_mgr). Mandatory access control differs: AppArmor on Debian/Ubuntu vs SELinux on RHEL. Use for drift detection, dry-running playbooks, snapshotting /etc, and shifting from pet-server management to reproducible automation.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -9,6 +9,32 @@ metadata:
 ---
 
 # Linux Configuration Management
+
+## Distro support
+
+Ansible and `/etc`-tracking are **cross-platform**; write playbooks that work
+on both families. Body uses Debian/Ubuntu; the **RHEL family** (Fedora, RHEL,
+CentOS Stream, Rocky, Alma, Oracle) equivalents are in the matrix.
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Ansible package module | `ansible.builtin.apt` | `ansible.builtin.dnf` |
+| Portable package module | `ansible.builtin.package` (works on both) | same |
+| Mandatory access control | **AppArmor** | **SELinux** (enforcing by default) |
+| /etc change tracking | `etckeeper` | `etckeeper` (same) |
+| Service manager | systemd | systemd (identical) |
+| Gather pkg-mgr fact | `ansible_facts.pkg_mgr` = `apt` | = `dnf` |
+
+**RHEL-family gotchas:** prefer `ansible.builtin.package` (or branch on
+`ansible_facts['os_family']` / `pkg_mgr`) so one playbook runs on both. RHEL
+enforces **SELinux** — Ansible config that writes files into service paths must
+also manage SELinux contexts/booleans (`ansible.posix.seboolean`,
+`community.general.sefcontext`); the equivalent on Debian is AppArmor profiles.
+Deep SELinux coverage is in `linux-server-hardening` (Phase 2).
+
+In `sk-*` scripts use the `common.sh` primitives instead of hardcoding apt/dnf.
+See [`linux-bash-scripting`](../linux-bash-scripting/SKILL.md) and
+[`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -122,13 +148,15 @@ It does **not** own:
 ### Install Ansible
 
 ```bash
-# Preferred on Ubuntu: pipx (isolates pinned version)
-sudo apt install pipx
+# Preferred on both families: pipx (isolates pinned version)
+sudo apt install pipx          # Debian/Ubuntu
+sudo dnf install pipx          # RHEL family (Fedora, RHEL, Rocky, Alma, ...)
 pipx install --include-deps ansible
 pipx ensurepath
 
-# Alternative: apt (older version but packaged)
-sudo apt install ansible
+# Alternative: distro package (older version but packaged)
+sudo apt install ansible       # Debian/Ubuntu
+sudo dnf install ansible       # RHEL family
 
 # Verify
 ansible --version

@@ -1,6 +1,6 @@
 ---
 name: linux-dns-server
-description: Run and manage authoritative DNS servers on Ubuntu/Debian — BIND9 and unbound. Use for zone file authoring, record validation, zone reloads, reverse zones, and DNS server hardening. For client-side DNS resolution on a server, use linux-network-admin instead.
+description: Run and manage authoritative DNS servers on Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) — BIND and unbound. The tools (dig, rndc, named-checkconf, named-checkzone) are portable; package names, config paths, and the RHEL-family SELinux requirement differ. Use for zone file authoring, record validation, zone reloads, reverse zones, and DNS server hardening. For client-side DNS resolution on a server, use linux-network-admin instead.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -9,6 +9,33 @@ metadata:
 ---
 
 # Linux DNS Server
+
+## Distro support
+
+BIND and unbound run on both families; `dig`, `rndc`, `named-checkconf`, and
+`named-checkzone` are **identical**. The differences are package names, config
+file locations, and SELinux. Body uses Debian/Ubuntu; the **RHEL family**
+(Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) equivalents are in the matrix.
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| BIND package | `bind9` | `bind` |
+| DNS utilities | `dnsutils` | `bind-utils` |
+| systemd unit | `named` (alias `bind9`) | `named` |
+| Main config | `/etc/bind/named.conf*` | `/etc/named.conf` |
+| Zone files | `/etc/bind/`, `/var/lib/bind/` | `/var/named/` |
+| Service user | `bind` | `named` |
+| Validation tools | `named-checkconf`, `named-checkzone`, `dig` | identical |
+
+**RHEL-family gotcha:** SELinux governs BIND. Zone files must carry the
+`named_zone_t` context (`restorecon -Rv /var/named`) and writes to
+`/var/named` need the right labels; serving from a non-standard path requires
+`semanage fcontext`. There is no SELinux step on Debian/Ubuntu. (Deep SELinux
+coverage lands in `linux-server-hardening` / Phase 2.)
+
+In `sk-*` scripts use the `common.sh` primitives (`pkg_install`, `svc_name`)
+instead of hardcoding the family. See [`linux-bash-scripting`](../linux-bash-scripting/SKILL.md)
+and [`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -57,10 +84,11 @@ metadata:
 - [`references/bind9-reference.md`](references/bind9-reference.md)
 - [`references/zone-file-syntax.md`](references/zone-file-syntax.md)
 
-**This skill is self-contained.** Every command below is a standard
-Ubuntu/Debian tool (`named`, `rndc`, `named-checkconf`, `named-checkzone`,
-`dig`). The `sk-*` scripts in the **Optional fast path** section are
-convenience wrappers — never required.
+**This skill is self-contained.** Every command below is a standard BIND
+tool (`named`, `rndc`, `named-checkconf`, `named-checkzone`, `dig`) present on
+both Debian/Ubuntu and the RHEL family; only package names and paths differ
+(see **Distro support**). The `sk-*` scripts in the **Optional fast path**
+section are convenience wrappers — never required.
 
 This skill owns **authoritative DNS serving** — running BIND9 or unbound
 as a server that answers queries for zones you control.

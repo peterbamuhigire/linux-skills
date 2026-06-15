@@ -1,6 +1,6 @@
 ---
 name: linux-observability
-description: Add metrics, logs, and health endpoints to Ubuntu/Debian servers — Prometheus node_exporter, centralized logging via rsyslog/fluent-bit, standard /health endpoints. Use for any task involving metrics collection or log shipping off the host.
+description: Add metrics, logs, and health endpoints to Linux servers on both the Debian/Ubuntu and RHEL families (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) — Prometheus node_exporter, centralized logging via rsyslog/fluent-bit/journald, standard /health endpoints. Prometheus and node_exporter are portable binaries; only the install source and the firewall command for the scrape port differ. Use for any task involving metrics collection or log shipping off the host.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -9,6 +9,31 @@ metadata:
 ---
 
 # Linux Observability
+
+## Distro support
+
+Prometheus, `node_exporter`, and Grafana are **portable** (static binaries /
+cross-platform packages); the systemd units are identical. The differences are
+install source and opening the scrape port on the firewall. Body uses
+Debian/Ubuntu; the **RHEL family** (Fedora, RHEL, CentOS Stream, Rocky, Alma,
+Oracle) equivalents are in the matrix.
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Install node_exporter | apt / release binary | dnf (EPEL has `golang-github-prometheus-node-exporter`) / release binary |
+| Open scrape port (9100) | `ufw allow 9100/tcp` | `firewall-cmd --add-port=9100/tcp --permanent && firewall-cmd --reload` |
+| systemd unit / service | identical | identical |
+| Log forwarding | rsyslog / journald | same (journald primary on RHEL) |
+| Health endpoint pattern | identical | identical |
+
+**RHEL-family note:** `node_exporter` is in **EPEL** on RHEL/Rocky/Alma
+(`ensure_epel`), in main on Fedora, or install the upstream static binary on
+either. Open the firewall with firewalld, not ufw.
+
+In `sk-*` scripts use the `common.sh` primitives (`pkg_install`, `ensure_epel`,
+`firewall_allow`) instead of hardcoding the family. See
+[`linux-bash-scripting`](../linux-bash-scripting/SKILL.md) and
+[`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -58,9 +83,10 @@ metadata:
 - [`references/log-forwarding.md`](references/log-forwarding.md)
 - [`references/health-endpoint-pattern.md`](references/health-endpoint-pattern.md)
 
-**This skill is self-contained.** Every step below uses standard
-Ubuntu/Debian tools and released binaries. The `sk-*` scripts in the
-**Optional fast path** section are convenience wrappers — never required.
+**This skill is self-contained.** Every step below uses standard tools and
+released binaries; the body shows Debian/Ubuntu, with RHEL-family equivalents
+in the **Distro support** matrix above. The `sk-*` scripts in the **Optional
+fast path** section are convenience wrappers — never required.
 
 This skill owns **metrics and log shipping** — turning a server from a
 black box you SSH into occasionally into a first-class citizen of a

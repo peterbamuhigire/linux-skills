@@ -1,6 +1,6 @@
 ---
 name: linux-service-management
-description: Manage systemd services on Ubuntu/Debian servers. Start, stop, restart, reload, enable/disable on boot, view status and logs via journalctl. Covers all web server services (nginx, apache2, mysql, postgresql, php-fpm, redis, fail2ban, certbot, cron, msmtp) and Node.js product services. Includes crashed-service diagnosis workflow.
+description: Manage systemd services on both Debian/Ubuntu and RHEL-family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) servers. systemd itself is identical across both families — only a few unit names and the package manager differ. Start, stop, restart, reload, enable/disable on boot, view status and logs via journalctl. Covers all web server services (nginx, apache2/httpd, mysql/mariadb, postgresql, php-fpm, redis, fail2ban, certbot, cron/crond, msmtp) and Node.js product services. Includes crashed-service diagnosis workflow.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -8,6 +8,30 @@ metadata:
   author_contact: "+256784464178"
 ---
 # Service Management
+
+## Distro support
+
+systemd is **identical** on both supported families — `systemctl`, `journalctl`,
+unit files, targets, and timers all work the same. The only differences are a
+few **unit names** and the package manager. The commands below use the
+Debian/Ubuntu names; the **RHEL family** (Fedora, RHEL, CentOS Stream, Rocky,
+Alma, Oracle) equivalents are in the matrix.
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Web server unit | `apache2` | `httpd` |
+| Cron daemon unit | `cron` | `crond` |
+| SSH daemon unit | `ssh` | `sshd` |
+| Database unit | `mysql` / `mariadb` | `mariadb` |
+| Firewall unit | `ufw` | `firewalld` |
+| Install a service pkg | `apt install <pkg>` | `dnf install <pkg>` |
+| systemctl / journalctl | identical | identical |
+| Unit file locations | `/etc/systemd/system`, `/lib/systemd/system` | same |
+
+In `sk-*` scripts, resolve unit names with the `svc_name` helper from
+`common.sh` (e.g. `svc_name apache` → `apache2` or `httpd`) instead of
+hardcoding — see [`linux-bash-scripting`](../linux-bash-scripting/SKILL.md) and
+[`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -56,9 +80,11 @@ metadata:
 - [`references/service-reference.md`](references/service-reference.md)
 - [`references/timers-and-cron.md`](references/timers-and-cron.md)
 
-**This skill is self-contained.** Every command below is a standard
-Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
-are convenience wrappers — never required.
+**This skill is self-contained.** Every command below is a standard systemd
+tool that works identically on both the Debian/Ubuntu and RHEL family (Fedora,
+RHEL, CentOS Stream, Rocky, Alma, Oracle) — only the unit names in the **Distro
+support** matrix differ. The `sk-*` scripts in the **Optional fast path**
+section are convenience wrappers — never required.
 
 ## Core Commands
 

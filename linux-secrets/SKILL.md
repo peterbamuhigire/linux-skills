@@ -1,6 +1,6 @@
 ---
 name: linux-secrets
-description: Handle secrets on Ubuntu/Debian servers — scan for leaked credentials, encrypt config with age/sops, rotate managed credential files. Use whenever sensitive material touches the filesystem or a repo.
+description: Handle secrets on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) — scan for leaked credentials, encrypt config with age/sops/gpg, rotate managed credential files. The tooling is portable across both families; only installation differs. Use whenever sensitive material touches the filesystem or a repo.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -9,6 +9,29 @@ metadata:
 ---
 
 # Linux Secrets
+
+## Distro support
+
+The tooling — `age`, `sops`, `gpg`, `pass`, and secret scanners — is **portable
+across both families**; only installation differs. Body uses Debian/Ubuntu; the
+**RHEL family** (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) equivalents
+are in the matrix.
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Install age / gpg | `apt install age gnupg` | `dnf install age gnupg2` |
+| Install sops | release binary / `apt` | release binary / `dnf` (Fedora has it) |
+| Install scanners (gitleaks, trufflehog) | release binary | release binary |
+| age / sops / gpg usage | identical | identical |
+| `age` availability | universe | **EPEL** on RHEL/Rocky/Alma; in main on Fedora |
+
+**RHEL-family note:** GnuPG is the `gnupg2` package on RHEL. `age` requires
+**EPEL** on RHEL/CentOS/Rocky/Alma (`ensure_epel`), but is in the main repo on
+Fedora. Encryption/decryption commands and key formats are identical.
+
+In `sk-*` scripts use the `common.sh` primitives (`pkg_install`, `ensure_epel`)
+rather than hardcoding the family. See [`linux-bash-scripting`](../linux-bash-scripting/SKILL.md)
+and [`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 

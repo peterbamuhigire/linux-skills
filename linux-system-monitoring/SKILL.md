@@ -1,6 +1,6 @@
 ---
 name: linux-system-monitoring
-description: Monitor system health on Ubuntu/Debian production servers. CPU load, memory, disk I/O, network connections, process inspection. Covers htop, iostat, vmstat, ss, and backup health verification. Includes what warning signs to watch for. Reference-style — outputs commands and how to read them.
+description: Monitor system health on Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) production servers. Monitoring commands are identical across both families; only install steps and a couple of package names differ. CPU load, memory, disk I/O, network connections, process inspection. Covers htop, iostat, vmstat, ss, and backup health verification. Includes what warning signs to watch for. Reference-style — outputs commands and how to read them.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -8,6 +8,27 @@ metadata:
   author_contact: "+256784464178"
 ---
 # System Monitoring
+
+## Distro support
+
+Monitoring commands are **identical** on both families — `top`, `htop`, `ss`,
+`vmstat`, `iostat`, `free`, `uptime`, `ps`, `sar` behave the same. The only
+differences are how the tools are installed and a couple of package names. Body
+uses Debian/Ubuntu; the **RHEL family** (Fedora, RHEL, CentOS Stream, Rocky,
+Alma, Oracle) equivalents are in the matrix.
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Install a tool | `apt install htop sysstat` | `dnf install htop sysstat` |
+| sysstat package | `sysstat` | `sysstat` (enable `sysstat.service`) |
+| Process/socket/mem tools | `ps`, `ss`, `free`, `vmstat` | identical |
+| Service health | `systemctl status` / `journalctl` | identical |
+| Firewall used for port checks | `ufw` | `firewalld` |
+
+In `sk-*` scripts use the `common.sh` primitives (`pkg_install`, `svc_name`,
+`firewall_allow`) instead of hardcoding the family. See
+[`linux-bash-scripting`](../linux-bash-scripting/SKILL.md) and
+[`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -56,9 +77,11 @@ metadata:
 - [`references/monitoring-commands.md`](references/monitoring-commands.md)
 - [`references/warning-signs.md`](references/warning-signs.md)
 
-**This skill is self-contained.** Every command below is a standard
-Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
-are convenience wrappers — never required.
+**This skill is self-contained.** Every command below is a standard tool on
+both families (Debian/Ubuntu and the RHEL family); only the install step and a
+couple of package names differ — see **Distro support** above. The `sk-*`
+scripts in the **Optional fast path** section are convenience wrappers — never
+required.
 
 ## Quick Health Check
 
