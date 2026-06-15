@@ -489,13 +489,30 @@ select_one() {
 # Safe file operations
 # =============================================================================
 
+_sk_registry() {
+    # Path to this run's temp-cleanup registry file. Derived from $$ (the PID of
+    # the invoking shell) which is STABLE inside command-substitution subshells,
+    # so a path registered by `TMP=$(safe_tempfile)` is still visible to the
+    # parent's cleanup trap. Without this, the array append below happens in the
+    # subshell and is lost — cleanup would silently never fire.
+    printf '%s/sk-cleanup.%s' "${TMPDIR:-/tmp}" "$$"
+}
+
+_sk_register_path() {
+    # Register a path for cleanup via both the in-memory array (when called in
+    # the parent shell) and the registry file (survives command substitution).
+    local p="$1"
+    SK_CLEANUP_PATHS+=("$p")
+    printf '%s\n' "$p" >> "$(_sk_registry)" 2>/dev/null || true
+}
+
 safe_tempfile() {
     # safe_tempfile [prefix]
     # Creates a temp file, registers it for cleanup, returns the path on stdout.
     local prefix="${1:-sk}"
     local tmp
     tmp="$(mktemp -t "${prefix}.XXXXXXXX")" || die "mktemp failed" 1
-    SK_CLEANUP_PATHS+=("$tmp")
+    _sk_register_path "$tmp"
     printf '%s\n' "$tmp"
 }
 
@@ -504,7 +521,7 @@ safe_tempdir() {
     local prefix="${1:-sk}"
     local tmp
     tmp="$(mktemp -d -t "${prefix}.XXXXXXXX")" || die "mktemp -d failed" 1
-    SK_CLEANUP_PATHS+=("$tmp")
+    _sk_register_path "$tmp"
     printf '%s\n' "$tmp"
 }
 
@@ -664,16 +681,31 @@ sk_on_exit() {
     SK_CLEANUP_FUNCS+=("$1")
 }
 
+_sk_remove_registered() {
+    # Remove every temp path registered via safe_tempfile/safe_tempdir, from
+    # both the registry file (subshell-registered) and the in-memory array
+    # (parent-registered). Idempotent; safe to call from the cleanup trap or
+    # directly from tests.
+    local reg p
+    reg="$(_sk_registry)"
+    if [[ -f "$reg" ]]; then
+        while IFS= read -r p; do
+            [[ -n "$p" && -e "$p" ]] && rm -rf "$p" 2>/dev/null || true
+        done < "$reg"
+        rm -f "$reg" 2>/dev/null || true
+    fi
+    for p in "${SK_CLEANUP_PATHS[@]}"; do
+        [[ -e "$p" ]] && rm -rf "$p" 2>/dev/null || true
+    done
+}
+
 _sk_cleanup() {
     local exit_code=$?
     local cmd="${BASH_COMMAND:-}"
     local line="${BASH_LINENO[0]:-}"
 
-    # Remove registered temp paths
-    local p
-    for p in "${SK_CLEANUP_PATHS[@]}"; do
-        [[ -e "$p" ]] && rm -rf "$p" 2>/dev/null || true
-    done
+    # Remove registered temp paths (registry file + in-memory array)
+    _sk_remove_registered
 
     # Call registered cleanup functions
     local fn

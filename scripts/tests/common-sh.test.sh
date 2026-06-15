@@ -60,25 +60,27 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# Test 4: safe_tempfile + cleanup trap removes the file
+# Test 4: safe_tempfile registers cleanup even via command substitution
+# (regression: the array append happens in the $(...) subshell and is lost;
+#  registration must survive via the PID-derived registry file)
 # -----------------------------------------------------------------------------
 SK_CLEANUP_PATHS=()
+rm -f "$(_sk_registry)" 2>/dev/null || true
 tmp=$(safe_tempfile test4)
 if [[ -f "$tmp" ]]; then
     pass_t "safe_tempfile created $tmp"
 else
     fail_t "safe_tempfile did not create the file"
 fi
-# Simulate cleanup
-_sk_cleanup_test() {
-    local p
-    for p in "${SK_CLEANUP_PATHS[@]}"; do
-        [[ -e "$p" ]] && rm -rf "$p"
-    done
-}
-_sk_cleanup_test
+if grep -qxF "$tmp" "$(_sk_registry)" 2>/dev/null; then
+    pass_t "safe_tempfile registered $tmp despite command-substitution subshell"
+else
+    fail_t "safe_tempfile did NOT register $tmp in the cleanup registry"
+fi
+# Exercise the real cleanup path
+_sk_remove_registered
 if [[ ! -f "$tmp" ]]; then
-    pass_t "safe_tempfile cleanup removed $tmp"
+    pass_t "_sk_remove_registered removed $tmp"
 else
     fail_t "cleanup did not remove $tmp"
 fi
