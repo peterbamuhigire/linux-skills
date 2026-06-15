@@ -1,6 +1,6 @@
 ---
 name: linux-security-analysis
-description: Deep read-only security audit for Ubuntu/Debian servers. Runs 10-layer analysis (kernel, users, network, firewall, web server, databases, filesystem, IDS, backups, packages) and produces a CRITICAL/HIGH/MEDIUM/LOW severity report. Never modifies the system — use linux-server-hardening to fix findings.
+description: Deep read-only security audit for Debian/Ubuntu and RHEL-family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) servers. Runs 10-layer analysis (kernel, users, network, firewall, web server, databases, filesystem, IDS, backups, packages) and produces a CRITICAL/HIGH/MEDIUM/LOW severity report. The audit must check the mandatory-access-control layer per family — SELinux must be Enforcing on RHEL vs AppArmor profiles loaded on Debian — and use family-specific package and firewall tooling (rpm/dnf + firewalld on RHEL vs dpkg/apt + ufw on Debian). Never modifies the system — use linux-server-hardening to fix findings.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -8,6 +8,26 @@ metadata:
   author_contact: "+256784464178"
 ---
 # Linux Security Analysis
+
+## Distro support
+
+Two-family skill. The 10-layer audit applies to both families; some layers
+inspect different tools. The body uses Debian/Ubuntu; substitute per this matrix.
+
+| Audit layer | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Mandatory access control | AppArmor `aa-status` (profiles loaded/enforced) | SELinux `getenforce` must be **Enforcing**; `sestatus` |
+| Firewall | `ufw status` | `firewall-cmd --list-all` |
+| Installed packages | `dpkg -l`, `apt list --installed` | `rpm -qa`, `dnf list installed` |
+| Pending updates | `apt list --upgradable` | `dnf check-update` |
+| Auto updates | `unattended-upgrades` configured | `dnf-automatic.timer` active |
+| Sudo group membership | `sudo` group | `wheel` group |
+| Audit daemon | `auditd` | `auditd` (also surfaces SELinux AVC denials) |
+
+**RHEL-family addition:** a security audit must flag SELinux not Enforcing,
+stray `permissive` domains, and unreviewed AVC denials (`ausearch -m AVC`). See
+[`../linux-server-hardening/references/selinux-reference.md`](../linux-server-hardening/references/selinux-reference.md)
+and [`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -54,9 +74,11 @@ metadata:
 ## References
 
 - [`references/audit-layers.md`](references/audit-layers.md)
+- [`../linux-server-hardening/references/selinux-reference.md`](../linux-server-hardening/references/selinux-reference.md) — SELinux audit checks (RHEL family)
 
 **This skill is self-contained.** The 10 audit layers below work on a stock
-Ubuntu/Debian server using nothing but built-in tools. The `sk-audit` script
+Debian/Ubuntu or RHEL-family server using nothing but built-in tools (substitute
+family-specific tools per the Distro support matrix). The `sk-audit` script
 in the **Optional fast path** section is a convenience wrapper — never
 required.
 

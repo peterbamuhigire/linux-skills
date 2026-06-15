@@ -1,6 +1,6 @@
 ---
 name: linux-firewall-ssl
-description: Manage UFW firewall and SSL/TLS certificates on Ubuntu/Debian servers. UFW rule management (view, add, remove, rate limiting). Certbot operations (issue cert with --nginx plugin, check expiry, force renew, dry run, add domains, troubleshoot renewal). ECDSA certificates, TLSv1.2/1.3 only.
+description: Manage host firewalls and SSL/TLS certificates across both major Linux families — UFW on Debian/Ubuntu and firewalld (zone-based, firewall-cmd) on the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Firewall rule management (view, add, remove, rate limiting, reload). Certbot operations on both families (issue cert with --nginx plugin, check expiry, force renew, dry run, add domains, troubleshoot renewal, renew timer). ECDSA certificates, TLSv1.2/1.3 only.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -8,6 +8,30 @@ metadata:
   author_contact: "+256784464178"
 ---
 # Firewall & SSL Management
+
+## Distro support
+
+Two-family skill. **UFW** is the Debian/Ubuntu firewall; the RHEL family
+(Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) uses **firewalld** — a
+zone-based model, not a flat allow-list. `certbot` works on both; only install
+and the renew timer differ. The body below uses UFW/Debian; full RHEL detail is
+in [`references/firewalld-reference.md`](references/firewalld-reference.md).
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Firewall | `ufw` | `firewalld` (`firewall-cmd`) |
+| Show rules | `ufw status verbose` | `firewall-cmd --list-all` |
+| Allow HTTP/HTTPS | `ufw allow 80,443/tcp` | `firewall-cmd --permanent --add-service={http,https}` |
+| Allow a raw port | `ufw allow 9100/tcp` | `firewall-cmd --permanent --add-port=9100/tcp` |
+| Apply changes | immediate | `firewall-cmd --reload` (permanent vs runtime!) |
+| Enable on boot | `ufw enable` | `systemctl enable --now firewalld` |
+| certbot install | `apt install certbot python3-certbot-nginx` | `dnf install certbot python3-certbot-nginx` (EPEL on RHEL/Rocky/Alma) |
+| Renew timer | `certbot.timer` / `snap.certbot.renew.timer` | `certbot-renew.timer` |
+
+In `sk-*` scripts use the `firewall_allow` helper from `common.sh`, which
+targets whichever firewall is active. See
+[`references/firewalld-reference.md`](references/firewalld-reference.md) and
+[`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -54,12 +78,16 @@ metadata:
 ## References
 
 - [`references/ufw-reference.md`](references/ufw-reference.md)
+- [`references/firewalld-reference.md`](references/firewalld-reference.md)
 - [`references/certbot-reference.md`](references/certbot-reference.md)
 - [`references/ssl-config.md`](references/ssl-config.md)
 
-**This skill is self-contained.** Every command below is a standard
-Ubuntu/Debian tool (`ufw`, `certbot`). The `sk-*` scripts in the **Optional
-fast path** section are convenience wrappers — never required.
+**This skill is self-contained.** Every command below is a standard tool on its
+family — `ufw` + `certbot` on Debian/Ubuntu, `firewall-cmd` (firewalld) +
+`certbot` on the RHEL family (see
+[`references/firewalld-reference.md`](references/firewalld-reference.md)). The
+`sk-*` scripts in the **Optional fast path** section are convenience wrappers —
+never required.
 
 ## UFW Firewall
 

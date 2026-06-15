@@ -1,6 +1,6 @@
 ---
 name: linux-intrusion-detection
-description: Manage intrusion detection on Ubuntu/Debian servers. fail2ban (check jails, unban IPs, add custom jails, tune bans, read logs). AIDE file integrity monitoring (install, initialise, run checks, schedule daily). auditd system call auditing (install, watch files, read audit log).
+description: Manage intrusion detection on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). fail2ban (check jails, unban IPs, add custom jails, tune bans, read logs), AIDE file integrity monitoring (install, initialise, run checks, schedule daily), and auditd system call auditing (install, watch files, read audit log) all run on both families — fail2ban needs EPEL on RHEL/Rocky/Alma and reads journald/`/var/log/secure` via `backend = systemd`. On the RHEL family, SELinux AVC denials are an additional intrusion-detection signal.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -8,6 +8,28 @@ metadata:
   author_contact: "+256784464178"
 ---
 # Intrusion Detection
+
+## Distro support
+
+Two-family skill. fail2ban, AIDE, and auditd run on both families; install and
+a couple of paths differ, and the RHEL family adds SELinux AVC denials as an
+intrusion signal. Body uses Debian/Ubuntu; substitute per this matrix.
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| fail2ban install | `apt install fail2ban` | `dnf install fail2ban` (**EPEL** on RHEL/Rocky/Alma; main on Fedora) |
+| fail2ban backend | reads `/var/log/auth.log` | reads journald / `/var/log/secure` (use `backend = systemd`) |
+| AIDE | `apt install aide` | `dnf install aide` |
+| auditd | `auditd` | `auditd` (same) |
+| MAC denials as IDS signal | AppArmor (`journalctl -k \| grep apparmor`) | **SELinux AVC** (`ausearch -m AVC`, `aureport --avc`) |
+| Web/auth log paths | `/var/log/auth.log` | `/var/log/secure` |
+
+**RHEL-family note:** fail2ban on RHEL usually needs `backend = systemd` (and
+the right `logpath`/journal match) because `/var/log/auth.log` does not exist —
+auth events go to `/var/log/secure` and journald. Treat new SELinux AVC denials
+as a triage signal. See
+[`../linux-server-hardening/references/selinux-reference.md`](../linux-server-hardening/references/selinux-reference.md)
+and [`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -55,9 +77,11 @@ metadata:
 
 - [`references/fail2ban-jails.md`](references/fail2ban-jails.md)
 - [`references/aide-and-auditd.md`](references/aide-and-auditd.md)
+- [`../linux-server-hardening/references/selinux-reference.md`](../linux-server-hardening/references/selinux-reference.md) — SELinux AVC denials as an IDS signal (RHEL family)
 
 **This skill is self-contained.** Every command below is a standard
-Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
+Debian/Ubuntu or RHEL-family tool (see **Distro support** for the install and
+path substitutions). The `sk-*` scripts in the **Optional fast path** section
 are convenience wrappers — never required.
 
 ## fail2ban

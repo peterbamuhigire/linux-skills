@@ -1,6 +1,6 @@
 ---
 name: linux-webstack
-description: Manage the web stack on Ubuntu/Debian servers — Nginx reverse proxy (config, reload, debug 502), Apache backend (port 8080 vhosts), PHP-FPM (pool tuning, restart), and Node.js API services (systemd). Covers the Nginx+Apache dual-stack pattern where Nginx fronts all traffic and proxies PHP apps to Apache on port 8080.
+description: Manage the web stack on Debian/Ubuntu AND RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) — Nginx reverse proxy (config, reload, debug 502), Apache backend (port 8080 vhosts), PHP-FPM (pool tuning, restart), and Node.js API services (systemd). Nginx is portable (conf.d on both); Apache differs the most — on RHEL it is `httpd` with a flat `/etc/httpd/conf.d/` model (no sites-available/a2ensite), PHP-FPM service and socket paths differ (`php-fpm` / `/etc/php-fpm.d/` / `/run/php-fpm/www.sock`), and SELinux governs web access on RHEL. Covers the Nginx+Apache dual-stack pattern where Nginx fronts all traffic and proxies PHP apps to Apache on port 8080.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -8,6 +8,31 @@ metadata:
   author_contact: "+256784464178"
 ---
 # Web Stack Management
+
+## Distro support
+
+Two-family skill. Nginx is portable (conf.d on both). **Apache differs the
+most**: on the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle)
+it is **`httpd`** with a flat **`/etc/httpd/conf.d/`** model — no
+`sites-available`/`a2ensite`. And **SELinux** can block a correctly-permissioned
+site. Full detail: [`references/httpd-reference.md`](references/httpd-reference.md).
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Apache package/service | `apache2` / `apache2ctl` | `httpd` / `apachectl` |
+| Vhost model | `sites-available` + `a2ensite` | drop `*.conf` in `/etc/httpd/conf.d/` |
+| Apache config root | `/etc/apache2/` | `/etc/httpd/` |
+| Web run-as user | `www-data` | `apache` |
+| Apache logs | `/var/log/apache2/` | `/var/log/httpd/` |
+| PHP-FPM service / pool | `php8.x-fpm` / `/etc/php/8.x/fpm/pool.d/` | `php-fpm` / `/etc/php-fpm.d/` |
+| PHP-FPM socket | `/run/php/php8.x-fpm.sock` | `/run/php-fpm/www.sock` |
+| Newer PHP | Ondřej PPA | Remi repo / `dnf module` |
+| MAC on web content | none | **SELinux**: `httpd_sys_content_t`, `httpd_can_network_connect` |
+
+In `sk-*` scripts use `svc_name apache`, `web_conf_dir apache`, and
+`web_reload apache` from `common.sh` instead of hardcoding. See
+[`references/httpd-reference.md`](references/httpd-reference.md) and
+[`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -56,10 +81,13 @@ metadata:
 - [`references/nginx-directives.md`](references/nginx-directives.md)
 - [`references/config-patterns.md`](references/config-patterns.md)
 - [`references/php-fpm-tuning.md`](references/php-fpm-tuning.md)
+- [`references/httpd-reference.md`](references/httpd-reference.md) — Apache httpd + conf.d model + SELinux (RHEL family)
 
-**This skill is self-contained.** Every command below is a standard
-Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
-are convenience wrappers — never required.
+**This skill is self-contained.** Every command below is a standard tool on
+both the Debian/Ubuntu and RHEL families (note the per-family naming in the
+**Distro support** table above — e.g. `apache2ctl`/`apachectl`). The `sk-*`
+scripts in the **Optional fast path** section are convenience wrappers — never
+required.
 
 ```
 Client → Nginx (443/80)

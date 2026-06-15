@@ -1,6 +1,6 @@
 ---
 name: linux-server-hardening
-description: Interactive security hardening for Ubuntu/Debian servers. Runs the audit script first, then walks through each FAIL and WARN item — asks before applying any change. Covers SSH, UFW, fail2ban, sysctl, Nginx, PHP-FPM, MySQL, Redis, file permissions, backup credential security.
+description: Interactive security hardening for both Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Runs the audit script first, then walks through each FAIL and WARN item — asks before applying any change. SSH and sysctl hardening are largely identical across families, but the mandatory access control system differs (AppArmor on Debian/Ubuntu vs SELinux on RHEL), the firewall differs (ufw vs firewalld), auto-updates differ (unattended-upgrades vs dnf-automatic), and the sudo admin group differs (sudo vs wheel). Covers SSH, firewall, fail2ban, sysctl, MAC, Nginx, PHP-FPM, MySQL, Redis, file permissions, backup credential security.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -8,6 +8,30 @@ metadata:
   author_contact: "+256784464178"
 ---
 # Linux Server Hardening
+
+## Distro support
+
+Two-family skill. SSH and kernel/sysctl hardening are largely identical; the
+**big difference is mandatory access control** — Debian/Ubuntu use **AppArmor**,
+the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) enforces
+**SELinux** by default. Full SELinux detail is in
+[`references/selinux-reference.md`](references/selinux-reference.md).
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Mandatory access control | **AppArmor** (`aa-status`, `/etc/apparmor.d/`) | **SELinux** (`getenforce`, `sestatus`) — enforcing by default |
+| Firewall | `ufw` | `firewalld` |
+| Auto security updates | `unattended-upgrades` | `dnf-automatic` |
+| Sudo admin group | `sudo` | `wheel` |
+| SSH hardening | `/etc/ssh/sshd_config[.d]` | identical |
+| sysctl hardening | `/etc/sysctl.d/` | identical |
+| Audit daemon | `auditd` | `auditd` (same) |
+
+**Golden rule on RHEL:** never `setenforce 0` to "fix" a problem — diagnose the
+denial and set the right context/boolean/port. See
+[`references/selinux-reference.md`](references/selinux-reference.md) and
+[`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md). In `sk-*` scripts
+use the `common.sh` primitives (`pkg_install`, `firewall_allow`, `svc_name`).
 
 ## Use when
 
@@ -55,10 +79,13 @@ metadata:
 
 - [`references/hardening-checklist.md`](references/hardening-checklist.md)
 - [`references/sysctl-reference.md`](references/sysctl-reference.md)
+- [`references/selinux-reference.md`](references/selinux-reference.md)
 
 **This skill is self-contained.** Every hardening step below uses standard
-Ubuntu/Debian tools. The `sk-*` scripts in the **Optional fast path** section
-are convenience wrappers — never required.
+tools on both Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream,
+Rocky, Alma, Oracle); see the **Distro support** table above for the
+family-specific equivalents. The `sk-*` scripts in the **Optional fast path**
+section are convenience wrappers — never required.
 
 Applies security fixes interactively. Runs the audit first — never applies
 a change without your confirmation.

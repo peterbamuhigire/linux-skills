@@ -1,6 +1,6 @@
 ---
 name: linux-site-deployment
-description: Deploy a new website to an Ubuntu/Debian server running Nginx + Apache dual-stack. Interactive — asks domain name and site type (Astro static / PHP app / Astro+PHP hybrid), generates the correct Nginx config, walks the full 8-step deployment, issues SSL, and registers the repo in update-all-repos.
+description: Deploy a new website to a Linux server running Nginx + Apache dual-stack, across both the Debian/Ubuntu and RHEL families (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Interactive — asks domain name and site type (Astro static / PHP app / Astro+PHP hybrid), generates the correct Nginx config, walks the full 8-step deployment, issues SSL, and registers the repo in update-all-repos. Vhost enablement differs (a2ensite symlink on Debian/Ubuntu vs dropping *.conf in conf.d on RHEL), the web user differs (www-data vs apache), and deploying under SELinux on RHEL requires labeling the docroot (httpd_sys_content_t).
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -8,6 +8,30 @@ metadata:
   author_contact: "+256784464178"
 ---
 # Site Deployment
+
+## Distro support
+
+Two-family skill. Static/PHP/Node deployment is largely portable; the
+differences are how an Apache vhost is enabled, the web-server user, the
+firewall, and — on the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma,
+Oracle) — **SELinux labeling of the docroot**.
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Enable Apache vhost | `a2ensite` (symlink) + reload | drop `*.conf` in `/etc/httpd/conf.d/` + reload |
+| Web server user:group | `www-data:www-data` | `apache:apache` |
+| Default docroot | `/var/www/html` | `/var/www/html` (same) |
+| Reload web server | `systemctl reload apache2` / `nginx` | `systemctl reload httpd` / `nginx` |
+| Open firewall | `ufw allow 80,443/tcp` | `firewall-cmd --permanent --add-service={http,https}; --reload` |
+| **Docroot under SELinux** | n/a | label `httpd_sys_content_t` + `restorecon`; uploads `httpd_sys_rw_content_t` |
+
+**RHEL deploy gotcha:** after copying a site into a custom docroot, set the
+SELinux context or it serves 403s despite correct unix permissions:
+`sudo semanage fcontext -a -t httpd_sys_content_t "/var/www/example(/.*)?" && sudo restorecon -Rv /var/www/example`.
+See [`../linux-webstack/references/httpd-reference.md`](../linux-webstack/references/httpd-reference.md)
+and [`../linux-server-hardening/references/selinux-reference.md`](../linux-server-hardening/references/selinux-reference.md).
+In `sk-*` scripts use `svc_name`, `web_conf_dir`, `web_reload`, `firewall_allow`
+from `common.sh`. Plan: [`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -56,9 +80,12 @@ metadata:
 - [`references/deployment-checklist.md`](references/deployment-checklist.md)
 - [`references/nginx-templates.md`](references/nginx-templates.md)
 - [`references/apache-backend.md`](references/apache-backend.md)
+- [`../linux-webstack/references/httpd-reference.md`](../linux-webstack/references/httpd-reference.md) — httpd conf.d model (RHEL family)
+- [`../linux-server-hardening/references/selinux-reference.md`](../linux-server-hardening/references/selinux-reference.md) — SELinux docroot labeling (RHEL family)
 
 This skill is self-contained. Every step below works with only the tools
-that ship with Ubuntu/Debian. The `sk-*` scripts listed in the Scripts
+that ship with the Debian/Ubuntu and RHEL families (see Distro support above
+for the per-family command differences). The `sk-*` scripts listed in the Scripts
 manifest are an **optional fast path** that wraps the same steps — install
 them if they make your life easier, but they are never required.
 

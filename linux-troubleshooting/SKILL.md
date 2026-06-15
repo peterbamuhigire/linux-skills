@@ -1,6 +1,6 @@
 ---
 name: linux-troubleshooting
-description: Systematic incident diagnosis for Ubuntu/Debian production servers. Ask for the symptom then follow the matching diagnosis branch — high CPU/load, OOM kill, disk full, service crashed, 502/504 errors, slow site, MySQL issues, SSL expired, backup failed, site down after git update.
+description: Systematic incident diagnosis for production servers across both families (Debian/Ubuntu and the RHEL family — Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Ask for the symptom then follow the matching diagnosis branch — high CPU/load, OOM kill, disk full, service crashed, 502/504 errors, slow site, MySQL issues, SSL expired, backup failed, site down after git update. Service names and log paths differ between families; on the RHEL family SELinux is a frequent hidden cause of "permission denied" / 403 / connection-refused failures that filesystem permissions don't explain.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -8,6 +8,36 @@ metadata:
   author_contact: "+256784464178"
 ---
 # Troubleshooting
+
+## Distro support
+
+Two-family skill. The diagnosis trees apply to both families; only service
+names, log paths, and a few tools differ — plus the RHEL family adds **SELinux**
+as a cause of failures that look like permission or connection bugs.
+
+| When diagnosing… | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Web server unit | `systemctl status apache2` | `systemctl status httpd` |
+| System log | `/var/log/syslog`, `journalctl` | `/var/log/messages`, `journalctl` |
+| Auth failures | `/var/log/auth.log` | `/var/log/secure` |
+| Web logs | `/var/log/apache2/` | `/var/log/httpd/` |
+| Firewall blocking a port | `ufw status` | `firewall-cmd --list-all` |
+| Package query | `dpkg -l` / `apt` | `rpm -qa` / `dnf` |
+
+**RHEL-family "it should work but doesn't":** when unix permissions look
+correct but you still get 403 / EACCES / "connection refused" from a service
+(Apache 403, PHP can't reach the DB, a daemon won't bind a port), suspect
+**SELinux** before anything else:
+
+```bash
+sudo ausearch -m AVC -ts recent | audit2why     # what did SELinux block, and why
+sudo getenforce                                  # Enforcing?
+```
+
+Fix with the right context/boolean/port — do **not** `setenforce 0`. See
+[`../linux-server-hardening/references/selinux-reference.md`](../linux-server-hardening/references/selinux-reference.md)
+and [`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md). In `sk-*`
+scripts resolve unit names via `svc_name` from `common.sh`.
 
 ## Use when
 
@@ -54,9 +84,10 @@ metadata:
 ## References
 
 - [`references/diagnosis-tree.md`](references/diagnosis-tree.md)
+- [`../linux-server-hardening/references/selinux-reference.md`](../linux-server-hardening/references/selinux-reference.md) — SELinux as a hidden cause (RHEL family)
 
 **This skill is self-contained.** Every command below works on a stock
-Ubuntu/Debian server with no additional tooling. The `sk-*` scripts in the
+Debian/Ubuntu or RHEL-family server with no additional tooling. The `sk-*` scripts in the
 **Optional fast path** section at the bottom are convenience wrappers —
 they are never required.
 
