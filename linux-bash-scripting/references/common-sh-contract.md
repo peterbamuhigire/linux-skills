@@ -107,6 +107,55 @@ information that should land in the log but not clutter stdout.
 
 ---
 
+## Distro detection & cross-distro primitives
+
+The engine supports two package families: **debian** (Debian/Ubuntu and
+derivatives) and **rhel** (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle,
+Amazon). Scripts call these primitives instead of hardcoding
+`apt`/`dnf`/`ufw`/`apache2`, so the same script runs on both. See
+[`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
+
+### `detect_distro`
+
+Populates and memoizes three globals from `/etc/os-release`:
+
+| Variable | Example (Ubuntu) | Example (Fedora) | Meaning |
+|---|---|---|---|
+| `SK_DISTRO_ID` | `ubuntu` | `fedora` | Raw `ID` from os-release. |
+| `SK_DISTRO_FAMILY` | `debian` | `rhel` | `debian` \| `rhel` \| `unknown`. |
+| `SK_PKG` | `apt-get` | `dnf` | Package-manager binary (`yum` fallback on old RHEL). |
+
+Classifies by `ID` first, then by `ID_LIKE` for derivatives. Reads os-release
+in a subshell so it never pollutes the caller's namespace. Returns 1 (and sets
+family `unknown`) if os-release is missing.
+
+### Package primitives
+
+```bash
+pkg_install nginx php-fpm     # apt-get install -y  /  dnf install -y
+pkg_remove  oldpkg
+pkg_update                    # apt-get update      /  dnf makecache
+pkg_is_installed fail2ban     # 0 installed, 1 not, 2 unknown family
+ensure_epel                   # enable EPEL on RHEL/Rocky/Alma; no-op on Fedora & Debian
+```
+
+All honor `--dry-run` via `run`. `pkg_install`/`pkg_remove`/`pkg_update` exit 3
+on an unknown family.
+
+### Service / firewall / web primitives
+
+```bash
+svc_name apache               # apache2 (debian)  /  httpd (rhel); also cron, ssh
+firewall_allow 443/tcp        # ufw allow … if ufw active, else firewall-cmd; warns if neither
+firewall_allow https          # service name form
+web_conf_dir nginx            # /etc/nginx/conf.d (both families)
+web_conf_dir apache           # /etc/apache2/sites-available (debian) /  /etc/httpd/conf.d (rhel)
+web_reload apache             # config-test then systemctl reload the right unit
+```
+
+`svc_name` only remaps services whose unit name actually differs by family
+(`apache`/`httpd`, `cron`/`crond`, `ssh`/`sshd`); everything else passes through.
+
 ## Guard primitives
 
 ### `require_root`
@@ -117,10 +166,21 @@ require_root
 
 Exits 1 if `$EUID != 0`. Error message suggests `sudo`.
 
+### `require_family <debian|rhel|any>`
+
+```bash
+require_family any      # accept both supported families, reject unknown distros
+require_family rhel     # gate to the RHEL family only
+```
+
+Calls `detect_distro`, then exits 3 on a family mismatch or an undetectable OS.
+Use `any` for cross-distro scripts; use a specific family only when the logic
+is genuinely family-specific.
+
 ### `require_debian`
 
-Reads `/etc/os-release`. Exits 3 unless `$ID` is `debian` or `ubuntu`. Error
-message names the distro it found.
+Backward-compatible alias for `require_family debian`. Debian-only scripts gate
+here until they are migrated to the family-aware primitives.
 
 ### `require_cmd <cmd>...`
 
@@ -128,8 +188,8 @@ message names the distro it found.
 require_cmd nginx certbot jq
 ```
 
-Exits 5 if any listed command is missing. For common tools, the error names
-the apt package that provides it (`jq` → `apt install jq`).
+Exits 5 if any listed command is missing. The install hint is family-aware:
+`apt install …` on Debian, `dnf install …` on RHEL.
 
 ### `require_flag <NAME>`
 

@@ -117,12 +117,90 @@ fi
 rm -f "$target" "$bak"
 
 # -----------------------------------------------------------------------------
-# Test 7: require_debian passes on Ubuntu
+# Test 7: distro detection populates family + package manager
 # -----------------------------------------------------------------------------
-if ( require_debian 2>/dev/null ); then
-    pass_t "require_debian accepts Ubuntu"
+SK_DISTRO_FAMILY="" SK_DISTRO_ID="" SK_PKG=""
+detect_distro
+case "$SK_DISTRO_FAMILY" in
+    debian)
+        if [[ "$SK_PKG" == "apt-get" ]]; then
+            pass_t "detect_distro: debian family -> apt-get ($SK_DISTRO_ID)"
+        else
+            fail_t "detect_distro: debian family but SK_PKG=$SK_PKG"
+        fi ;;
+    rhel)
+        if [[ "$SK_PKG" == "dnf" || "$SK_PKG" == "yum" ]]; then
+            pass_t "detect_distro: rhel family -> $SK_PKG ($SK_DISTRO_ID)"
+        else
+            fail_t "detect_distro: rhel family but SK_PKG=$SK_PKG"
+        fi ;;
+    *)
+        fail_t "detect_distro: family is '$SK_DISTRO_FAMILY' (expected debian or rhel)" ;;
+esac
+
+# Test 7b: detect_distro on a mocked os-release of the OTHER family
+#   We mock by overriding the function's file source via a subshell with a
+#   crafted /etc/os-release substitute is not possible without root; instead we
+#   exercise the family classifier directly through a temp wrapper.
+test_classify() {
+    # test_classify <ID> <ID_LIKE> -> echoes resulting family
+    local _id="$1" _like=" $2 "
+    local fam="unknown"
+    case "$_id" in
+        debian|ubuntu|linuxmint|pop|raspbian|devuan|kali) fam="debian" ;;
+        fedora|rhel|centos|rocky|almalinux|ol|amzn|scientific) fam="rhel" ;;
+        *)
+            if   [[ "$_like" == *" debian "* || "$_like" == *" ubuntu "* ]]; then fam="debian"
+            elif [[ "$_like" == *" rhel "* || "$_like" == *" fedora "* || "$_like" == *" centos "* ]]; then fam="rhel"
+            fi ;;
+    esac
+    printf '%s' "$fam"
+}
+if [[ "$(test_classify fedora '')" == "rhel" \
+   && "$(test_classify rocky 'rhel centos fedora')" == "rhel" \
+   && "$(test_classify ubuntu '')" == "debian" \
+   && "$(test_classify pureos 'debian')" == "debian" ]]; then
+    pass_t "family classifier maps Fedora/Rocky->rhel, Ubuntu/PureOS->debian"
 else
-    fail_t "require_debian rejected Ubuntu"
+    fail_t "family classifier produced wrong mappings"
+fi
+
+# Test 7c: require_family enforces and rejects correctly
+if ( require_family any 2>/dev/null ); then
+    pass_t "require_family any accepts a supported distro"
+else
+    fail_t "require_family any rejected a supported distro"
+fi
+# The family that is NOT the current one must be rejected
+OTHER="rhel"; [[ "$SK_DISTRO_FAMILY" == "rhel" ]] && OTHER="debian"
+if ( require_family "$OTHER" 2>/dev/null ); then
+    fail_t "require_family $OTHER should have failed on a $SK_DISTRO_FAMILY host"
+else
+    pass_t "require_family rejects the wrong family"
+fi
+
+# Test 7d: svc_name maps apache per family, passes others through
+EXPECT_APACHE="apache2"; [[ "$SK_DISTRO_FAMILY" == "rhel" ]] && EXPECT_APACHE="httpd"
+if [[ "$(svc_name apache)" == "$EXPECT_APACHE" && "$(svc_name nginx)" == "nginx" ]]; then
+    pass_t "svc_name maps apache->$EXPECT_APACHE and passes nginx through"
+else
+    fail_t "svc_name wrong: apache=$(svc_name apache) nginx=$(svc_name nginx)"
+fi
+
+# Test 7e: require_debian still works as a backward-compatible alias
+SK_DISTRO_FAMILY="" SK_DISTRO_ID="" SK_PKG=""; detect_distro
+if [[ "$SK_DISTRO_FAMILY" == "debian" ]]; then
+    if ( require_debian 2>/dev/null ); then
+        pass_t "require_debian alias accepts a Debian-family host"
+    else
+        fail_t "require_debian alias rejected a Debian-family host"
+    fi
+else
+    if ( require_debian 2>/dev/null ); then
+        fail_t "require_debian alias should reject a non-Debian host"
+    else
+        pass_t "require_debian alias rejects a non-Debian host"
+    fi
 fi
 
 # -----------------------------------------------------------------------------

@@ -48,6 +48,11 @@ SK_AUDIT_LOG="${SK_AUDIT_DIR}/${SK_SCRIPT_NAME}.log"
 SK_CLEANUP_PATHS=()
 SK_CLEANUP_FUNCS=()
 
+# Distro detection state — populated lazily by detect_distro
+SK_DISTRO_ID=""       # raw ID from /etc/os-release (ubuntu, debian, fedora, rhel, ...)
+SK_DISTRO_FAMILY=""   # debian | rhel | unknown
+SK_PKG=""             # apt-get | dnf | yum | ""
+
 # =============================================================================
 # Colors — collapse to empty strings when output is not a TTY, or under --json
 # or --quiet. Initialized lazily after flag parsing.
@@ -125,6 +130,181 @@ _sk_log_append() {
 }
 
 # =============================================================================
+# Distro detection & cross-distro primitives
+#
+# The engine supports two package families: Debian (Debian/Ubuntu + derivatives)
+# and RHEL (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle, Amazon). Scripts
+# should call these primitives instead of hardcoding apt/dnf/ufw/apache2 so the
+# same script runs on both families. See docs/multi-distro/plan.md.
+# =============================================================================
+
+detect_distro() {
+    # Populate SK_DISTRO_ID / SK_DISTRO_FAMILY / SK_PKG from /etc/os-release.
+    # Memoized: returns the cached result on subsequent calls. Reads os-release
+    # in a subshell so it never pollutes the caller's variable namespace.
+    [[ -n "$SK_DISTRO_FAMILY" ]] && return 0
+
+    if [[ ! -f /etc/os-release ]]; then
+        SK_DISTRO_ID="unknown"
+        SK_DISTRO_FAMILY="unknown"
+        SK_PKG=""
+        return 1
+    fi
+
+    # shellcheck disable=SC1091
+    SK_DISTRO_ID="$(. /etc/os-release && printf '%s' "${ID:-unknown}")"
+    local like
+    # shellcheck disable=SC1091
+    like=" $(. /etc/os-release && printf '%s' "${ID_LIKE:-}") "
+
+    case "$SK_DISTRO_ID" in
+        debian|ubuntu|linuxmint|pop|raspbian|devuan|kali)
+            SK_DISTRO_FAMILY="debian" ;;
+        fedora|rhel|centos|rocky|almalinux|ol|amzn|scientific)
+            SK_DISTRO_FAMILY="rhel" ;;
+        *)
+            if   [[ "$like" == *" debian "* || "$like" == *" ubuntu "* ]]; then
+                SK_DISTRO_FAMILY="debian"
+            elif [[ "$like" == *" rhel "* || "$like" == *" fedora "* || "$like" == *" centos "* ]]; then
+                SK_DISTRO_FAMILY="rhel"
+            else
+                SK_DISTRO_FAMILY="unknown"
+            fi
+            ;;
+    esac
+
+    case "$SK_DISTRO_FAMILY" in
+        debian) SK_PKG="apt-get" ;;
+        rhel)   if command -v dnf >/dev/null 2>&1; then SK_PKG="dnf"; else SK_PKG="yum"; fi ;;
+        *)      SK_PKG="" ;;
+    esac
+    return 0
+}
+
+pkg_install() {
+    # pkg_install <pkg>... — install packages on the detected family.
+    detect_distro
+    case "$SK_DISTRO_FAMILY" in
+        debian)
+            run env DEBIAN_FRONTEND=noninteractive apt-get install -y "$@" ;;
+        rhel)
+            run "$SK_PKG" install -y "$@" ;;
+        *)
+            die "pkg_install: unsupported distro family '${SK_DISTRO_FAMILY:-unknown}'" 3 ;;
+    esac
+}
+
+pkg_remove() {
+    # pkg_remove <pkg>...
+    detect_distro
+    case "$SK_DISTRO_FAMILY" in
+        debian) run apt-get remove -y "$@" ;;
+        rhel)   run "$SK_PKG" remove -y "$@" ;;
+        *)      die "pkg_remove: unsupported distro family '${SK_DISTRO_FAMILY:-unknown}'" 3 ;;
+    esac
+}
+
+pkg_update() {
+    # pkg_update — refresh the package metadata cache.
+    detect_distro
+    case "$SK_DISTRO_FAMILY" in
+        debian) run apt-get update ;;
+        rhel)   run "$SK_PKG" makecache ;;
+        *)      die "pkg_update: unsupported distro family '${SK_DISTRO_FAMILY:-unknown}'" 3 ;;
+    esac
+}
+
+pkg_is_installed() {
+    # pkg_is_installed <pkg> — return 0 if installed, 1 if not, 2 if unknown family.
+    detect_distro
+    case "$SK_DISTRO_FAMILY" in
+        debian) dpkg -s "$1" >/dev/null 2>&1 ;;
+        rhel)   rpm -q "$1" >/dev/null 2>&1 ;;
+        *)      return 2 ;;
+    esac
+}
+
+ensure_epel() {
+    # ensure_epel — enable EPEL on RHEL/CentOS/Rocky/Alma (needed for fail2ban,
+    # certbot, etc.). No-op on Debian and on Fedora (Fedora ships those in main).
+    detect_distro
+    [[ "$SK_DISTRO_FAMILY" == "rhel" ]] || return 0
+    [[ "$SK_DISTRO_ID" == "fedora" ]] && return 0
+    pkg_is_installed epel-release && return 0
+    run "$SK_PKG" install -y epel-release
+}
+
+svc_name() {
+    # svc_name <logical> — map a logical service to the family's unit name.
+    # Only services whose unit name actually differs by family are mapped;
+    # everything else passes through unchanged.
+    detect_distro
+    local s="$1"
+    case "$s" in
+        apache|httpd)
+            [[ "$SK_DISTRO_FAMILY" == "rhel" ]] && printf 'httpd' || printf 'apache2' ;;
+        cron|crond)
+            [[ "$SK_DISTRO_FAMILY" == "rhel" ]] && printf 'crond' || printf 'cron' ;;
+        ssh|sshd)
+            [[ "$SK_DISTRO_FAMILY" == "rhel" ]] && printf 'sshd' || printf 'ssh' ;;
+        *)
+            printf '%s' "$s" ;;
+    esac
+}
+
+firewall_allow() {
+    # firewall_allow <port[/proto]|service> — open on whichever firewall is
+    # active (ufw on Debian, firewalld on RHEL). Returns 1 if neither is active.
+    detect_distro
+    local what="$1"
+    if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: active"; then
+        run ufw allow "$what"
+    elif command -v firewall-cmd >/dev/null 2>&1 && firewall-cmd --state >/dev/null 2>&1; then
+        if [[ "$what" =~ ^[0-9]+(/(tcp|udp))?$ ]]; then
+            [[ "$what" == */* ]] || what="${what}/tcp"
+            run firewall-cmd --permanent --add-port="$what"
+        else
+            run firewall-cmd --permanent --add-service="$what"
+        fi
+        run firewall-cmd --reload
+    else
+        warn "no active firewall (ufw/firewalld) detected; cannot open $what"
+        return 1
+    fi
+}
+
+web_conf_dir() {
+    # web_conf_dir [nginx|apache] — directory to drop a vhost/server config in.
+    # For nginx, conf.d is portable across both families. For Apache, RHEL uses
+    # conf.d while Debian uses the sites-available/a2ensite model.
+    detect_distro
+    case "${1:-nginx}" in
+        nginx)
+            printf '/etc/nginx/conf.d' ;;
+        apache|httpd)
+            [[ "$SK_DISTRO_FAMILY" == "rhel" ]] && printf '/etc/httpd/conf.d' || printf '/etc/apache2/sites-available' ;;
+        *)
+            die "web_conf_dir: unknown server '${1}'" 2 ;;
+    esac
+}
+
+web_reload() {
+    # web_reload [nginx|apache] — config-test then reload the web server.
+    detect_distro
+    case "${1:-nginx}" in
+        nginx)
+            run nginx -t && run systemctl reload nginx ;;
+        apache|httpd)
+            local svc ctl
+            svc="$(svc_name apache)"
+            [[ "$SK_DISTRO_FAMILY" == "rhel" ]] && ctl="apachectl" || ctl="apache2ctl"
+            run "$ctl" configtest && run systemctl reload "$svc" ;;
+        *)
+            die "web_reload: unknown server '${1}'" 2 ;;
+    esac
+}
+
+# =============================================================================
 # Guards
 # =============================================================================
 
@@ -134,18 +314,29 @@ require_root() {
     fi
 }
 
-require_debian() {
-    if [[ ! -f /etc/os-release ]]; then
-        die "this script requires /etc/os-release (Debian/Ubuntu); not found" 3
+require_family() {
+    # require_family <debian|rhel|any>
+    # Gate a script to a package family. 'any' accepts both supported families
+    # but still rejects unknown distros. Exits 3 on mismatch or undetectable OS.
+    local want="${1:-any}"
+    if ! detect_distro; then
+        die "cannot detect distro: /etc/os-release not found" 3
     fi
-    # shellcheck disable=SC1091
-    . /etc/os-release
-    case "${ID:-}" in
-        ubuntu|debian) return 0 ;;
-        *)
-            die "this script targets Ubuntu/Debian; detected: ${PRETTY_NAME:-unknown}" 3
-            ;;
-    esac
+    if [[ "$want" == "any" ]]; then
+        [[ "$SK_DISTRO_FAMILY" == "unknown" ]] && \
+            die "unsupported distro: ${SK_DISTRO_ID:-unknown}" 3
+        return 0
+    fi
+    if [[ "$SK_DISTRO_FAMILY" != "$want" ]]; then
+        die "this script targets the ${want} family; detected ${SK_DISTRO_ID:-unknown} (${SK_DISTRO_FAMILY:-unknown})" 3
+    fi
+    return 0
+}
+
+require_debian() {
+    # Backward-compatible alias. Debian-only scripts gate here until they are
+    # migrated to family-aware primitives (see docs/multi-distro/plan.md).
+    require_family debian
 }
 
 require_cmd() {
@@ -158,7 +349,14 @@ require_cmd() {
     done
     if (( ${#missing[@]} > 0 )); then
         fail "missing required command(s): ${missing[*]}"
-        info "install with: sudo apt install ${missing[*]}"
+        detect_distro
+        local hint
+        case "$SK_DISTRO_FAMILY" in
+            debian) hint="sudo apt install ${missing[*]}" ;;
+            rhel)   hint="sudo ${SK_PKG:-dnf} install ${missing[*]}" ;;
+            *)      hint="install via your package manager: ${missing[*]}" ;;
+        esac
+        info "install with: $hint"
         die "dependency missing" 5
     fi
 }
