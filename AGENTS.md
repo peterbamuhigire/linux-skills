@@ -8,7 +8,7 @@ without duplicating logic or requiring a different directory layout.
 
 The repository contains:
 
-- Top-level skill directories such as `linux-webstack/`, `linux-security-analysis/`, and `linux-troubleshooting/`
+- Specialist skills grouped into numbered category directories, e.g. `04-web-and-mail-services/linux-webstack/`, `07-security-and-hardening/linux-security-analysis/`, and `09-troubleshooting-and-recovery/linux-troubleshooting/` (the `linux-sysadmin/` hub stays at the repo root)
 - A colocated `SKILL.md` in each skill directory
 - Optional `references/` and `scripts/` folders inside each skill directory
 - Repo-wide engine and operational docs under `docs/`

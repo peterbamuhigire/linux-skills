@@ -50,7 +50,7 @@ difference is pushed down into two layers:
 right family automatically. The two real intra-RHEL branch points — **EPEL**
 (needed on RHEL/Rocky/Alma, not Fedora) and **dnf4 vs dnf5** — are handled
 inside the primitives. Full contract:
-[`linux-bash-scripting/references/common-sh-contract.md`](linux-bash-scripting/references/common-sh-contract.md).
+[`10-automation-and-scripting/linux-bash-scripting/references/common-sh-contract.md`](10-automation-and-scripting/linux-bash-scripting/references/common-sh-contract.md).
 
 ---
 
@@ -59,11 +59,11 @@ inside the primitives. Full contract:
 | Domain | Debian/Ubuntu | RHEL family | Deep-dive reference |
 |---|---|---|---|
 | Packages | apt, snap, unattended-upgrades | dnf, flatpak, dnf-automatic, EPEL | `linux-package-management` |
-| Firewall | UFW (flat allow-list) | **firewalld** (zones) | [`firewalld-reference.md`](linux-firewall-ssl/references/firewalld-reference.md) |
-| Mandatory access control | AppArmor | **SELinux** (enforcing) | [`selinux-reference.md`](linux-server-hardening/references/selinux-reference.md) |
-| Apache | `apache2`, sites-available | **`httpd`**, conf.d (no a2ensite) | [`httpd-reference.md`](linux-webstack/references/httpd-reference.md) |
-| Networking | Netplan | **NetworkManager / nmcli** | [`networkmanager-reference.md`](linux-network-admin/references/networkmanager-reference.md) |
-| Install automation | autoinstall (subiquity) | **Kickstart** (Anaconda) | [`kickstart-reference.md`](linux-cloud-init/references/kickstart-reference.md) |
+| Firewall | UFW (flat allow-list) | **firewalld** (zones) | [`firewalld-reference.md`](07-security-and-hardening/linux-firewall-ssl/references/firewalld-reference.md) |
+| Mandatory access control | AppArmor | **SELinux** (enforcing) | [`selinux-reference.md`](07-security-and-hardening/linux-server-hardening/references/selinux-reference.md) |
+| Apache | `apache2`, sites-available | **`httpd`**, conf.d (no a2ensite) | [`httpd-reference.md`](04-web-and-mail-services/linux-webstack/references/httpd-reference.md) |
+| Networking | Netplan | **NetworkManager / nmcli** | [`networkmanager-reference.md`](03-networking-and-dns/linux-network-admin/references/networkmanager-reference.md) |
+| Install automation | autoinstall (subiquity) | **Kickstart** (Anaconda) | [`kickstart-reference.md`](01-provisioning-and-bootstrap/linux-cloud-init/references/kickstart-reference.md) |
 | Admin group | `sudo` | `wheel` | `linux-access-control` |
 | Containers | LXD / Docker | **Podman** / Docker | `linux-virtualization` |
 | Time sync | systemd-timesyncd | chrony | `linux-network-admin` |
@@ -75,7 +75,7 @@ inside the primitives. Full contract:
 ```
 docs/engine-design/      Engine specification + curated script inventory
 docs/multi-distro/       The two-family upgrade plan + status
-linux-bash-scripting/    Meta-skill: how every sk-* script is written
+10-automation-and-scripting/linux-bash-scripting/    Meta-skill: how every sk-* script is written
 linux-<domain>/          23 specialist skills, each with SKILL.md + references/
 scripts/                 Executable scripts (sk-* + common.sh library + tests)
 commands/                Command references by topic
@@ -109,66 +109,66 @@ Every specialist skill below leads with a **`## Distro support`** matrix
 skill (it routes, it doesn't operate).
 
 **Foundation**
-- [`linux-bash-scripting`](linux-bash-scripting/SKILL.md) — meta-skill. Script
+- [`linux-bash-scripting`](10-automation-and-scripting/linux-bash-scripting/SKILL.md) — meta-skill. Script
   template, the `common.sh` contract **including the distro primitives**,
   standard flags, interactive UX, safety patterns.
 - [`linux-sysadmin`](linux-sysadmin/SKILL.md) — the routing hub.
 
 **Security**
-- [`linux-security-analysis`](linux-security-analysis/SKILL.md) — 10-layer
+- [`linux-security-analysis`](07-security-and-hardening/linux-security-analysis/SKILL.md) — 10-layer
   read-only audit (SELinux/AppArmor aware).
-- [`linux-server-hardening`](linux-server-hardening/SKILL.md) — apply fixes;
-  ships the shared [SELinux reference](linux-server-hardening/references/selinux-reference.md).
-- [`linux-access-control`](linux-access-control/SKILL.md) — users, SSH keys,
+- [`linux-server-hardening`](07-security-and-hardening/linux-server-hardening/SKILL.md) — apply fixes;
+  ships the shared [SELinux reference](07-security-and-hardening/linux-server-hardening/references/selinux-reference.md).
+- [`linux-access-control`](02-users-access-and-secrets/linux-access-control/SKILL.md) — users, SSH keys,
   permissions, `sudo`/`wheel`.
-- [`linux-firewall-ssl`](linux-firewall-ssl/SKILL.md) — UFW **and firewalld**,
+- [`linux-firewall-ssl`](07-security-and-hardening/linux-firewall-ssl/SKILL.md) — UFW **and firewalld**,
   certbot, TLS.
-- [`linux-intrusion-detection`](linux-intrusion-detection/SKILL.md) — fail2ban,
+- [`linux-intrusion-detection`](07-security-and-hardening/linux-intrusion-detection/SKILL.md) — fail2ban,
   AIDE, auditd, SELinux AVC denials.
-- [`linux-secrets`](linux-secrets/SKILL.md) — scanning, age/sops, rotation.
+- [`linux-secrets`](02-users-access-and-secrets/linux-secrets/SKILL.md) — scanning, age/sops, rotation.
 
 **Operations**
-- [`linux-server-provisioning`](linux-server-provisioning/SKILL.md) — fresh
+- [`linux-server-provisioning`](01-provisioning-and-bootstrap/linux-server-provisioning/SKILL.md) — fresh
   server setup on either family.
-- [`linux-cloud-init`](linux-cloud-init/SKILL.md) — cloud-init (portable) +
+- [`linux-cloud-init`](01-provisioning-and-bootstrap/linux-cloud-init/SKILL.md) — cloud-init (portable) +
   **autoinstall and Kickstart**.
-- [`linux-site-deployment`](linux-site-deployment/SKILL.md) — deploy sites
+- [`linux-site-deployment`](04-web-and-mail-services/linux-site-deployment/SKILL.md) — deploy sites
   (static, PHP, Node), conf.d + SELinux docroot labeling.
-- [`linux-repo-sync`](linux-repo-sync/SKILL.md) — safe git updates:
+- [`linux-repo-sync`](10-automation-and-scripting/linux-repo-sync/SKILL.md) — safe git updates:
   `pull --rebase --autostash`, never `reset --hard`.
-- [`linux-service-management`](linux-service-management/SKILL.md) — systemd
+- [`linux-service-management`](05-services-and-virtualization/linux-service-management/SKILL.md) — systemd
   (identical) with family unit-name mapping.
-- [`linux-webstack`](linux-webstack/SKILL.md) — Nginx + Apache/httpd + PHP-FPM
-  + Node.js; ships the [httpd reference](linux-webstack/references/httpd-reference.md).
-- [`linux-package-management`](linux-package-management/SKILL.md) — apt/snap +
+- [`linux-webstack`](04-web-and-mail-services/linux-webstack/SKILL.md) — Nginx + Apache/httpd + PHP-FPM
+  + Node.js; ships the [httpd reference](04-web-and-mail-services/linux-webstack/references/httpd-reference.md).
+- [`linux-package-management`](01-provisioning-and-bootstrap/linux-package-management/SKILL.md) — apt/snap +
   **dnf/flatpak/dnf-automatic/EPEL**.
-- [`linux-disk-storage`](linux-disk-storage/SKILL.md) — usage, cleanup, inodes,
+- [`linux-disk-storage`](06-storage-and-filesystems/linux-disk-storage/SKILL.md) — usage, cleanup, inodes,
   swap (ext4/XFS aware).
-- [`linux-system-monitoring`](linux-system-monitoring/SKILL.md) — CPU, memory,
+- [`linux-system-monitoring`](08-observability-and-logging/linux-system-monitoring/SKILL.md) — CPU, memory,
   disk, network health.
-- [`linux-log-management`](linux-log-management/SKILL.md) — journalctl + the
+- [`linux-log-management`](08-observability-and-logging/linux-log-management/SKILL.md) — journalctl + the
   family log-path differences, logrotate.
 
 **Networking**
-- [`linux-network-admin`](linux-network-admin/SKILL.md) — interfaces, routes,
+- [`linux-network-admin`](03-networking-and-dns/linux-network-admin/SKILL.md) — interfaces, routes,
   Netplan **and NetworkManager/nmcli**, DNS client, NTP/chrony.
-- [`linux-dns-server`](linux-dns-server/SKILL.md) — authoritative DNS
+- [`linux-dns-server`](03-networking-and-dns/linux-dns-server/SKILL.md) — authoritative DNS
   (`bind9`/`bind`, unbound), SELinux zone contexts.
-- [`linux-mail-server`](linux-mail-server/SKILL.md) — Postfix, Dovecot, SPF,
+- [`linux-mail-server`](04-web-and-mail-services/linux-mail-server/SKILL.md) — Postfix, Dovecot, SPF,
   DKIM (EPEL), DMARC.
 
 **Containers & automation**
-- [`linux-virtualization`](linux-virtualization/SKILL.md) — LXD/**Podman**,
+- [`linux-virtualization`](05-services-and-virtualization/linux-virtualization/SKILL.md) — LXD/**Podman**,
   Docker, KVM/libvirt, SELinux volume labels.
-- [`linux-config-management`](linux-config-management/SKILL.md) — Ansible
+- [`linux-config-management`](01-provisioning-and-bootstrap/linux-config-management/SKILL.md) — Ansible
   (family-neutral modules), drift detection, AppArmor/SELinux.
-- [`linux-observability`](linux-observability/SKILL.md) — Prometheus
+- [`linux-observability`](08-observability-and-logging/linux-observability/SKILL.md) — Prometheus
   node_exporter, log shipping, `/health`.
 
 **Recovery**
-- [`linux-troubleshooting`](linux-troubleshooting/SKILL.md) — symptom-based
+- [`linux-troubleshooting`](09-troubleshooting-and-recovery/linux-troubleshooting/SKILL.md) — symptom-based
   diagnosis trees; SELinux as a hidden cause on RHEL.
-- [`linux-disaster-recovery`](linux-disaster-recovery/SKILL.md) — restore from
+- [`linux-disaster-recovery`](09-troubleshooting-and-recovery/linux-disaster-recovery/SKILL.md) — restore from
   backup, GRUB2/dracut/xfs_repair differences.
 
 ---
@@ -243,7 +243,7 @@ two-family promise from regressing.
 ## Legacy content
 
 - [update-all-repos](scripts/sk-update-all-repos.sh) — pulls every registered
-  repo safely (see [`linux-repo-sync`](linux-repo-sync/SKILL.md)).
+  repo safely (see [`linux-repo-sync`](10-automation-and-scripting/linux-repo-sync/SKILL.md)).
 - [rclone](commands/rclone.md), [redis](commands/redis.md) — command references.
 - [notes/](notes/) — setup guides for Astro sites, MySQL backups, Redis,
   server security, new-repo onboarding.

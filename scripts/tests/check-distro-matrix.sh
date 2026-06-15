@@ -32,8 +32,8 @@ ok()   { PASS=$((PASS + 1)); printf '  [PASS] %s\n' "$*"; }
 
 printf '== Distro-matrix invariant ==\n'
 
-for dir in linux-*/; do
-    skill="${dir%/}"
+for dir in linux-*/ [0-9]*-*/linux-*/; do
+    skill="$(basename "${dir%/}")"
     file="${dir}SKILL.md"
     [[ -f "$file" ]] || continue
     if is_exempt "$skill"; then

@@ -199,7 +199,7 @@ install_library() {
 # ----------------------------------------------------------------------------
 install_skill() {
     local skill="$1"
-    local skill_md="$REPO_ROOT/$skill/SKILL.md"
+    local skill_md; skill_md="$(find "$REPO_ROOT" -path "*/$skill/SKILL.md" -print -quit 2>/dev/null)"
 
     if [[ ! -f "$skill_md" ]]; then
         die "skill not found: $skill (no $skill_md)" 2
@@ -236,7 +236,7 @@ install_core() {
     local total_installed=0
 
     local skill_md
-    for skill_md in "$REPO_ROOT"/linux-*/SKILL.md; do
+    for skill_md in "$REPO_ROOT"/linux-*/SKILL.md "$REPO_ROOT"/[0-9]*-*/linux-*/SKILL.md; do
         local skill
         skill="$(basename "$(dirname "$skill_md")")"
         [[ "$skill" == "linux-sysadmin" ]] && continue
@@ -262,7 +262,7 @@ install_all() {
     install_library
 
     local skill_md
-    for skill_md in "$REPO_ROOT"/linux-*/SKILL.md; do
+    for skill_md in "$REPO_ROOT"/linux-*/SKILL.md "$REPO_ROOT"/[0-9]*-*/linux-*/SKILL.md; do
         local skill
         skill="$(basename "$(dirname "$skill_md")")"
         [[ "$skill" == "linux-sysadmin" ]] && continue
@@ -278,7 +278,7 @@ list_scripts() {
     printf "  %-30s %-30s %-6s %s\n" "SCRIPT" "SKILL" "CORE?" "INSTALLED?"
     printf "  %-30s %-30s %-6s %s\n" "------" "-----" "-----" "----------"
     local skill_md
-    for skill_md in "$REPO_ROOT"/linux-*/SKILL.md; do
+    for skill_md in "$REPO_ROOT"/linux-*/SKILL.md "$REPO_ROOT"/[0-9]*-*/linux-*/SKILL.md; do
         local skill
         skill="$(basename "$(dirname "$skill_md")")"
         while IFS='|' read -r name source core purpose; do
@@ -295,7 +295,7 @@ list_scripts() {
 # ----------------------------------------------------------------------------
 uninstall_skill() {
     local skill="$1"
-    local skill_md="$REPO_ROOT/$skill/SKILL.md"
+    local skill_md; skill_md="$(find "$REPO_ROOT" -path "*/$skill/SKILL.md" -print -quit 2>/dev/null)"
     [[ -f "$skill_md" ]] || die "skill not found: $skill" 2
 
     header "Uninstalling scripts for $skill"
@@ -353,7 +353,7 @@ update_skills() {
         # Re-install every currently-installed script
         info "re-installing every currently-installed script"
         local skill_md
-        for skill_md in "$REPO_ROOT"/linux-*/SKILL.md; do
+        for skill_md in "$REPO_ROOT"/linux-*/SKILL.md "$REPO_ROOT"/[0-9]*-*/linux-*/SKILL.md; do
             local skill
             skill="$(basename "$(dirname "$skill_md")")"
             # Only touch skills that have at least one script already installed

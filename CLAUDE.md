@@ -26,7 +26,12 @@ Alma, Oracle).
 ## Structure
 
 - `linux-sysadmin/` - Hub skill: routes to all specialist skills (start here)
-- `linux-*/` - Specialist skills: security, provisioning, deployment, services, etc.
+- `NN-category/linux-*/` - Specialist skills grouped into numbered categories:
+  `01-provisioning-and-bootstrap`, `02-users-access-and-secrets`, `03-networking-and-dns`,
+  `04-web-and-mail-services`, `05-services-and-virtualization`, `06-storage-and-filesystems`,
+  `07-security-and-hardening`, `08-observability-and-logging`, `09-troubleshooting-and-recovery`,
+  `10-automation-and-scripting`
+- `meta/` - Engine-authoring skills (`skill-writing`, `skill-safety-audit`)
 - `commands/` - Useful command references organized by topic
 - `scripts/` - Reusable shell scripts and snippets
 - `notes/` - General Linux notes and troubleshooting guides
