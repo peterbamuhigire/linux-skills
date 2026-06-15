@@ -1,6 +1,6 @@
 ---
 name: linux-access-control
-description: Manage users, groups, SSH keys, sudo access, and file permissions on Ubuntu/Debian servers. Create/delete users, manage sudo group, add/revoke SSH authorized_keys, audit who has access, fix file permissions in web roots and credential files.
+description: Manage users, groups, SSH keys, sudo access, and file permissions on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Create/delete users, manage the admin group (differs by family — `sudo` on Debian/Ubuntu, `wheel` on RHEL), add/revoke SSH authorized_keys, audit who has access, fix file permissions in web roots and credential files. RHEL family also adds authselect-managed PAM and SELinux user mapping.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -8,6 +8,29 @@ metadata:
   author_contact: "+256784464178"
 ---
 # Access Control
+
+## Distro support
+
+Two-family skill. `useradd`/`usermod`/`passwd`, SSH keys, and `/etc/sudoers.d/`
+work the same on both. The notable differences are the **admin group** and a
+couple of RHEL-only auth/SELinux layers. Body uses Debian/Ubuntu; substitute
+per this matrix.
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Sudo admin group | `sudo` | `wheel` |
+| Grant admin | `usermod -aG sudo <u>` | `usermod -aG wheel <u>` |
+| User/group tools | `useradd`, `usermod`, `passwd` | identical |
+| Sudoers drop-ins | `/etc/sudoers.d/` | same |
+| PAM config | `/etc/pam.d/` | `/etc/pam.d/` (managed via `authselect` on RHEL) |
+| Password quality | `libpam-pwquality` | `pam_pwquality` (in `pwquality.conf`) |
+| SELinux user mapping | n/a | `semanage login` maps Linux users → SELinux users |
+
+**RHEL-family note:** the admin group is `wheel`, not `sudo`. RHEL manages the
+PAM/nsswitch stack through `authselect` (don't hand-edit what it owns), and
+SELinux can confine users (`semanage login`, `semanage user`). See
+[`../linux-server-hardening/references/selinux-reference.md`](../linux-server-hardening/references/selinux-reference.md)
+and [`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -55,10 +78,13 @@ metadata:
 
 - [`references/users-sudoers-pam.md`](references/users-sudoers-pam.md)
 - [`references/permissions-reference.md`](references/permissions-reference.md)
+- [`../linux-server-hardening/references/selinux-reference.md`](../linux-server-hardening/references/selinux-reference.md) — SELinux user confinement (RHEL family)
 
-**This skill is self-contained.** Every command below is a standard
-Ubuntu/Debian tool. The `sk-*` scripts in the **Optional fast path** section
-are convenience wrappers — never required.
+**This skill is self-contained.** Every command below is a standard tool on
+both families (Debian/Ubuntu and RHEL); substitute the admin group and
+RHEL-only auth/SELinux layers per the **Distro support** matrix above. The
+`sk-*` scripts in the **Optional fast path** section are convenience
+wrappers — never required.
 
 ## User Management
 

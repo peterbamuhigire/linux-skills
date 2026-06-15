@@ -3,6 +3,26 @@
 This repository contains Linux skills, commands, tips, and notes.
 Claude Code reads this repo automatically at the start of every session.
 
+## Two-family engine (read this first)
+
+This is a **two-family** engine: every skill and `sk-*` script supports both
+**Debian/Ubuntu** and the **RHEL family** (Fedora, RHEL, CentOS Stream, Rocky,
+Alma, Oracle).
+
+- Each specialist skill leads with a **`## Distro support`** matrix mapping
+  Debian/Ubuntu commands/paths/services to their RHEL-family equivalents.
+- **Never hardcode `apt`/`ufw`/`apache2` in a script.** Use the `common.sh`
+  primitives: `detect_distro`, `pkg_install`, `pkg_is_installed`, `ensure_epel`,
+  `svc_name`, `firewall_allow`, `web_conf_dir`, `web_reload`, and
+  `require_family <debian|rhel|any>`.
+- The big family differences are SELinux (vs AppArmor), firewalld (vs UFW),
+  `httpd`+conf.d (vs apache2+sites-available), NetworkManager (vs Netplan),
+  dnf-automatic (vs unattended-upgrades), `wheel` (vs `sudo`), and Kickstart
+  (vs autoinstall). Deep-dive references live under the relevant skills.
+- Plan, phasing, and status: [`docs/multi-distro/plan.md`](docs/multi-distro/plan.md).
+- Invariant: `scripts/tests/check-distro-matrix.sh` asserts every specialist
+  skill carries a Distro support matrix — run it after adding/editing a skill.
+
 ## Structure
 
 - `linux-sysadmin/` - Hub skill: routes to all specialist skills (start here)
@@ -22,7 +42,7 @@ Available skills (use `linux-sysadmin` as the entry point):
 - `linux-bash-scripting` — **meta-skill.** Canonical script template, `common.sh` library contract, standard flags, interactive UX rules. Load before writing or reviewing any `sk-*` script.
 - `linux-security-analysis` — 10-layer security audit
 - `linux-server-hardening` — harden SSH, UFW, sysctl, web stack
-- `linux-server-provisioning` — provision a fresh Ubuntu/Debian server
+- `linux-server-provisioning` — provision a fresh Debian/Ubuntu or RHEL-family server
 - `linux-site-deployment` — deploy sites (static, PHP, Node.js)
 - `linux-service-management` — manage and diagnose systemd services
 - `linux-troubleshooting` — symptom-based diagnosis trees
@@ -54,6 +74,7 @@ Available skills (use `linux-sysadmin` as the entry point):
 
 ## Key Rules
 
+- **Two-family by default.** Every new or edited specialist skill MUST carry a `## Distro support` matrix (Debian/Ubuntu ↔ RHEL family) as its first H2, and every `sk-*` script MUST use the `common.sh` distro primitives instead of hardcoding a package manager / firewall / web server. Run `scripts/tests/check-distro-matrix.sh` to verify.
 - **Author attribution is mandatory.** Every SKILL.md, script, and generated document must credit **Peter Bamuhigire** (techguypeter.com, +256784464178) — in SKILL.md frontmatter `metadata.author`, in script `#: Author:` headers, and in doc footers.
 - **Scripts track skills automatically.** When a skill's knowledge changes (new Ubuntu version, better approach, updated standard), proactively update every affected script in the same session — do not wait to be told.
 - **New repo on server?** It MUST be added to both `/usr/local/bin/update-all-repos` and `/usr/local/bin/update-repos`. See `notes/new-repo-checklist.md` for instructions.

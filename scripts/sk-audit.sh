@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 #: Title:       sk-audit
 #: Synopsis:    sk-audit [--yes] [--log] [--json]
-#: Description: Read-only security audit for Ubuntu/Debian servers. Runs a 14-
-#:              section check and produces a PASS/WARN/FAIL report with a score.
-#:              Non-destructive — this script observes and reports, never
-#:              modifies. Use linux-server-hardening to fix what it finds.
+#: Description: Read-only security audit for Debian/Ubuntu and RHEL-family
+#:              (Fedora, RHEL, Rocky, Alma) servers. Runs a 14-section check and
+#:              produces a PASS/WARN/FAIL report with a score. Non-destructive —
+#:              this script observes and reports, never modifies. Family-specific
+#:              checks (updates, firewall, Apache, admin group) auto-detect via
+#:              common.sh. Use linux-server-hardening to fix what it finds.
 #: Author:      Peter Bamuhigire <techguypeter.com>
 #: Contact:     +256784464178
-#: Version:     0.2.0
+#: Version:     0.3.0
 
 # =============================================================================
 # 1. Library + safety
@@ -25,7 +27,7 @@ source "$SK_LIB" || { echo "FATAL: cannot source common.sh" >&2; exit 5; }
 # =============================================================================
 # 2. Defaults
 # =============================================================================
-SCRIPT_VERSION="0.2.0"
+SCRIPT_VERSION="0.3.0"
 
 # =============================================================================
 # 3. Functions
@@ -34,7 +36,8 @@ usage() {
     cat <<'EOF'
 Usage: sk-audit [OPTIONS]
 
-Read-only 14-section security audit for Ubuntu/Debian servers.
+Read-only 14-section security audit for Debian/Ubuntu and RHEL-family
+(Fedora, RHEL, Rocky, Alma) servers. Family-specific checks auto-detect.
 
 Checks: system updates, SSH hardening, firewall, fail2ban, open ports,
 Apache, PHP, SSL certificates, kernel sysctl hardening, user accounts,
@@ -56,7 +59,7 @@ STANDARD FLAGS:
 EXIT CODES:
     0  success (audit completed, regardless of findings)
     1  generic failure
-    3  precondition failed (not root or not Debian/Ubuntu)
+    3  precondition failed (not root, or unsupported distro)
 
 EXAMPLES:
     sudo sk-audit
@@ -129,7 +132,7 @@ parse_standard_flags "$@"
 # 5. Sanity checks
 # =============================================================================
 require_root
-require_debian
+require_family any        # Debian/Ubuntu or RHEL family; sets SK_DISTRO_FAMILY
 
 # =============================================================================
 # 6. Main logic — 14 audit sections
@@ -143,28 +146,49 @@ printf "  IP:   %s\n" "$(hostname -I | awk '{print $1}')"
 printf "  Date: %s\n" "$(date '+%Y-%m-%d %H:%M:%S')"
 # shellcheck disable=SC1091
 printf "  OS:   %s\n" "$(. /etc/os-release && echo "$PRETTY_NAME")"
+printf "  Fam:  %s (%s)\n" "$SK_DISTRO_FAMILY" "$SK_PKG"
 printf "==============================================\n"
 printf "${SK_NC}\n"
 
 # --- 1. System updates -------------------------------------------------------
 header "1. System Updates"
-if dpkg -l 2>/dev/null | grep -q unattended-upgrades; then
-    pass "unattended-upgrades is installed"
-else
-    fail "unattended-upgrades is NOT installed"
-fi
-
-if [[ -f /etc/apt/apt.conf.d/20auto-upgrades ]]; then
-    if grep -q 'Unattended-Upgrade "1"' /etc/apt/apt.conf.d/20auto-upgrades; then
-        pass "Automatic security updates are enabled"
+if [[ "$SK_DISTRO_FAMILY" == "debian" ]]; then
+    if pkg_is_installed unattended-upgrades; then
+        pass "unattended-upgrades is installed"
     else
-        warn "auto-upgrades file exists but unattended upgrades may be disabled"
+        fail "unattended-upgrades is NOT installed"
     fi
+
+    if [[ -f /etc/apt/apt.conf.d/20auto-upgrades ]]; then
+        if grep -q 'Unattended-Upgrade "1"' /etc/apt/apt.conf.d/20auto-upgrades; then
+            pass "Automatic security updates are enabled"
+        else
+            warn "auto-upgrades file exists but unattended upgrades may be disabled"
+        fi
+    else
+        fail "Automatic updates not configured"
+    fi
+
+    UPDATES=$(apt list --upgradable 2>/dev/null | grep -c "upgradable" || true)
 else
-    fail "Automatic updates not configured"
+    # RHEL family: dnf-automatic is the unattended-upgrades equivalent
+    if pkg_is_installed dnf-automatic; then
+        pass "dnf-automatic is installed"
+    else
+        fail "dnf-automatic is NOT installed"
+    fi
+
+    if systemctl is-active dnf-automatic.timer &>/dev/null \
+       || systemctl is-active dnf-automatic-install.timer &>/dev/null; then
+        pass "Automatic security updates are enabled (dnf-automatic.timer active)"
+    else
+        fail "Automatic updates not configured (dnf-automatic.timer inactive)"
+    fi
+
+    # `dnf check-update` exits 100 when updates exist; count package lines.
+    UPDATES=$("$SK_PKG" -q check-update 2>/dev/null | grep -cE '^[A-Za-z0-9]' || true)
 fi
 
-UPDATES=$(apt list --upgradable 2>/dev/null | grep -c "upgradable" || true)
 if (( UPDATES > 10 )); then
     warn "$UPDATES packages have pending updates"
 elif (( UPDATES > 0 )); then
@@ -215,21 +239,36 @@ fi
 
 # --- 3. Firewall -------------------------------------------------------------
 header "3. Firewall"
-UFW_STATUS=$(ufw status 2>/dev/null | head -1)
-if echo "$UFW_STATUS" | grep -q "active"; then
-    pass "UFW firewall is active"
-    UFW_DEFAULT=$(ufw status verbose 2>/dev/null | grep "Default:")
-    if echo "$UFW_DEFAULT" | grep -q "deny (incoming)"; then
-        pass "Default incoming policy is DENY"
+if [[ "$SK_DISTRO_FAMILY" == "debian" ]]; then
+    UFW_STATUS=$(ufw status 2>/dev/null | head -1)
+    if echo "$UFW_STATUS" | grep -q "active"; then
+        pass "UFW firewall is active"
+        UFW_DEFAULT=$(ufw status verbose 2>/dev/null | grep "Default:")
+        if echo "$UFW_DEFAULT" | grep -q "deny (incoming)"; then
+            pass "Default incoming policy is DENY"
+        else
+            warn "Default incoming policy is not DENY: $UFW_DEFAULT"
+        fi
+        info "Open ports:"
+        ufw status 2>/dev/null | grep "ALLOW" | while read -r line; do
+            printf "         %s\n" "$line"
+        done
     else
-        warn "Default incoming policy is not DENY: $UFW_DEFAULT"
+        fail "UFW firewall is NOT active"
     fi
-    info "Open ports:"
-    ufw status 2>/dev/null | grep "ALLOW" | while read -r line; do
-        printf "         %s\n" "$line"
-    done
 else
-    fail "UFW firewall is NOT active"
+    # RHEL family: firewalld
+    if systemctl is-active firewalld &>/dev/null; then
+        pass "firewalld is active"
+        FW_ZONE=$(firewall-cmd --get-default-zone 2>/dev/null)
+        info "Default zone: ${FW_ZONE:-unknown}"
+        info "Allowed services/ports:"
+        firewall-cmd --list-all 2>/dev/null \
+            | grep -E '^\s+(services|ports):' \
+            | while read -r line; do printf "         %s\n" "$line"; done
+    else
+        fail "firewalld is NOT active"
+    fi
 fi
 
 # --- 4. Fail2Ban -------------------------------------------------------------
@@ -282,23 +321,29 @@ fi
 
 # --- 6. Apache security ------------------------------------------------------
 header "6. Apache Web Server"
-if systemctl is-active apache2 &>/dev/null; then
-    pass "Apache is running"
-    TOKENS=$(grep -rh "^ServerTokens" /etc/apache2/conf-enabled/ /etc/apache2/conf-available/security.conf 2>/dev/null | tail -1 | awk '{print $2}')
+APACHE_SVC="$(svc_name apache)"            # apache2 (debian) / httpd (rhel)
+if [[ "$SK_DISTRO_FAMILY" == "debian" ]]; then
+    APACHE_CONF=(/etc/apache2/conf-enabled/ /etc/apache2/conf-available/security.conf)
+else
+    APACHE_CONF=(/etc/httpd/conf.d/ /etc/httpd/conf/httpd.conf)
+fi
+if systemctl is-active "$APACHE_SVC" &>/dev/null; then
+    pass "Apache ($APACHE_SVC) is running"
+    TOKENS=$(grep -rh "^ServerTokens" "${APACHE_CONF[@]}" 2>/dev/null | tail -1 | awk '{print $2}')
     if [[ "$TOKENS" == "Prod" ]]; then
         pass "ServerTokens set to Prod"
     else
         warn "ServerTokens is '${TOKENS:-OS}' — set to 'Prod'"
     fi
 
-    SIGNATURE=$(grep -rh "^ServerSignature" /etc/apache2/conf-enabled/ /etc/apache2/conf-available/security.conf 2>/dev/null | tail -1 | awk '{print $2}')
+    SIGNATURE=$(grep -rh "^ServerSignature" "${APACHE_CONF[@]}" 2>/dev/null | tail -1 | awk '{print $2}')
     if [[ "$SIGNATURE" == "Off" ]]; then
         pass "ServerSignature is Off"
     else
         warn "ServerSignature is '${SIGNATURE:-On}' — set to 'Off'"
     fi
 else
-    info "Apache is not running"
+    info "Apache ($APACHE_SVC) is not running"
 fi
 
 # --- 7. PHP security ---------------------------------------------------------
@@ -340,7 +385,9 @@ if command -v certbot &>/dev/null; then
             fi
         done <<< "$CERTS"
     fi
-    if systemctl is-active certbot.timer &>/dev/null || systemctl is-active snap.certbot.renew.timer &>/dev/null; then
+    if systemctl is-active certbot.timer &>/dev/null \
+       || systemctl is-active certbot-renew.timer &>/dev/null \
+       || systemctl is-active snap.certbot.renew.timer &>/dev/null; then
         pass "Certificate auto-renewal timer is active"
     fi
 else
@@ -381,8 +428,10 @@ else
     fail "Accounts with EMPTY passwords: $EMPTY_PW"
 fi
 
-SUDO_USERS=$(grep -E "^sudo:" /etc/group | cut -d: -f4)
-info "Users in sudo group: ${SUDO_USERS:-none}"
+# Admin group differs by family: 'sudo' on Debian/Ubuntu, 'wheel' on RHEL
+ADMIN_GROUP="sudo"; [[ "$SK_DISTRO_FAMILY" == "rhel" ]] && ADMIN_GROUP="wheel"
+SUDO_USERS=$(grep -E "^${ADMIN_GROUP}:" /etc/group | cut -d: -f4)
+info "Users in ${ADMIN_GROUP} group: ${SUDO_USERS:-none}"
 
 # --- 11. File permissions ----------------------------------------------------
 header "11. Critical File Permissions"
@@ -443,7 +492,7 @@ else
     info "AIDE not installed (optional)"
 fi
 
-if dpkg -l 2>/dev/null | grep -q "logwatch\|logcheck"; then
+if pkg_is_installed logwatch || pkg_is_installed logcheck; then
     pass "Log monitoring tool installed"
 else
     info "No log monitoring tool installed"
@@ -453,6 +502,28 @@ if systemctl is-active auditd &>/dev/null; then
     pass "auditd is running"
 else
     info "auditd not running (optional)"
+fi
+
+# Mandatory access control — SELinux (RHEL) or AppArmor (Debian/Ubuntu)
+if [[ "$SK_DISTRO_FAMILY" == "rhel" ]]; then
+    if command -v getenforce &>/dev/null; then
+        MODE=$(getenforce 2>/dev/null)
+        if [[ "$MODE" == "Enforcing" ]]; then
+            pass "SELinux is Enforcing"
+        elif [[ "$MODE" == "Permissive" ]]; then
+            warn "SELinux is Permissive (logging only — set to Enforcing)"
+        else
+            fail "SELinux is Disabled"
+        fi
+    else
+        warn "SELinux tools not found (expected on the RHEL family)"
+    fi
+else
+    if command -v aa-status &>/dev/null && aa-status --enabled 2>/dev/null; then
+        pass "AppArmor is enabled"
+    else
+        warn "AppArmor not enabled"
+    fi
 fi
 
 # =============================================================================

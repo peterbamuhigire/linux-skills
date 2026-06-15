@@ -1,6 +1,6 @@
 ---
 name: linux-virtualization
-description: Manage containers and VMs on Ubuntu/Debian — LXD system containers, Docker/Podman application containers, KVM virtual machines. Use for container lifecycle, snapshots, backups, and host-level inspection.
+description: Manage containers and VMs across Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) — system containers, application containers, KVM virtual machines. Docker and KVM/libvirt (virsh, virt-install) are portable across both families, but the default container engine differs (LXD on Ubuntu vs Podman on RHEL) and SELinux labels container volumes on RHEL. Use for container lifecycle, snapshots, backups, and host-level inspection.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -9,6 +9,30 @@ metadata:
 ---
 
 # Linux Virtualization
+
+## Distro support
+
+Two-family skill. KVM/libvirt (`virsh`, `virt-install`) and Docker are portable;
+the big difference is the **default container engine** — Ubuntu leans on **LXD**
+(Canonical/snap), the RHEL family ships **Podman** (daemonless, rootless,
+drop-in `docker` CLI). Body uses Debian/Ubuntu; substitute per this matrix.
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Default app-container engine | Docker / LXD | **Podman** (`podman`, `podman-compose`) |
+| Docker install | `docker.io` / Docker CE repo | Docker CE repo (`dnf`) |
+| System containers | LXD (snap) | Podman / `systemd-nspawn` (no native LXD) |
+| VMs (KVM) | `qemu-kvm`, `libvirt-daemon-system` | `qemu-kvm`, `libvirt` |
+| Manage VMs | `virsh`, `virt-install` | identical |
+| Container firewall | `ufw` (known quirks) | `firewalld` + nftables |
+| Volume labeling | n/a | **SELinux**: mount with `:z`/`:Z` so containers can access volumes |
+
+**RHEL-family notes:** prefer **Podman** (rootless, no daemon; `alias docker=podman`
+works for most flows). LXD is Ubuntu-centric and not native on RHEL. SELinux
+relabels bind-mounted volumes — append `:z` (shared) or `:Z` (private) to
+`-v host:container` mounts or the container gets permission denied. See
+[`../linux-server-hardening/references/selinux-reference.md`](../linux-server-hardening/references/selinux-reference.md)
+and [`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -57,9 +81,11 @@ metadata:
 - [`references/lxd-reference.md`](references/lxd-reference.md)
 - [`references/docker-reference.md`](references/docker-reference.md)
 
-**This skill is self-contained.** Every command below uses standard
-Ubuntu/Debian tools (`lxc`, `docker`, `virsh`). The `sk-*` scripts in the
-**Optional fast path** section are convenience wrappers — never required.
+**This skill is self-contained.** Every command below uses standard tools
+(`lxc`, `docker`, `virsh`); the body shows Debian/Ubuntu, with RHEL-family
+substitutions (Podman, SELinux `:z`/`:Z`) per the **Distro support** matrix
+above. The `sk-*` scripts in the **Optional fast path** section are
+convenience wrappers — never required.
 
 This skill owns the container and VM layer on a host: **LXD** system
 containers (Canonical's native), **Docker/Podman** for application
@@ -300,6 +326,7 @@ docker inspect web01 --format '{{.RestartCount}}'
   reference: init, profiles, storage, networks, 6 worked examples.
 - [`references/docker-reference.md`](references/docker-reference.md) —
   Docker daemon config, Dockerfile best practices, compose, security.
+- [`../linux-server-hardening/references/selinux-reference.md`](../linux-server-hardening/references/selinux-reference.md) — SELinux volume labeling for containers (RHEL family)
 - Book: *Ubuntu Server Guide* (Canonical, Focal) — LXD and KVM chapters.
 - Book: *Mastering Ubuntu* (Atef, 2023) — Docker coverage.
 - Man pages: `lxc(1)`, `docker(1)`, `virsh(1)`.

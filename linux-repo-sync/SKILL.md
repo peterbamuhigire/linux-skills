@@ -9,6 +9,22 @@ metadata:
 ---
 # Repo Sync — safe git updates on a server
 
+## Distro support
+
+**Fully portable.** This skill is `git`-only and identical on both families
+(Debian/Ubuntu and the RHEL family: Fedora, RHEL, CentOS Stream, Rocky, Alma,
+Oracle). The doctrine below — `pull --rebase --autostash`, porcelain
+dirty-checks, never `reset --hard`/`clean -fd` — is distro-neutral. The only
+difference is installing git itself.
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Install git | `apt install git` | `dnf install git` |
+| Everything else (`git pull --rebase --autostash`, status, conflict recovery) | identical | identical |
+
+In `sk-*` scripts use `pkg_install git` from `common.sh` if you must ensure git
+is present. See [`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
+
 ## Use when
 
 - Writing, reviewing, or running any script that pulls git repos on a server

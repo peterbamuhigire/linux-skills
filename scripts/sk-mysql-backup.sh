@@ -8,7 +8,7 @@
 #:              cron invocations.
 #: Author:      Peter Bamuhigire <techguypeter.com>
 #: Contact:     +256784464178
-#: Version:     0.2.0
+#: Version:     0.3.0
 
 # =============================================================================
 # 1. Library + safety
@@ -26,7 +26,7 @@ source "$SK_LIB" || { echo "FATAL: cannot source common.sh" >&2; exit 5; }
 # =============================================================================
 # 2. Defaults
 # =============================================================================
-SCRIPT_VERSION="0.2.0"
+SCRIPT_VERSION="0.3.0"
 
 # These are overridable by a config file at /etc/linux-skills/mysql-backup.conf
 # or by explicit flags. Never hard-code credentials here.
@@ -136,7 +136,7 @@ done
 # 5. Sanity checks
 # =============================================================================
 load_config
-require_debian
+require_family any        # runs on Debian/Ubuntu and the RHEL family
 require_cmd mysqldump gpg tar find
 
 [[ -n "$RCLONE_REMOTE" ]] && require_cmd rclone

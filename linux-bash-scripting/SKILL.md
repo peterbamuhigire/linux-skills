@@ -1,6 +1,6 @@
 ---
 name: linux-bash-scripting
-description: Write interactive, secure, powerful Bash scripts for the linux-skills engine. Defines the canonical script template, the common.sh library contract, standard flags, interactive UX rules, and safety patterns every `sk-*` script must follow. Use before writing or reviewing any script in this repo.
+description: Write interactive, secure, powerful, family-aware Bash scripts for the linux-skills engine. Scripts must run on both families (Debian/Ubuntu + the RHEL family: Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) by calling the common.sh distro primitives instead of hardcoding apt/ufw/apache2. Defines the canonical script template, the common.sh library contract, standard flags, interactive UX rules, and safety patterns every `sk-*` script must follow. Use before writing or reviewing any script in this repo.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -9,6 +9,27 @@ metadata:
 ---
 
 # Linux Bash Scripting — the meta-skill
+
+## Distro support
+
+This meta-skill is **how** sk-* scripts stay two-family. A script must never
+hardcode `apt`, `ufw`, or `apache2` — it calls the `common.sh` primitives, which
+resolve to the right tool for the detected family (Debian/Ubuntu or the RHEL
+family: Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle).
+
+| Need | Don't hardcode | Use this primitive |
+|---|---|---|
+| Detect the family | parse `/etc/os-release` | `detect_distro` → `SK_DISTRO_FAMILY`, `SK_PKG` |
+| Install packages | `apt install` / `dnf install` | `pkg_install <pkg>...` |
+| Query installed | `dpkg -s` / `rpm -q` | `pkg_is_installed <pkg>` |
+| Enable extra repo | `add-apt-repository` / EPEL | `ensure_epel` (no-op off-RHEL & on Fedora) |
+| Service unit name | `apache2` / `httpd` | `svc_name apache` |
+| Open a firewall port | `ufw allow` / `firewall-cmd` | `firewall_allow <port|service>` |
+| Web config dir / reload | `sites-available` / `conf.d` | `web_conf_dir`, `web_reload` |
+| Gate the script | check `$ID` | `require_family <debian|rhel|any>` |
+
+Full contract: [`references/common-sh-contract.md`](references/common-sh-contract.md).
+Plan: [`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -117,8 +138,8 @@ The six sections in order:
    script accepts.
 5. **Flag parsing** — call `parse_standard_flags "$@"`, then parse
    script-specific decision flags from `REMAINING_ARGS`.
-6. **Sanity checks** — `require_root`, `require_debian`, `require_cmd`, and
-   any `require_flag` calls for `--yes` mode.
+6. **Sanity checks** — `require_root`, `require_family <debian|rhel|any>`,
+   `require_cmd`, and any `require_flag` calls for `--yes` mode.
 7. **Main logic** — the work, expressed via `header`, `pass`, `warn`, `fail`,
    `info`, and `run`.
 
@@ -150,7 +171,7 @@ Always use these. Never roll your own `echo -e "\033[31m..."`.
 | Function | Purpose |
 |---|---|
 | `require_root` | Exit 1 if not root. |
-| `require_debian` | Exit 3 if `/etc/os-release` isn't Debian/Ubuntu. |
+| `require_family <debian\|rhel\|any>` | Exit 3 if the detected family isn't allowed. Gate a script to one family, or pass `any` for both. Prefer this over the legacy `require_debian`. |
 | `require_cmd <cmd>...` | Exit 5 if any command is missing; names the package. |
 | `require_flag <NAME>` | Under `--yes`, exit 2 if the named global variable is empty. |
 

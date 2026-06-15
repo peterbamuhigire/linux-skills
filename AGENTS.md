@@ -18,6 +18,23 @@ Do not assume the repo must live under a particular folder name. For Claude Code
 cloned to `~/.claude/skills`. For Codex, use the repository in place and treat the existing skill
 directories as the source of truth.
 
+## Two-Family Support (Debian/Ubuntu + RHEL)
+
+Every specialist skill and `sk-*` script supports **both** the Debian family
+(Debian, Ubuntu) and the **RHEL family** (Fedora, RHEL, CentOS Stream, Rocky,
+Alma, Oracle). When acting on a task:
+
+- Read the skill's **`## Distro support`** matrix (its first H2) to pick the
+  right command/path/service for the target distro.
+- In scripts, never hardcode `apt`/`ufw`/`apache2`. Use the `common.sh`
+  primitives: `detect_distro`, `pkg_install`, `pkg_is_installed`, `ensure_epel`,
+  `svc_name`, `firewall_allow`, `web_conf_dir`, `web_reload`, `require_family`.
+- Deep-dive RHEL references: firewalld, SELinux, httpd/conf.d,
+  NetworkManager/nmcli, Kickstart — each lives under its owning skill's
+  `references/`.
+- Design, phasing, and status: `docs/multi-distro/plan.md`. The invariant
+  `scripts/tests/check-distro-matrix.sh` must pass.
+
 ## Baseline Skills
 
 Start from these skills unless the task is already narrowly scoped:

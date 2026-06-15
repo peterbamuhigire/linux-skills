@@ -1,6 +1,6 @@
 ---
 name: linux-disaster-recovery
-description: Restore from GPG-encrypted backups on Ubuntu/Debian servers. Covers MySQL database restore (single DB or full), app file restore, config snapshots, and emergency recovery checklist. Backups are AES256 GPG encrypted, stored locally and on Google Drive via rclone. Always confirms before any destructive restore.
+description: Restore from GPG-encrypted backups on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Covers MySQL database restore (single DB or full), app file restore, config snapshots, and emergency recovery checklist. Backup/restore logic is portable across both families; recovery-time tooling differs at a few critical points — bootloader paths and GRUB regeneration, initramfs rebuild tooling, and filesystem repair tools — get these wrong and a box won't boot. Backups are AES256 GPG encrypted, stored locally and on Google Drive via rclone. Always confirms before any destructive restore.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -8,6 +8,31 @@ metadata:
   author_contact: "+256784464178"
 ---
 # Disaster Recovery
+
+## Distro support
+
+Two-family skill. Backup/restore strategy and systemd rescue/emergency targets
+are identical; recovery-time tooling differs at a few critical points — get
+these wrong and a box won't boot. Body uses Debian/Ubuntu; substitute per this
+matrix.
+
+| Recovery concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Reinstall packages | `apt install --reinstall` | `dnf reinstall` |
+| Regenerate GRUB | `update-grub` | `grub2-mkconfig -o /boot/grub2/grub.cfg` |
+| GRUB config path | `/boot/grub/grub.cfg` | `/boot/grub2/grub.cfg` (UEFI: `/boot/efi/EFI/<distro>/`) |
+| Rebuild initramfs | `update-initramfs -u` | `dracut -f` |
+| Default root FS / repair | ext4 → `e2fsck` | xfs → `xfs_repair` (xfs can't shrink) |
+| Restore networking | Netplan | NetworkManager/`nmcli` |
+| Restore firewall | `ufw` | `firewalld` |
+| Rescue target | `systemctl rescue` | identical |
+
+**RHEL-family note:** the two recovery actions that most often differ are
+**GRUB regeneration** (`grub2-mkconfig`, not `update-grub`) and **initramfs
+rebuild** (`dracut -f`, not `update-initramfs`). Root is usually XFS — use
+`xfs_repair`, and remember XFS cannot be shrunk. See
+[`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md). In `sk-*` scripts
+use the `common.sh` package primitives.
 
 ## Use when
 
@@ -57,7 +82,8 @@ metadata:
 - [`references/restore-procedures.md`](references/restore-procedures.md)
 
 **This skill is self-contained.** Every command below works on a stock
-Ubuntu/Debian server. The `sk-*` scripts in the **Optional fast path**
+Debian/Ubuntu or RHEL-family server (substitute per the **Distro support**
+matrix above). The `sk-*` scripts in the **Optional fast path**
 section at the bottom are convenience wrappers — never required.
 
 **Always confirm before restoring.** A restore overwrites existing data.
