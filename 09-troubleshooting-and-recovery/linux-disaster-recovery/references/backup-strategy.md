@@ -108,20 +108,18 @@ The rule is "back up what's irreplaceable", not "skip everything rebuildable".
 
 ## Compression trade-offs
 
-| Tool | CPU | Ratio | When to use |
-|---|---|---|---|
-| `gzip` (`gz`) | fast | medium | Default. Good balance. Every Unix can read it. |
-| `xz` | slow | best | Archive backups you'll rarely restore. Disk-bound servers. |
-| `bzip2` | medium | medium-good | Legacy choice, rarely best at anything now. |
-| `zstd` | fast | very good | Modern choice. Better than gzip at similar CPU. Requires `zstd` package. |
-
-Recommended default for a live backup cron: **gzip**. Fast, universal, good
-enough ratio. Switch to `zstd` if you're disk-bound.
+Quick rule: **gzip** for live/rotated backups (fast, universal), **xz** for
+cold archives, **zstd** if you are disk-bound. The detailed `tar` create/verify
+mechanics — metadata flags (`--acls --xattrs --numeric-owner`), incremental
+`--listed-incremental` level-0/1 backups, and archive verification — now live in
+the **`13-backup-and-archiving/linux-archive-integrity`** skill. Hard-linked
+incremental rsync snapshots live in
+**`13-backup-and-archiving/linux-rsync-sync`**. This file keeps only the
+*strategy* (what/where/how-often/retention/monitoring).
 
 ```bash
-tar czf backup.tar.gz <dir>          # gzip (default)
+tar czf backup.tar.gz <dir>          # gzip (default; see linux-archive-integrity)
 tar cJf backup.tar.xz <dir>          # xz
-tar --use-compress-program=zstd -cf backup.tar.zst <dir>   # zstd
 ```
 
 ---

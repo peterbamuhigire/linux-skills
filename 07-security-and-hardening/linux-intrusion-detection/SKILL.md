@@ -1,6 +1,6 @@
 ---
 name: linux-intrusion-detection
-description: Manage intrusion detection on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). fail2ban (check jails, unban IPs, add custom jails, tune bans, read logs), AIDE file integrity monitoring (install, initialise, run checks, schedule daily), auditd system call auditing (install, watch files, read audit log), and rootkit scanning with rkhunter and chkrootkit (install, baseline with `--propupd`, scheduled scans, interpreting warnings, reducing false positives) all run on both families — fail2ban and the rootkit scanners need EPEL on RHEL/Rocky/Alma, and fail2ban reads journald/`/var/log/secure` via `backend = systemd`. On the RHEL family, SELinux AVC denials are an additional intrusion-detection signal.
+description: Manage ACTIVE intrusion detection on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). fail2ban (check jails, unban IPs, add custom jails, tune bans, read logs) and rootkit scanning with rkhunter and chkrootkit (install, baseline with `--propupd`, scheduled scans, interpreting warnings, reducing false positives) — both run on both families, need EPEL on RHEL/Rocky/Alma, and fail2ban reads journald/`/var/log/secure` via `backend = systemd`. On the RHEL family, SELinux AVC denials are an additional intrusion-detection signal. For the compliance/forensic side — auditd system-call auditing and AIDE file-integrity monitoring — use the dedicated skills linux-auditd-rules and linux-file-integrity in 15-compliance-and-auditing.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -11,17 +11,17 @@ metadata:
 
 ## Distro support
 
-Two-family skill. fail2ban, AIDE, auditd, and the rootkit scanners
-(rkhunter, chkrootkit) run on both families; install and a couple of paths
-differ, and the RHEL family adds SELinux AVC denials as an intrusion signal.
-Body uses Debian/Ubuntu; substitute per this matrix.
+Two-family skill. fail2ban and the rootkit scanners (rkhunter, chkrootkit)
+run on both families; install and a couple of paths differ, and the RHEL
+family adds SELinux AVC denials as an intrusion signal. Body uses
+Debian/Ubuntu; substitute per this matrix. **auditd and AIDE moved to
+`15-compliance-and-auditing`** — see `linux-auditd-rules` and
+`linux-file-integrity`.
 
 | Concept | Debian/Ubuntu | RHEL family |
 |---|---|---|
 | fail2ban install | `apt install fail2ban` | `dnf install fail2ban` (**EPEL** on RHEL/Rocky/Alma; main on Fedora) |
 | fail2ban backend | reads `/var/log/auth.log` | reads journald / `/var/log/secure` (use `backend = systemd`) |
-| AIDE | `apt install aide` | `dnf install aide` |
-| auditd | `auditd` | `auditd` (same) |
 | rkhunter / chkrootkit | `apt install rkhunter chkrootkit` | `dnf install rkhunter chkrootkit` (**EPEL** on RHEL/Rocky/Alma/Oracle; main on Fedora) |
 | Rootkit scan auto-run | `/etc/cron.daily/rkhunter` + `/etc/default/rkhunter` | no packaged wrapper — use systemd timer / cron |
 | MAC denials as IDS signal | AppArmor (`journalctl -k \| grep apparmor`) | **SELinux AVC** (`ausearch -m AVC`, `aureport --avc`) |
@@ -36,18 +36,20 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Use when
 
-- Managing fail2ban, AIDE, auditd, or rootkit scanners (rkhunter/chkrootkit) on Ubuntu/Debian or RHEL-family servers.
-- Investigating bans, file-integrity alerts, syscall audit trails, or rootkit-scanner warnings.
+- Managing fail2ban or rootkit scanners (rkhunter/chkrootkit) on Ubuntu/Debian or RHEL-family servers.
+- Investigating bans or rootkit-scanner warnings.
 - Hardening host monitoring after repeated abuse or suspicious changes.
 
 ## Do not use when
 
 - The task is perimeter firewalling or certificates; use `linux-firewall-ssl`.
 - The task is a broad read-only security audit; use `linux-security-analysis`.
+- The task is system-call auditing (auditd); use `linux-auditd-rules` (15-compliance-and-auditing).
+- The task is file-integrity / hash drift (AIDE); use `linux-file-integrity` (15-compliance-and-auditing).
 
 ## Required inputs
 
-- Which subsystem is involved: fail2ban, AIDE, or auditd.
+- Which subsystem is involved: fail2ban or the rootkit scanners.
 - The host, jail, file path, or event pattern under investigation.
 - Whether the task is inspection, tuning, or first-time setup.
 
@@ -66,8 +68,8 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Anti-patterns
 
-- Disabling a noisy jail or audit rule without understanding why it fired.
-- Rebuilding AIDE baselines blindly after suspicious change.
+- Disabling a noisy jail without understanding why it fired.
+- Re-baselining a rootkit scanner blindly after a suspicious change.
 - Treating intrusion-detection tooling as a substitute for root-cause analysis.
 
 ## Outputs
@@ -79,9 +81,10 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 ## References
 
 - [`references/fail2ban-jails.md`](references/fail2ban-jails.md)
-- [`references/aide-and-auditd.md`](references/aide-and-auditd.md)
 - [`references/rootkit-scanning.md`](references/rootkit-scanning.md) — rkhunter + chkrootkit on both families (install, baseline, scheduling, false positives, triage)
 - [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md) — SELinux AVC denials as an IDS signal (RHEL family)
+- **auditd (system-call auditing)** moved to [`../../15-compliance-and-auditing/linux-auditd-rules/SKILL.md`](../../15-compliance-and-auditing/linux-auditd-rules/SKILL.md).
+- **AIDE (file integrity)** moved to [`../../15-compliance-and-auditing/linux-file-integrity/SKILL.md`](../../15-compliance-and-auditing/linux-file-integrity/SKILL.md).
 
 **This skill is self-contained.** Every command below is a standard
 Debian/Ubuntu or RHEL-family tool (see **Distro support** for the install and
@@ -107,62 +110,23 @@ Full jail configuration templates: `references/fail2ban-jails.md`
 
 ---
 
-## AIDE (File Integrity Monitoring)
+## File integrity (AIDE) and system-call auditing (auditd) — moved
 
-```bash
-# Install
-sudo apt install aide
+These two **compliance / forensic** layers now live in their own skills under
+`15-compliance-and-auditing`:
 
-# Initialise (first time — takes a few minutes)
-sudo aideinit
-sudo cp /var/lib/aide/aide.db.new /var/lib/aide/aide.db
+- **`linux-file-integrity`** — AIDE: build the baseline, run `aide --check`,
+  accept changes, schedule, tune `aide.conf`, store the DB off-box. See
+  [`../../15-compliance-and-auditing/linux-file-integrity/SKILL.md`](../../15-compliance-and-auditing/linux-file-integrity/SKILL.md).
+- **`linux-auditd-rules`** — auditd: `auditctl`, persistent
+  `/etc/audit/rules.d/*.rules`, file/syscall watches, key tagging,
+  `ausearch`/`aureport`, immutable mode (`-e 2`), rotation. See
+  [`../../15-compliance-and-auditing/linux-auditd-rules/SKILL.md`](../../15-compliance-and-auditing/linux-auditd-rules/SKILL.md).
 
-# Run integrity check
-sudo aide --check
-# No output = no changes. Any output = files changed since last init.
-
-# Update DB after intentional changes (e.g. after a deployment)
-sudo aideinit
-sudo cp /var/lib/aide/aide.db.new /var/lib/aide/aide.db
-```
-
-### Schedule Daily AIDE Check
-
-```bash
-sudo nano /etc/cron.daily/aide-check
-```
-```bash
-#!/bin/bash
-aide --check | mail -s "AIDE Report $(hostname) $(date +%Y-%m-%d)" root
-```
-```bash
-sudo chmod +x /etc/cron.daily/aide-check
-```
-
----
-
-## auditd (System Call Auditing)
-
-```bash
-sudo apt install auditd
-sudo systemctl enable auditd && sudo systemctl start auditd
-
-# Watch critical files:
-sudo auditctl -w /etc/passwd -p rwxa -k passwd-changes
-sudo auditctl -w /etc/shadow -p rwxa -k shadow-changes
-sudo auditctl -w /etc/ssh/sshd_config -p rwxa -k ssh-config
-sudo auditctl -w /var/www -p w -k webroot-writes
-
-# Make rules permanent:
-sudo nano /etc/audit/rules.d/hardening.rules
-# Add the -w rules above
-
-# Search audit log:
-sudo ausearch -k passwd-changes
-sudo ausearch -f /etc/passwd
-sudo ausearch --start today
-sudo aureport --summary
-```
+This skill stays focused on **active** intrusion detection: blocking abusive
+hosts (fail2ban) and rootkit signature scanning (rkhunter/chkrootkit). The
+rootkit scanners below correlate their findings with AIDE drift and auditd
+attribution — run those layers from the compliance skills above.
 
 ---
 
@@ -208,12 +172,14 @@ Running `sudo install-skills-bin linux-intrusion-detection` installs:
 | Task | Fast-path script |
 |---|---|
 | fail2ban status report with recent blocks | `sudo sk-fail2ban-status` |
-| First-time AIDE install + init + cron | `sudo sk-file-integrity-init` |
-| Run AIDE check with classified results | `sudo sk-file-integrity-check` |
 | Run rkhunter + chkrootkit with summarised warnings | `sudo sk-rootkit-scan` |
+| First-time AIDE install + init + cron (see `linux-file-integrity`) | `sudo sk-file-integrity-init` |
+| Run AIDE check with classified results (see `linux-file-integrity`) | `sudo sk-file-integrity-check` |
 
-These are optional wrappers around `fail2ban-client`, `aide`, `auditd`,
-`rkhunter`, and `chkrootkit`.
+These are optional wrappers around `fail2ban-client`, `rkhunter`, and
+`chkrootkit`. The two `sk-file-integrity-*` rows drive AIDE — documented in
+`15-compliance-and-auditing/linux-file-integrity`; their manifest entries are
+retained here for backward compatibility with existing installs.
 
 ## Scripts
 

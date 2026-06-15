@@ -448,33 +448,20 @@ back up first.
 
 ---
 
-## 10. LVM snapshots
+## 10. LVM snapshots → moved to `13-backup-and-archiving`
 
-A snapshot is a COW copy of an LV that captures its state at an
-instant. Used for consistent backups of live databases.
+LVM **snapshots** (COW point-in-time copies for consistent backups of live
+volumes), and ZFS/Btrfs filesystem-level snapshots, now live in the
+**`13-backup-and-archiving/linux-filesystem-snapshots`** skill — including COW
+sizing, the fill/invalidation risk, mounting read-only to back up, and
+`zfs send`/`btrfs send` replication. This file keeps LVM **volume management**
+(PV→VG→LV, online resize) only.
 
 ```bash
-# 5 GB COW scratch space is usually enough for a short-lived snapshot
-sudo lvcreate -L 5G -s -n web-snap /dev/data/web
-
-# Mount the snapshot read-only to back it up
-sudo mkdir -p /mnt/snap
-sudo mount -o ro /dev/data/web-snap /mnt/snap
-tar czf /backups/web-$(date +%F).tar.gz -C /mnt/snap .
-sudo umount /mnt/snap
-
-# Delete when done
-sudo lvremove -f /dev/data/web-snap
+# Quick reminder — full detail in linux-filesystem-snapshots:
+sudo lvcreate -L 5G -s -n web-snap /dev/data/web   # COW snapshot
+sudo lvremove -f /dev/data/web-snap                # release when done
 ```
-
-Rules of thumb:
-
-- Size the snapshot COW area to at least 10–20% of the LV you are
-  snapshotting, more if writes are heavy during the backup window.
-- **A full snapshot becomes invalid**. Monitor with `lvs` — the
-  `Data%` column tells you how full the COW space is. If it hits 100%,
-  LVM drops the snapshot.
-- Snapshots are for short-lived backup windows, not long-term storage.
 
 ---
 

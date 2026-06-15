@@ -44,6 +44,12 @@ use the `common.sh` package primitives.
 
 - The problem is only a service outage or bad config that can be fixed in place; use `linux-service-management` or `linux-troubleshooting`.
 - The task is a routine backup review rather than an actual restore path.
+- The task is **creating** backups — building rsync/tar archives, incremental
+  snapshots, or filesystem (LVM/ZFS/Btrfs) snapshots. That now lives in the
+  **`13-backup-and-archiving`** category: `linux-rsync-sync` (offsite/incremental
+  rsync), `linux-archive-integrity` (tar create + verify), and
+  `linux-filesystem-snapshots` (LVM/ZFS/Btrfs). This skill stays focused on
+  *restore* and emergency recovery.
 
 ## Required inputs
 

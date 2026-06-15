@@ -49,6 +49,10 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 - The issue is mainly application slowness or CPU pressure; use `linux-system-monitoring` or `linux-troubleshooting`.
 - The task is filesystem permissions or user access; use `linux-access-control`.
+- The task is **point-in-time snapshots** — LVM snapshots, or ZFS/Btrfs
+  (`zfs snapshot`/`zfs send`, `btrfs subvolume snapshot`/`btrfs send`). That now
+  lives in **`13-backup-and-archiving/linux-filesystem-snapshots`**. This skill
+  keeps LVM volume management, fstab, NFS, and CIFS/SMB.
 
 ## Required inputs
 

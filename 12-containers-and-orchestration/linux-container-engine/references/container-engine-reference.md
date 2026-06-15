@@ -1,29 +1,37 @@
-# Docker (and Podman) on Ubuntu — Reference
+# Container Engine — Docker & Podman Reference
 
 **Author:** Peter Bamuhigire · [techguypeter.com](https://techguypeter.com) · +256 784 464 178
 
-Docker packages one process at a time. That is the key difference between Docker and LXD: an LXD container is a whole userland with systemd inside; a Docker container is a single application plus the libraries it needs, started by `docker run` and killed when the process exits. This reference covers installing Docker Engine CE from the official Ubuntu repo, daemon configuration, the day-to-day container workflow, Dockerfile best practice, Compose v2, networks and volumes, resource limits, pinning images by digest, container security, running containers under systemd, and using Podman as a rootless alternative.
+This reference covers the **engine layer**: installing Docker Engine CE and
+Podman on both families, daemon configuration (`/etc/docker/daemon.json`),
+registries (`/etc/containers/registries.conf`), the day-to-day inspection
+workflow, Dockerfile best practice, networks and volumes, image-digest pinning,
+container/daemon security hardening, and rootless Podman. **Running** containers
+(compose, Quadlet, `podman generate systemd`, restart policies, lifecycle) is
+covered by `linux-container-deployment`; disk reclamation (`prune`) by
+`linux-image-hygiene`.
+
+Docker packages one process at a time: a Docker/Podman container is a single
+application plus its libraries, started by `run` and killed when the process
+exits — unlike an LXD/KVM whole-userland guest.
 
 ## Table of contents
 
-- [Install Docker Engine on Ubuntu](#install-docker-engine-on-ubuntu)
+- [Install Docker Engine](#install-docker-engine)
 - [Daemon configuration](#daemon-configuration)
+- [Registries (Podman registries.conf)](#registries-podman-registriesconf)
 - [Core workflow](#core-workflow)
 - [Dockerfile best practice](#dockerfile-best-practice)
-- [Compose v2](#compose-v2)
 - [Networks](#networks)
 - [Volumes](#volumes)
-- [Restart policies](#restart-policies)
-- [Resource limits](#resource-limits)
 - [Pin images by digest](#pin-images-by-digest)
 - [Security hardening](#security-hardening)
-- [Systemd-managed containers](#systemd-managed-containers)
 - [Podman as a rootless alternative](#podman-as-a-rootless-alternative)
 - [Sources](#sources)
 
-## Install Docker Engine on Ubuntu
+## Install Docker Engine
 
-**Do not** install `docker.io` from the Ubuntu archive on a production host — it lags upstream by months. Install Docker CE from Docker Inc.'s own apt repository:
+**Do not** install `docker.io` from the Ubuntu archive on a production host — it lags upstream by months. Install Docker CE from Docker Inc.'s own apt repository (a `dnf`-repo equivalent exists for the RHEL family; see the skill's matrix):
 
 ```bash
 sudo apt update
@@ -80,6 +88,48 @@ Apply changes:
 ```bash
 sudo systemctl restart docker
 docker info | grep -E 'Storage Driver|Logging Driver|Live Restore'
+```
+
+Podman has **no daemon** — there is nothing equivalent to `daemon.json`.
+Engine-wide defaults for Podman live in `/etc/containers/containers.conf`
+(and `~/.config/containers/containers.conf` per user), and storage in
+`/etc/containers/storage.conf`. Hardening like `no-new-privileges` is applied
+per-`run` (or in a Quadlet unit) rather than daemon-wide.
+
+## Registries (Podman registries.conf)
+
+Podman, Buildah, and skopeo resolve images through
+`/etc/containers/registries.conf` (system) — overridable per user at
+`~/.config/containers/registries.conf` (the user file wins on conflict). On
+RHEL the file ships with three registries by default: two Red Hat registries
+(licensed content, require Red Hat credentials) and Docker Hub as the last
+fallback. Always set `unqualified-search-registries` so a bare `podman pull
+nginx` is unambiguous, and use `[[registry]]` blocks to add, pin, or block
+registries:
+
+```toml
+# /etc/containers/registries.conf
+unqualified-search-registries = ["registry.access.redhat.com", "registry.redhat.io", "docker.io"]
+
+[[registry]]
+location = "docker.io"
+
+[[registry]]
+location = "registry.example.com"
+insecure = false        # true only for an internal registry without TLS
+
+[[registry]]
+location = "quay.io/oldnamespace"
+blocked  = true         # refuse pulls from this registry entirely
+```
+
+Docker's equivalent is `registry-mirrors` (and `insecure-registries`) in
+`/etc/docker/daemon.json`. Verify resolution with `podman info` /
+`docker info`:
+
+```bash
+podman info --format '{{.Registries}}'
+podman pull --log-level=debug alpine 2>&1 | grep -i 'trying'   # see search order
 ```
 
 ## Core workflow
@@ -163,81 +213,6 @@ docker build -t registry.example.com/myapp:2026.04.10 .
 docker image ls registry.example.com/myapp
 ```
 
-## Compose v2
-
-Compose v2 ships as the `docker compose` subcommand (two words, no hyphen, no separate binary). It reads `compose.yaml` (or the legacy `docker-compose.yml`) from the current directory.
-
-```yaml
-# compose.yaml
-name: webstack
-services:
-  web:
-    image: nginx:1.27-alpine@sha256:aaaa...   # pinned by digest
-    restart: unless-stopped
-    ports: ["80:80", "443:443"]
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - webdata:/usr/share/nginx/html
-    networks: [frontend, backend]
-    depends_on:
-      app: { condition: service_healthy }
-    deploy:
-      resources:
-        limits: { cpus: "1.0", memory: 256M }
-    read_only: true
-    tmpfs: ["/var/cache/nginx", "/var/run"]
-    cap_drop: [ALL]
-    cap_add: [NET_BIND_SERVICE]
-    security_opt: ["no-new-privileges:true"]
-  app:
-    image: registry.example.com/myapp:2026.04.10@sha256:bbbb...
-    restart: unless-stopped
-    env_file: .env
-    networks: [backend]
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/healthz"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 20s
-    deploy:
-      resources:
-        limits: { cpus: "2.0", memory: 1G }
-  db:
-    image: postgres:16-bookworm@sha256:cccc...
-    restart: unless-stopped
-    environment:
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
-      POSTGRES_DB: myapp
-    volumes: [dbdata:/var/lib/postgresql/data]
-    networks: [backend]
-    secrets: [db_password]
-volumes:
-  webdata:
-  dbdata:
-networks:
-  frontend:
-  backend:
-    internal: true
-secrets:
-  db_password:
-    file: ./secrets/db_password.txt
-```
-
-Operate the stack:
-
-```bash
-docker compose up -d
-docker compose ps
-docker compose logs -f --tail 100 app
-docker compose exec app sh
-docker compose restart web
-docker compose pull && docker compose up -d   # rolling update
-docker compose down                            # stop and remove
-docker compose down -v                         # and remove named volumes
-docker compose config                           # validate without starting
-```
-
 ## Networks
 
 Docker ships four built-in drivers:
@@ -295,38 +270,6 @@ docker run --rm \
     tar -czf /backup/pgdata-$(date +%F).tar.gz -C /data .
 ```
 
-## Restart policies
-
-Pick a restart policy explicitly. The default is `no`, which means a container that crashes stays dead until a human notices.
-
-| Policy | When to use |
-|---|---|
-| `no` | one-off batch jobs (default — fine for `docker run --rm`) |
-| `on-failure[:max]` | batch jobs that should retry a bounded number of times |
-| `always` | background services that must always run |
-| `unless-stopped` | background services, but respect operator `docker stop` across reboots — **usually the right pick** |
-
-```bash
-docker run -d --name web --restart unless-stopped -p 80:80 nginx:1.27-alpine
-```
-
-## Resource limits
-
-Unbounded containers happily eat every GB of RAM on the host. Always set limits — in Compose via `deploy.resources.limits`, or on the CLI:
-
-```bash
-docker run -d --name app \
-    --memory 1g \
-    --memory-swap 1g \
-    --memory-reservation 512m \
-    --cpus 2 \
-    --pids-limit 200 \
-    --ulimit nofile=65536:65536 \
-    myapp:2026.04.10
-```
-
-`--memory` is a hard cap with OOM-kill on overrun. `--memory-swap` set equal to `--memory` disables swap entirely. `--memory-reservation` is a soft cap used under host pressure. `--cpus` accepts fractional values (`1.5` is fine). `--pids-limit` guards against fork-bombs. `--ulimit nofile` raises the file-descriptor cap for network servers.
-
 ## Pin images by digest
 
 Tags are mutable. `nginx:1.27` today may be a different image next week. For any production workload, pin the **digest** and record it in Git:
@@ -375,39 +318,6 @@ docker scout cves myapp:2026.04.10
 trivy image myapp:2026.04.10
 ```
 
-## Systemd-managed containers
-
-On a server, you want containers to start on boot, restart on failure, and show up in `systemctl status`. Drop this into `/etc/systemd/system/webstack.service`:
-
-```ini
-[Unit]
-Description=Webstack Compose project
-Requires=docker.service
-After=docker.service network-online.target
-Wants=network-online.target
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-WorkingDirectory=/opt/webstack
-ExecStart=/usr/bin/docker compose up -d --remove-orphans
-ExecStop=/usr/bin/docker compose down
-TimeoutStartSec=0
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Then enable it:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now webstack
-sudo systemctl status webstack
-```
-
-For Podman (see next section), the equivalent is `podman generate systemd`, which emits proper unit files directly from a running container. **Don't run Docker containers in a detached `docker run` started from a login shell** — that dies on reboot.
-
 ## Podman as a rootless alternative
 
 Podman is a drop-in, daemonless, rootless alternative to Docker. The CLI is intentionally Docker-compatible — most `docker` commands work unchanged with `podman`. Key differences: **no daemon** (each `podman` invocation is a short-lived process; nothing equivalent to `dockerd` runs in the background); **rootless by default** (containers run in your user namespace, so a compromise cannot gain host root even on namespace break-out); **systemd-native** (`podman generate systemd` emits unit files that run in the user slice); **pods** (group related containers into a shared network namespace, similar to a Kubernetes pod).
@@ -425,20 +335,21 @@ podman exec -it web sh
 podman stop web && podman rm web
 ```
 
-Build and run a pod, and generate a systemd unit from a running container:
+For rootless operation, packages and subuid/subgid ranges must be in place:
 
 ```bash
-podman pod create --name webpod -p 8080:80
-podman run -d --pod webpod --name web   nginx:1.27-alpine
-podman run -d --pod webpod --name cache redis:7-alpine
-
-podman generate systemd --new --name --files web
-mv container-web.service ~/.config/systemd/user/
-systemctl --user daemon-reload
-systemctl --user enable --now container-web.service
+podman unshare cat /proc/self/uid_map     # confirm the user namespace mapping
+grep "$USER" /etc/subuid /etc/subgid       # rootless needs a sub-uid/gid range
+loginctl enable-linger "$USER"             # let user services start at boot
 ```
 
-Use Podman when you want rootless containers on a multi-tenant host, when you cannot justify running a root-level daemon, or when you want systemd-native integration without hand-writing unit files.
+Use Podman when you want rootless containers on a multi-tenant host, when you
+cannot justify running a root-level daemon, or when you want systemd-native
+integration without hand-writing unit files.
+
+Running containers as systemd services (`podman generate systemd`, Quadlet
+`.container` units, pods, restart policies) and compose stacks are covered in
+**`linux-container-deployment`**; disk reclamation in **`linux-image-hygiene`**.
 
 ## Sources
 
