@@ -26,11 +26,12 @@ Alma, Oracle).
 ## Structure
 
 - `linux-sysadmin/` - Hub skill: routes to all specialist skills (start here)
-- `NN-category/linux-*/` - Specialist skills grouped into numbered categories:
+- `NN-category/linux-*/` - Specialist skills grouped into 15 numbered categories:
   `01-provisioning-and-bootstrap`, `02-users-access-and-secrets`, `03-networking-and-dns`,
   `04-web-and-mail-services`, `05-services-and-virtualization`, `06-storage-and-filesystems`,
   `07-security-and-hardening`, `08-observability-and-logging`, `09-troubleshooting-and-recovery`,
-  `10-automation-and-scripting`
+  `10-automation-and-scripting`, `11-databases-and-caching`, `12-containers-and-orchestration`,
+  `13-backup-and-archiving`, `14-performance-and-kernel`, `15-compliance-and-auditing`
 - `meta/` - Engine-authoring skills (`skill-writing`, `skill-safety-audit`)
 - `commands/` - Useful command references organized by topic
 - `scripts/` - Reusable shell scripts and snippets
@@ -43,31 +44,79 @@ This repo IS the Claude Code skills directory. On a server it is cloned to
 on a new server to set everything up.
 
 Available skills (use `linux-sysadmin` as the entry point):
-- `linux-sysadmin` — hub, routes to all 24 specialist skills below
+- `linux-sysadmin` — hub, routes to all 40 specialist skills below (grouped into 15 categories)
+
+**Meta / foundation**
 - `linux-bash-scripting` — **meta-skill.** Canonical script template, `common.sh` library contract, standard flags, interactive UX rules. Load before writing or reviewing any `sk-*` script.
-- `linux-security-analysis` — 10-layer security audit
-- `linux-server-hardening` — harden SSH, UFW, sysctl, web stack
+
+**01 — Provisioning & bootstrap**
 - `linux-server-provisioning` — provision a fresh Debian/Ubuntu or RHEL-family server
+- `linux-cloud-init` — cloud-init user-data, autoinstall, and Kickstart
+- `linux-package-management` — apt, snap, unattended-upgrades / dnf, flatpak, dnf-automatic
+- `linux-config-management` — Ansible, drift detection, `/etc` tracking
+
+**02 — Users, access & secrets**
+- `linux-access-control` — users, groups, SSH keys, sudo/wheel, file permissions
+- `linux-secrets` — secret scanning, rotation, age/sops
+
+**03 — Networking & DNS**
+- `linux-network-admin` — interfaces, routes, netplan/NetworkManager, DNS client, NTP
+- `linux-dns-server` — authoritative DNS (bind9 / unbound)
+
+**04 — Web & mail services**
+- `linux-webstack` — Nginx + Apache/httpd + PHP-FPM + Node.js
 - `linux-site-deployment` — deploy sites (static, PHP, Node.js)
+- `linux-mail-server` — Postfix / Exim, SPF/DKIM/DMARC, mail queue
+
+**05 — Services & virtualization**
 - `linux-service-management` — manage and diagnose systemd services
+- `linux-virtualization` — KVM/libvirt VMs and LXD system containers
+
+**06 — Storage & filesystems**
+- `linux-disk-storage` — disk usage, cleanup, inode issues, swap
+
+**07 — Security & hardening**
+- `linux-security-analysis` — deep read-only security audit
+- `linux-server-hardening` — harden SSH, firewall, sysctl, web stack
+- `linux-firewall-ssl` — UFW/firewalld rules, certbot, TLS config
+- `linux-intrusion-detection` — fail2ban and active intrusion response
+
+**08 — Observability & logging**
+- `linux-system-monitoring` — CPU, memory, disk, network health
+- `linux-log-management` — journalctl, Nginx/Apache logs, logrotate
+- `linux-observability` — Prometheus node_exporter, log shipping, `/health`
+
+**09 — Troubleshooting & recovery**
 - `linux-troubleshooting` — symptom-based diagnosis trees
 - `linux-disaster-recovery` — restore from backup, emergency procedures
-- `linux-firewall-ssl` — UFW rules, certbot, TLS config
-- `linux-intrusion-detection` — fail2ban, AIDE, auditd
-- `linux-webstack` — Nginx + Apache + PHP-FPM + Node.js
-- `linux-access-control` — users, SSH keys, file permissions
-- `linux-system-monitoring` — CPU, memory, disk, network health
-- `linux-disk-storage` — disk usage, cleanup, inode issues
-- `linux-log-management` — journalctl, Nginx/Apache logs, logrotate
-- `linux-network-admin` — interfaces, routes, netplan, DNS client, NTP
-- `linux-dns-server` — authoritative DNS (bind9 / unbound)
-- `linux-mail-server` — Postfix / Exim, SPF/DKIM/DMARC, mail queue
-- `linux-virtualization` — LXD, Docker, KVM container & VM lifecycle
-- `linux-cloud-init` — cloud-init user-data and Ubuntu autoinstall
-- `linux-package-management` — apt, snap, unattended-upgrades
-- `linux-config-management` — Ansible, drift detection, `/etc` tracking
-- `linux-observability` — Prometheus node_exporter, log shipping, `/health`
-- `linux-secrets` — secret scanning, rotation, age/sops
+
+**10 — Automation & scripting**
+- `linux-repo-sync` — safe git updates (`pull --rebase --autostash`)
+
+**11 — Databases & caching**
+- `linux-mysql-mariadb` — install, tune, and back up MySQL/MariaDB
+- `linux-postgresql` — install, tune, and back up PostgreSQL
+- `linux-inmemory-stores` — operate Redis and Memcached
+
+**12 — Containers & orchestration**
+- `linux-container-engine` — install/manage Docker (dockerd) or Podman
+- `linux-container-deployment` — run and operate containers
+- `linux-image-hygiene` — reclaim disk from the container engine
+
+**13 — Backup & archiving**
+- `linux-rsync-sync` — advanced rsync for offsite/incremental backups
+- `linux-archive-integrity` — create and verify tar.gz / tar.xz archives
+- `linux-filesystem-snapshots` — point-in-time filesystem snapshots
+
+**14 — Performance & kernel**
+- `linux-sysctl-tuning` — performance kernel tuning via sysctl
+- `linux-kernel-modules` — manage kernel modules (drivers)
+- `linux-perf-profiling` — find the bottleneck before tuning
+
+**15 — Compliance & auditing**
+- `linux-auditd-rules` — Linux Audit daemon (auditd) for compliance/forensics
+- `linux-file-integrity` — File Integrity Monitoring (FIM) with AIDE
+- `linux-benchmark-scanning` — security-benchmark / compliance scanning
 
 ## Engine design
 

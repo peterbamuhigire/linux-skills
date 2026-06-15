@@ -3,7 +3,9 @@
 **Author:** Peter Bamuhigire · [techguypeter.com](https://techguypeter.com) · +256 784 464 178
 
 A **two-family Linux server management engine** — a curated knowledge base of
-**25 specialist skills**, 5 RHEL-family deep-dive references, an engine
+**40 specialist skills** (plus the `linux-sysadmin` routing hub and the
+`linux-bash-scripting` meta-skill) organized into **15 categories**, 5
+RHEL-family deep-dive references, an engine
 specification, and a growing suite of interactive, idempotent `sk-*` scripts
 that wrap the skills as command-line tools.
 
@@ -75,8 +77,22 @@ inside the primitives. Full contract:
 ```
 docs/engine-design/      Engine specification + curated script inventory
 docs/multi-distro/       The two-family upgrade plan + status
-10-automation-and-scripting/linux-bash-scripting/    Meta-skill: how every sk-* script is written
-linux-<domain>/          23 specialist skills, each with SKILL.md + references/
+linux-sysadmin/          Routing hub (start here)
+01-provisioning-and-bootstrap/   linux-server-provisioning, linux-cloud-init, linux-package-management, linux-config-management
+02-users-access-and-secrets/     linux-access-control, linux-secrets
+03-networking-and-dns/           linux-network-admin, linux-dns-server
+04-web-and-mail-services/        linux-webstack, linux-site-deployment, linux-mail-server
+05-services-and-virtualization/  linux-service-management, linux-virtualization
+06-storage-and-filesystems/      linux-disk-storage
+07-security-and-hardening/       linux-security-analysis, linux-server-hardening, linux-firewall-ssl, linux-intrusion-detection
+08-observability-and-logging/    linux-system-monitoring, linux-log-management, linux-observability
+09-troubleshooting-and-recovery/ linux-troubleshooting, linux-disaster-recovery
+10-automation-and-scripting/     linux-bash-scripting (meta-skill), linux-repo-sync
+11-databases-and-caching/        linux-mysql-mariadb, linux-postgresql, linux-inmemory-stores
+12-containers-and-orchestration/ linux-container-engine, linux-container-deployment, linux-image-hygiene
+13-backup-and-archiving/         linux-rsync-sync, linux-archive-integrity, linux-filesystem-snapshots
+14-performance-and-kernel/       linux-sysctl-tuning, linux-kernel-modules, linux-perf-profiling
+15-compliance-and-auditing/      linux-auditd-rules, linux-file-integrity, linux-benchmark-scanning
 scripts/                 Executable scripts (sk-* + common.sh library + tests)
 commands/                Command references by topic
 notes/                   Setup guides and troubleshooting
@@ -102,9 +118,10 @@ notes/                   Setup guides and troubleshooting
 
 ---
 
-## The 25 skills
+## The skills
 
-Every specialist skill below leads with a **`## Distro support`** matrix
+40 specialist skills across 15 categories, plus the `linux-sysadmin` hub and
+the `linux-bash-scripting` meta-skill. Every specialist skill below leads with a **`## Distro support`** matrix
 (Debian/Ubuntu ↔ RHEL family). The `linux-sysadmin` hub is the only exempt
 skill (it routes, it doesn't operate).
 
@@ -123,8 +140,8 @@ skill (it routes, it doesn't operate).
   permissions, `sudo`/`wheel`.
 - [`linux-firewall-ssl`](07-security-and-hardening/linux-firewall-ssl/SKILL.md) — UFW **and firewalld**,
   certbot, TLS.
-- [`linux-intrusion-detection`](07-security-and-hardening/linux-intrusion-detection/SKILL.md) — fail2ban,
-  AIDE, auditd, SELinux AVC denials.
+- [`linux-intrusion-detection`](07-security-and-hardening/linux-intrusion-detection/SKILL.md) — fail2ban and
+  active intrusion response (AIDE/auditd now live under `15-compliance-and-auditing`).
 - [`linux-secrets`](02-users-access-and-secrets/linux-secrets/SKILL.md) — scanning, age/sops, rotation.
 
 **Operations**
@@ -170,6 +187,46 @@ skill (it routes, it doesn't operate).
   diagnosis trees; SELinux as a hidden cause on RHEL.
 - [`linux-disaster-recovery`](09-troubleshooting-and-recovery/linux-disaster-recovery/SKILL.md) — restore from
   backup, GRUB2/dracut/xfs_repair differences.
+
+**Databases & caching**
+- [`linux-mysql-mariadb`](11-databases-and-caching/linux-mysql-mariadb/SKILL.md) — install (mysql-server /
+  MariaDB), tune, and back up MySQL/MariaDB.
+- [`linux-postgresql`](11-databases-and-caching/linux-postgresql/SKILL.md) — install, tune, and back up
+  PostgreSQL.
+- [`linux-inmemory-stores`](11-databases-and-caching/linux-inmemory-stores/SKILL.md) — operate Redis and
+  Memcached in-memory stores.
+
+**Containers & orchestration**
+- [`linux-container-engine`](12-containers-and-orchestration/linux-container-engine/SKILL.md) — install and
+  manage the engine: Docker (dockerd) or Podman (daemonless).
+- [`linux-container-deployment`](12-containers-and-orchestration/linux-container-deployment/SKILL.md) — run and
+  operate containers.
+- [`linux-image-hygiene`](12-containers-and-orchestration/linux-image-hygiene/SKILL.md) — reclaim disk from the
+  container engine.
+
+**Backup & archiving**
+- [`linux-rsync-sync`](13-backup-and-archiving/linux-rsync-sync/SKILL.md) — advanced rsync for offsite and
+  incremental backups.
+- [`linux-archive-integrity`](13-backup-and-archiving/linux-archive-integrity/SKILL.md) — create and verify
+  tar.gz / tar.xz archives that preserve full metadata.
+- [`linux-filesystem-snapshots`](13-backup-and-archiving/linux-filesystem-snapshots/SKILL.md) — point-in-time
+  filesystem snapshots.
+
+**Performance & kernel**
+- [`linux-sysctl-tuning`](14-performance-and-kernel/linux-sysctl-tuning/SKILL.md) — performance kernel tuning
+  via sysctl.
+- [`linux-kernel-modules`](14-performance-and-kernel/linux-kernel-modules/SKILL.md) — manage kernel modules
+  (drivers).
+- [`linux-perf-profiling`](14-performance-and-kernel/linux-perf-profiling/SKILL.md) — find the bottleneck
+  before tuning.
+
+**Compliance & auditing**
+- [`linux-auditd-rules`](15-compliance-and-auditing/linux-auditd-rules/SKILL.md) — Linux Audit daemon (auditd)
+  for compliance and forensic attribution.
+- [`linux-file-integrity`](15-compliance-and-auditing/linux-file-integrity/SKILL.md) — File Integrity
+  Monitoring (FIM) with AIDE.
+- [`linux-benchmark-scanning`](15-compliance-and-auditing/linux-benchmark-scanning/SKILL.md) — automated
+  security-benchmark and compliance scanning.
 
 ---
 
@@ -227,7 +284,7 @@ two-family promise from regressing.
 
 ## Current status
 
-- 25 skills, all specialist skills carrying a Distro support matrix.
+- 40 specialist skills across 15 categories, all carrying a Distro support matrix.
 - 5 RHEL-family deep-dive references (firewalld, SELinux, httpd,
   NetworkManager, Kickstart).
 - `common.sh` family abstraction + unit tests + the distro-matrix invariant

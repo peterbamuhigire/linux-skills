@@ -8,7 +8,7 @@ without duplicating logic or requiring a different directory layout.
 
 The repository contains:
 
-- Specialist skills grouped into numbered category directories, e.g. `04-web-and-mail-services/linux-webstack/`, `07-security-and-hardening/linux-security-analysis/`, and `09-troubleshooting-and-recovery/linux-troubleshooting/` (the `linux-sysadmin/` hub stays at the repo root)
+- 40 specialist skills grouped into 15 numbered category directories (`01-provisioning-and-bootstrap` through `15-compliance-and-auditing`), e.g. `04-web-and-mail-services/linux-webstack/`, `07-security-and-hardening/linux-security-analysis/`, `12-containers-and-orchestration/linux-container-engine/`, and `15-compliance-and-auditing/linux-auditd-rules/` (the `linux-sysadmin/` hub stays at the repo root)
 - A colocated `SKILL.md` in each skill directory
 - Optional `references/` and `scripts/` folders inside each skill directory
 - Repo-wide engine and operational docs under `docs/`
@@ -48,12 +48,17 @@ Start from these skills unless the task is already narrowly scoped:
 
 Use `linux-sysadmin` as the default entry point for server work, then route quickly:
 
-- Provisioning and bootstrap: `linux-server-provisioning`, `linux-cloud-init`
-- Deployment and web stack: `linux-site-deployment`, `linux-webstack`, `linux-service-management`
+- Provisioning and bootstrap: `linux-server-provisioning`, `linux-cloud-init`, `linux-package-management`, `linux-config-management`
+- Deployment and web stack: `linux-site-deployment`, `linux-webstack`, `linux-mail-server`, `linux-service-management`
 - Security: `linux-security-analysis`, `linux-server-hardening`, `linux-access-control`, `linux-firewall-ssl`, `linux-intrusion-detection`, `linux-secrets`
-- Operations: `linux-system-monitoring`, `linux-log-management`, `linux-disk-storage`, `linux-package-management`
-- Networking: `linux-network-admin`, `linux-dns-server`, `linux-mail-server`
-- Automation and platform: `linux-config-management`, `linux-observability`, `linux-virtualization`
+- Operations: `linux-system-monitoring`, `linux-log-management`, `linux-observability`, `linux-disk-storage`
+- Networking: `linux-network-admin`, `linux-dns-server`
+- Virtualization and automation: `linux-virtualization`, `linux-repo-sync`
+- Databases and caching: `linux-mysql-mariadb`, `linux-postgresql`, `linux-inmemory-stores`
+- Containers and orchestration: `linux-container-engine`, `linux-container-deployment`, `linux-image-hygiene`
+- Backup and archiving: `linux-rsync-sync`, `linux-archive-integrity`, `linux-filesystem-snapshots`
+- Performance and kernel: `linux-sysctl-tuning`, `linux-kernel-modules`, `linux-perf-profiling`
+- Compliance and auditing: `linux-auditd-rules`, `linux-file-integrity`, `linux-benchmark-scanning`
 - Incident and recovery: `linux-troubleshooting`, `linux-disaster-recovery`
 
 When the task is about creating or upgrading skills in this repo, use `skill-writing`. When the
