@@ -1,6 +1,6 @@
 ---
 name: linux-intrusion-detection
-description: Manage intrusion detection on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). fail2ban (check jails, unban IPs, add custom jails, tune bans, read logs), AIDE file integrity monitoring (install, initialise, run checks, schedule daily), and auditd system call auditing (install, watch files, read audit log) all run on both families — fail2ban needs EPEL on RHEL/Rocky/Alma and reads journald/`/var/log/secure` via `backend = systemd`. On the RHEL family, SELinux AVC denials are an additional intrusion-detection signal.
+description: Manage intrusion detection on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). fail2ban (check jails, unban IPs, add custom jails, tune bans, read logs), AIDE file integrity monitoring (install, initialise, run checks, schedule daily), auditd system call auditing (install, watch files, read audit log), and rootkit scanning with rkhunter and chkrootkit (install, baseline with `--propupd`, scheduled scans, interpreting warnings, reducing false positives) all run on both families — fail2ban and the rootkit scanners need EPEL on RHEL/Rocky/Alma, and fail2ban reads journald/`/var/log/secure` via `backend = systemd`. On the RHEL family, SELinux AVC denials are an additional intrusion-detection signal.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -11,9 +11,10 @@ metadata:
 
 ## Distro support
 
-Two-family skill. fail2ban, AIDE, and auditd run on both families; install and
-a couple of paths differ, and the RHEL family adds SELinux AVC denials as an
-intrusion signal. Body uses Debian/Ubuntu; substitute per this matrix.
+Two-family skill. fail2ban, AIDE, auditd, and the rootkit scanners
+(rkhunter, chkrootkit) run on both families; install and a couple of paths
+differ, and the RHEL family adds SELinux AVC denials as an intrusion signal.
+Body uses Debian/Ubuntu; substitute per this matrix.
 
 | Concept | Debian/Ubuntu | RHEL family |
 |---|---|---|
@@ -21,6 +22,8 @@ intrusion signal. Body uses Debian/Ubuntu; substitute per this matrix.
 | fail2ban backend | reads `/var/log/auth.log` | reads journald / `/var/log/secure` (use `backend = systemd`) |
 | AIDE | `apt install aide` | `dnf install aide` |
 | auditd | `auditd` | `auditd` (same) |
+| rkhunter / chkrootkit | `apt install rkhunter chkrootkit` | `dnf install rkhunter chkrootkit` (**EPEL** on RHEL/Rocky/Alma/Oracle; main on Fedora) |
+| Rootkit scan auto-run | `/etc/cron.daily/rkhunter` + `/etc/default/rkhunter` | no packaged wrapper — use systemd timer / cron |
 | MAC denials as IDS signal | AppArmor (`journalctl -k \| grep apparmor`) | **SELinux AVC** (`ausearch -m AVC`, `aureport --avc`) |
 | Web/auth log paths | `/var/log/auth.log` | `/var/log/secure` |
 
@@ -33,8 +36,8 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Use when
 
-- Managing fail2ban, AIDE, or auditd on Ubuntu/Debian servers.
-- Investigating bans, file-integrity alerts, or syscall audit trails.
+- Managing fail2ban, AIDE, auditd, or rootkit scanners (rkhunter/chkrootkit) on Ubuntu/Debian or RHEL-family servers.
+- Investigating bans, file-integrity alerts, syscall audit trails, or rootkit-scanner warnings.
 - Hardening host monitoring after repeated abuse or suspicious changes.
 
 ## Do not use when
@@ -77,6 +80,7 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 - [`references/fail2ban-jails.md`](references/fail2ban-jails.md)
 - [`references/aide-and-auditd.md`](references/aide-and-auditd.md)
+- [`references/rootkit-scanning.md`](references/rootkit-scanning.md) — rkhunter + chkrootkit on both families (install, baseline, scheduling, false positives, triage)
 - [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md) — SELinux AVC denials as an IDS signal (RHEL family)
 
 **This skill is self-contained.** Every command below is a standard
@@ -162,6 +166,41 @@ sudo aureport --summary
 
 ---
 
+## Rootkit scanning (rkhunter + chkrootkit)
+
+Signature/heuristic layer on top of AIDE (drift) and auditd (attribution).
+rkhunter keeps a file-property baseline and checks for known rootkit
+fingerprints; chkrootkit is a baseline-free signature scanner. Run **both** —
+they catch different things, and agreement raises confidence.
+
+```bash
+# Install (RHEL family: enable EPEL first on RHEL/Rocky/Alma/Oracle)
+sudo apt install rkhunter chkrootkit        # dnf install rkhunter chkrootkit
+
+# Refresh definitions, then baseline file properties on a KNOWN-CLEAN host
+sudo rkhunter --update
+sudo rkhunter --propupd                     # like aideinit — clean host only!
+
+# Scan
+sudo rkhunter --check --sk --rwo            # --sk = no pause, --rwo = warnings only
+sudo chkrootkit -q                          # -q = show only INFECTED/suspicious
+
+# Re-baseline after a CONFIRMED-legitimate change (e.g. package upgrade)
+sudo rkhunter --propupd
+```
+
+**Warnings are "verify", never "confirmed rootkit".** Most are false
+positives (package updates, hidden `.git`, DHCP promiscuous mode). Confirm a
+changed binary against the package (`dpkg -V` / `rpm -V`), whitelist the
+*specific* false positive in `/etc/rkhunter.conf.local` (set `PKGMGR=DPKG` or
+`RPM`), and never disable a whole test to silence one line. Correlate flagged
+paths with AIDE and auditd before declaring an incident.
+
+Install, scheduling (systemd timer / cron), false-positive tuning, and the
+full triage flow: `references/rootkit-scanning.md`
+
+---
+
 ## Optional fast path (when sk-* scripts are installed)
 
 Running `sudo install-skills-bin linux-intrusion-detection` installs:
@@ -171,8 +210,10 @@ Running `sudo install-skills-bin linux-intrusion-detection` installs:
 | fail2ban status report with recent blocks | `sudo sk-fail2ban-status` |
 | First-time AIDE install + init + cron | `sudo sk-file-integrity-init` |
 | Run AIDE check with classified results | `sudo sk-file-integrity-check` |
+| Run rkhunter + chkrootkit with summarised warnings | `sudo sk-rootkit-scan` |
 
-These are optional wrappers around `fail2ban-client`, `aide`, and `auditd`.
+These are optional wrappers around `fail2ban-client`, `aide`, `auditd`,
+`rkhunter`, and `chkrootkit`.
 
 ## Scripts
 
@@ -187,3 +228,4 @@ sudo install-skills-bin linux-intrusion-detection
 | sk-fail2ban-status | scripts/sk-fail2ban-status.sh | yes | Jails, active bans, total bans by jail, recent blocks with geo hints. |
 | sk-file-integrity-init | scripts/sk-file-integrity-init.sh | no | Initialize AIDE database, verify baseline, install nightly cron. |
 | sk-file-integrity-check | scripts/sk-file-integrity-check.sh | no | Run AIDE check, summarize changes, classify (config/log/binary), alert on binary drift. |
+| sk-rootkit-scan | scripts/sk-rootkit-scan.sh | no | Run rkhunter + chkrootkit, summarize warning counts, gate `--propupd` re-baseline, point triage at AIDE/auditd. |

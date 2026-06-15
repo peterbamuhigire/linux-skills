@@ -27,6 +27,9 @@ Alma, Oracle) equivalents are in the matrix.
 | Install a service pkg | `apt install <pkg>` | `dnf install <pkg>` |
 | systemctl / journalctl | identical | identical |
 | Unit file locations | `/etc/systemd/system`, `/lib/systemd/system` | same |
+| Targets (`multi-user`/`graphical`) | identical | identical |
+| cgroup v2 resource control (`CPUWeight=`, `CPUQuota=`, `IOWeight=`, `MemoryMax=`) | identical | identical |
+| `nice` / `renice` / `ionice` | identical | identical |
 
 In `sk-*` scripts, resolve unit names with the `svc_name` helper from
 `common.sh` (e.g. `svc_name apache` → `apache2` or `httpd`) instead of
@@ -79,6 +82,7 @@ hardcoding — see [`linux-bash-scripting`](../../10-automation-and-scripting/li
 
 - [`references/service-reference.md`](references/service-reference.md)
 - [`references/timers-and-cron.md`](references/timers-and-cron.md)
+- [`references/resource-control-and-targets.md`](references/resource-control-and-targets.md)
 
 **This skill is self-contained.** Every command below is a standard systemd
 tool that works identically on both the Debian/Ubuntu and RHEL family (Fedora,
@@ -150,6 +154,62 @@ sudo systemctl list-units --type=service --state=running | \
     grep -E "nginx|apache|mysql|postgresql|php|redis|fail2ban"
 ```
 
+## Process Priority & cgroup Resource Control
+
+A background service must never starve the host. systemd runs every service
+in a **cgroup v2** control group, so you can cap its CPU, I/O, and memory.
+
+```bash
+# Ad-hoc, per-process: nice (CPU) + ionice (disk I/O)
+nice -n 10 /usr/local/bin/backup.sh          # lower CPU priority (-20 high .. 19 low)
+sudo renice -n 10 -p <pid>                    # re-prioritize a running process
+ionice -c 3 /usr/local/bin/backup.sh          # idle I/O class — yields the disk
+nice -n 19 ionice -c 3 /usr/local/bin/heavy.sh
+
+# Per-service, persistent, kernel-enforced — via the unit [Service] section:
+#   Nice=10               CPUWeight=20        CPUQuota=50%
+#   IOSchedulingClass=idle  IOWeight=20       MemoryMax=512M  TasksMax=64
+
+# Apply a limit to a running service without editing the unit:
+sudo systemctl set-property nginx.service CPUQuota=50% MemoryMax=512M
+sudo systemctl set-property --runtime mysql.service IOWeight=50   # until reboot
+
+# Inspect effective limits + live usage:
+systemctl show nginx.service -p CPUWeight -p CPUQuota -p MemoryMax
+systemd-cgtop                                 # top-like per-cgroup usage
+```
+
+`CPUWeight=`/`IOWeight=` are relative shares under contention; `CPUQuota=`/
+`MemoryMax=` are hard ceilings. See
+[`references/resource-control-and-targets.md`](references/resource-control-and-targets.md)
+for the full directive table and a worked resource-limited service.
+
+## systemd Targets (boot state & ordering)
+
+Targets are the modern replacement for SysV runlevels — a group of units
+that defines the system state.
+
+```bash
+systemctl get-default                          # current boot target
+sudo systemctl set-default multi-user.target   # boot headless (no GUI) — server default
+sudo systemctl set-default graphical.target    # boot into a desktop
+sudo systemctl isolate rescue.target           # switch state live (single-user repair)
+systemctl list-units --type=target             # active targets
+systemctl list-dependencies multi-user.target  # what boots in this target
+```
+
+| Target | Runlevel | Meaning |
+|---|---|---|
+| `multi-user.target` | 3 | Full system, **no GUI** — normal server default |
+| `graphical.target`  | 5 | multi-user **plus** a graphical login |
+| `rescue.target`     | 1 | Single-user repair mode |
+
+Dependency ordering in a unit: `Wants=` (soft) / `Requires=` (hard) pull a
+dependency in; `After=`/`Before=` order startup (ordering is **separate** from
+requirement); `[Install] WantedBy=multi-user.target` is what `systemctl
+enable` hooks into to start the service at boot. Details in
+[`references/resource-control-and-targets.md`](references/resource-control-and-targets.md).
+
 ## Node.js Services (Product-Specific)
 
 ```bash
@@ -173,6 +233,7 @@ Running `sudo install-skills-bin linux-service-management` installs:
 | Safe restart with pre/post health check | `sudo sk-service-restart <service>` |
 | All systemd timers with next/last run | `sudo sk-timer-list` |
 | Crontab audit across all users | `sudo sk-cron-audit` |
+| Show or cap a service's CPU/IO/memory limits | `sudo sk-service-priority <service> [--cpu-quota 50% --memory-max 512M]` |
 
 These are optional wrappers around `systemctl` and `journalctl`.
 
@@ -190,3 +251,4 @@ sudo install-skills-bin linux-service-management
 | sk-cron-audit | scripts/sk-cron-audit.sh | yes | Enumerate all user + system crontabs, verify `MAILTO`, flag jobs that haven't run recently, validate syntax. |
 | sk-service-restart | scripts/sk-service-restart.sh | no | Safe restart: check health before, restart, wait, verify, show logs. Rollback hint on failure. |
 | sk-timer-list | scripts/sk-timer-list.sh | no | All systemd timers with next and last run, unit, state; flags timers that never fired. |
+| sk-service-priority | scripts/sk-service-priority.sh | no | Show a service's effective cgroup limits (CPUWeight/CPUQuota/IOWeight/MemoryMax/Nice) and live usage; with limit flags, applies them via `systemctl set-property` (asks first) so a background service can't starve the host. |

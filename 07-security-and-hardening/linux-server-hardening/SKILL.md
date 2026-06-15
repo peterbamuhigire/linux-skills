@@ -175,6 +175,7 @@ Running `sudo install-skills-bin linux-server-hardening` installs:
 | Apply SSH hardening (backs up first, tests before reload) | `sudo sk-harden-ssh` |
 | Apply sysctl kernel hardening | `sudo sk-harden-sysctl` |
 | Apply PHP hardening | `sudo sk-harden-php` |
+| Triage SELinux denials, build reviewed policy module (RHEL family) | `sudo sk-selinux-denials` |
 
 These wrap the manual steps in `references/hardening-checklist.md`.
 
@@ -191,3 +192,4 @@ sudo install-skills-bin linux-server-hardening
 | sk-harden-ssh | scripts/sk-harden-ssh.sh | no | Apply SSH hardening: disable root, password auth off, `MaxAuthTries=3`, banner; backs up original first. |
 | sk-harden-sysctl | scripts/sk-harden-sysctl.sh | no | Write `/etc/sysctl.d/99-linux-skills.conf` with ASLR, SYN cookies, rp_filter, icmp ignore_bogus. |
 | sk-harden-php | scripts/sk-harden-php.sh | no | Apply PHP hardening: `expose_php=off`, `display_errors=off`, `disable_functions`, session flags. |
+| sk-selinux-denials | scripts/sk-selinux-denials.sh | no | RHEL family only. Summarize recent AVC denials (`ausearch`/`aureport --avc`), explain with `audit2why`, then — only after you confirm — build a reviewed local policy module (`audit2allow -M` + `semodule -i`). Never disables SELinux. See `references/selinux-reference.md`. |

@@ -166,6 +166,18 @@ version of the same tool and is held to the same standard.
 If you find any repo-update script on a server still doing `git reset --hard`
 or `git clean -fd`, that is a bug to fix, not a pattern to copy.
 
+## Scripts
+
+This skill installs the following scripts to `/usr/local/bin/`. To install:
+
+```bash
+sudo install-skills-bin linux-repo-sync
+```
+
+| Script | Source | Core? | Purpose |
+|---|---|---|---|
+| sk-update-all-repos | scripts/sk-update-all-repos.sh | no | Pull every registered git repo on this server using `git pull --rebase --autostash` and a porcelain dirty-check; interactive menu plus `--all`/`--repo` flags. This is the engine implementation of the safe-update doctrine above (shared with `linux-site-deployment`, which installs it as a core tool). |
+
 ## Verify
 
 ```bash

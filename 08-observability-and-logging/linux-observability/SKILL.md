@@ -22,6 +22,9 @@ Oracle) equivalents are in the matrix.
 |---|---|---|
 | Install node_exporter | apt / release binary | dnf (EPEL has `golang-github-prometheus-node-exporter`) / release binary |
 | Open scrape port (9100) | `ufw allow 9100/tcp` | `firewall-cmd --add-port=9100/tcp --permanent && firewall-cmd --reload` |
+| Install Telegraf | InfluxData apt repo / `apt install telegraf` | InfluxData yum repo / `dnf install telegraf` |
+| Install Datadog agent | official script / Datadog apt repo | official script / Datadog dnf repo |
+| Open Telegraf scrape port (9273) | `ufw allow 9273/tcp` (restrict to monitor IP) | `firewall-cmd --add-rich-rule ... port=9273` |
 | systemd unit / service | identical | identical |
 | Log forwarding | rsyslog / journald | same (journald primary on RHEL) |
 | Health endpoint pattern | identical | identical |
@@ -80,6 +83,7 @@ In `sk-*` scripts use the `common.sh` primitives (`pkg_install`, `ensure_epel`,
 ## References
 
 - [`references/prometheus-setup.md`](references/prometheus-setup.md)
+- [`references/telemetry-agents.md`](references/telemetry-agents.md)
 - [`references/log-forwarding.md`](references/log-forwarding.md)
 - [`references/health-endpoint-pattern.md`](references/health-endpoint-pattern.md)
 
@@ -194,6 +198,28 @@ curl -s localhost:9100/metrics | head -20
 Full deep-dive (collectors, textfile collector, other exporters,
 systemd hardening options, cardinality discipline) — see
 [`references/prometheus-setup.md`](references/prometheus-setup.md).
+
+### Other telemetry agents (Telegraf, Datadog) — alternatives to node_exporter
+
+`node_exporter` is the **recommended default**: OSS, pull-based, minimal attack
+surface, scraped by your own Prometheus. Two alternatives exist when you have a
+concrete reason to use them:
+
+| Agent | Model | Use when |
+|---|---|---|
+| **node_exporter** (default) | OSS, pull | You run (or want) your own Prometheus/Grafana stack — keeps the smallest surface. |
+| **Telegraf** (InfluxData) | OSS, push | You already run InfluxDB, or want one plugin-rich agent (systemd/SNMP/MySQL inputs) pushing to InfluxDB or a Prometheus `/metrics` endpoint. Stays inside your network. |
+| **Datadog agent** | **SaaS, push** | Your org pays for Datadog and wants metrics+logs+APM in one managed platform — **and accepts that operational data (and logs, which carry PII/secrets) leaves your network** to Datadog's cloud. |
+
+Telegraf install (both families, signed repo), inputs
+(cpu/mem/disk/net/systemd) + outputs (InfluxDB / Prometheus), Datadog install
+via the official script/repo, `datadog.yaml` API-key config, enabling
+integrations, and the **privacy/egress** consideration of a SaaS agent — all in
+[`references/telemetry-agents.md`](references/telemetry-agents.md).
+
+**API keys / tokens** (Telegraf InfluxDB token, Datadog API key) are never put
+in a world-readable config: store them in a `0600`/root systemd env file and
+inject via the unit — see [`linux-secrets`](../../02-users-access-and-secrets/linux-secrets/SKILL.md).
 
 ### Log forwarding with rsyslog (TLS)
 
@@ -323,6 +349,11 @@ caching, auth for detail endpoint) — see
 - [`references/prometheus-setup.md`](references/prometheus-setup.md) —
   full node_exporter install, other exporters, cardinality discipline,
   systemd hardening.
+- [`references/telemetry-agents.md`](references/telemetry-agents.md) —
+  Telegraf (InfluxData) and Datadog agent as alternatives to node_exporter:
+  install on both families, Telegraf inputs/outputs (InfluxDB/Prometheus),
+  Datadog `datadog.yaml`/API key/integrations, "when to use which", and the
+  privacy/egress consideration of a SaaS agent.
 - [`references/log-forwarding.md`](references/log-forwarding.md) —
   rsyslog/fluent-bit/vector/promtail with TLS forwarding examples.
 - [`references/health-endpoint-pattern.md`](references/health-endpoint-pattern.md) —
@@ -341,6 +372,7 @@ Running `sudo install-skills-bin linux-observability` installs:
 | Task | Fast-path script |
 |---|---|
 | Install node_exporter as unprivileged systemd service | `sudo sk-node-exporter-install --monitor-ip <ip>` |
+| Install Telegraf (OSS alternative) with metrics inputs + an output | `sudo sk-telegraf-setup --output prometheus` |
 | Create/verify a `/health` endpoint for a vhost | `sudo sk-health-endpoint --domain <d> --db mysql` |
 | Configure log forwarding over TLS | `sudo sk-log-forward-setup --collector <host>:<port> --tls` |
 
@@ -357,5 +389,6 @@ sudo install-skills-bin linux-observability
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
 | sk-node-exporter-install | scripts/sk-node-exporter-install.sh | no | Install Prometheus node_exporter as unprivileged systemd service, firewall-restrict, verify scrape. |
+| sk-telegraf-setup | scripts/sk-telegraf-setup.sh | no | Install InfluxData Telegraf (OSS alternative to node_exporter) on both families from the signed repo; write host-metrics inputs (cpu/mem/disk/net/systemd) + one output (Prometheus `/metrics` or InfluxDB v2); firewall-restrict the scrape port; validate with `telegraf --test`. Token read from the 0600 env file, never the config. |
 | sk-health-endpoint | scripts/sk-health-endpoint.sh | no | Create and verify `/health` for a vhost: checks db, disk, required services; 200/503 + JSON. |
 | sk-log-forward-setup | scripts/sk-log-forward-setup.sh | no | Configure rsyslog or fluent-bit to forward journald and webserver logs to a central collector over TLS. |

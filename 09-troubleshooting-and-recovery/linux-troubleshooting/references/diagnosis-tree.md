@@ -26,7 +26,7 @@ obvious wide-scope problems (disk full, service dead, OOM kill).
 - [Branch 9: Backup failed](#branch-9-backup-failed)
 - [Branch 10: Site down after update-all-repos](#branch-10-site-down-after-update-all-repos)
 - [Branch 11: Can't reach the server](#branch-11-cant-reach-the-server)
-- [Branch 12: Strace / process tracing](#branch-12-strace--process-tracing)
+- [Branch 12: Process / file / packet diagnostics (strace · lsof · tcpdump)](#branch-12-process--file--packet-diagnostics-strace--lsof--tcpdump)
 - [Branch 13: Security audit — who touched what](#branch-13-security-audit--who-touched-what)
 - [Sources](#sources)
 
@@ -690,10 +690,66 @@ sudo fail2ban-client status sshd                    # did fail2ban ban me?
 
 ---
 
-## Branch 12: Strace / process tracing
+## Branch 12: Process / file / packet diagnostics (strace · lsof · tcpdump)
 
-Use when a service runs but behaves wrong, or a script dies without
-explaining why.
+Use when a service runs but behaves wrong, a process is **hung**, something is
+**holding a file or port** you need, or you must prove whether traffic is even
+**reaching the wire**. Three layers answer three different questions:
+
+| Symptom | Reach for | Question it answers |
+|---|---|---|
+| What's holding this port/file? Disk full after `rm`? | `lsof` | who has it *open right now* |
+| Process hung / failing syscall / which call is slow | `strace` | what kernel calls it's making |
+| App misuses a library (wrong return, leak) | `ltrace` | what library calls it's making |
+| Traffic "should" arrive but doesn't; SYN-no-ACK; routing loop | `tcpdump` | what's actually on the wire |
+
+This branch is a fast field guide. The **full deep-dive** — BPF filters, pcap
+ring buffers, snaplen, offline tshark/Wireshark analysis, the deleted-but-open
+file recovery, and the "why is this process hung" workflow — lives in
+[`packet-capture-and-tracing.md`](packet-capture-and-tracing.md). The
+`sk-capture` fast-path script wraps a safe, bounded `tcpdump -w`.
+
+### lsof — what holds this file or port
+
+```bash
+# Who is listening on / connected to a port (the usual "address already in use")
+sudo lsof -i :8080
+sudo lsof -iTCP:443 -sTCP:LISTEN
+
+# Everything a process has open, by PID
+sudo lsof -p <pid>
+
+# Who holds a file/mount (e.g. why won't this umount?)
+sudo lsof /var/log/app.log
+sudo lsof +D /var/www                 # recurse a directory
+
+# Disk full after deleting a big log? A process still holds the deleted file:
+sudo lsof -nP +L1                     # link count < 1 = deleted-but-open
+```
+
+The deleted-but-open case is the classic "I `rm`'d the logs but `df` still says
+full" (cross-reference Branch 3). The fix is to restart/signal the holding
+process — not another `rm`.
+
+### Packet capture — is the traffic even on the wire?
+
+```bash
+# Watch a port live, no name resolution, bounded to 20 packets
+sudo tcpdump -i any -nn -c 20 'tcp port 443 and host <client>'
+
+# SYN-no-ACK triage: do we see the client's SYN, and a SYN-ACK back?
+sudo tcpdump -i any -nn 'tcp port <port> and host <client>'
+#   SYN but no SYN-ACK   → nothing listening / firewall drop / (RHEL) SELinux port label
+#   SYN → RST            → port closed / service down (Branch 4)
+#   SYN-ACK leaves but client times out → broken return path / asymmetric routing
+
+# Capture to a pcap for offline analysis (or use the sk-capture wrapper)
+sudo tcpdump -i any -nn -w /tmp/cap.pcap 'port 443'
+tcpdump -nn -r /tmp/cap.pcap          # read it back
+```
+
+Full BPF-filter, ring-buffer (`-C`/`-W`), snaplen (`-s`), and Wireshark/tshark
+guidance: [`packet-capture-and-tracing.md`](packet-capture-and-tracing.md).
 
 ### Basic traces
 
@@ -713,8 +769,12 @@ strace -e trace=network <cmd>
 # Attach to a running process by PID
 sudo strace -p <pid>
 
-# Follow child processes too
+# Follow child processes too (pre-fork servers: Apache, PHP-FPM)
 strace -f <cmd>
+
+# Time each syscall to find the slow one (-T), or a totals table (-c)
+sudo strace -T -p <pid>
+strace -c -f <cmd>
 ```
 
 ### Tracing a misbehaving service
@@ -738,9 +798,14 @@ Look for:
 
 ### Alternatives
 
-- `ltrace` traces library calls (slower, but reveals application-level bugs).
+- `ltrace` traces *library* calls (slower, but reveals application-level bugs
+  above the syscall layer). `ltrace -S` shows both. See
+  [`packet-capture-and-tracing.md`](packet-capture-and-tracing.md).
 - `perf trace` is the modern replacement, lower overhead.
 - `bpftrace` for custom eBPF probes on production (lowest overhead).
+
+Full "why is this process hung?" workflow (combine `ps` STAT/wchan → `lsof` →
+`strace -T` → `ltrace`): [`packet-capture-and-tracing.md`](packet-capture-and-tracing.md).
 
 ---
 
@@ -829,5 +894,11 @@ Cross-reference with `/var/log/auth.log` for SSH login attribution.
 - Book: *Mastering Ubuntu* (Atef, 2023) — systemd, journald, and incident
   response chapters.
 - Book: *Ubuntu Server Guide* (Canonical) — service recovery and auditd.
-- Man pages: `systemctl(1)`, `journalctl(1)`, `strace(1)`, `auditctl(8)`,
+- Man pages: `systemctl(1)`, `journalctl(1)`, `strace(1)`, `ltrace(1)`,
+  `lsof(8)`, `tcpdump(1)`, `pcap-filter(7)`, `tshark(1)`, `auditctl(8)`,
   `ausearch(8)`, `aureport(8)`, `ss(8)`, `iotop(8)`, `iostat(1)`.
+- Book: *The Linux Programming Interface* (Michael Kerrisk) — syscalls, file
+  descriptors, and sockets (background for `strace`/`lsof`).
+
+> [GROUNDING-GAP: strace/ltrace/lsof/tcpdump — grounded on man pages and *The
+> Linux Programming Interface* (Kerrisk); deepen on purchase]

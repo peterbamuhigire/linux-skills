@@ -84,6 +84,7 @@ scripts resolve unit names via `svc_name` from `common.sh`.
 ## References
 
 - [`references/diagnosis-tree.md`](references/diagnosis-tree.md)
+- [`references/packet-capture-and-tracing.md`](references/packet-capture-and-tracing.md) — `tcpdump` packet capture (BPF filters, pcap, ring buffers) and `strace`/`ltrace`/`lsof` process & file diagnostics
 - [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md) — SELinux as a hidden cause (RHEL family)
 
 **This skill is self-contained.** Every command below works on a stock
@@ -109,6 +110,8 @@ Ask: "What's the symptom?" then follow the matching branch in
 | Backup failed | → Branch 9 |
 | Site down after update-all-repos | → Branch 10 |
 | Can't reach this server | → Branch 11 |
+| Process hung / what's locking this file or port | → Branch 12 |
+| Traffic not arriving / SYN-no-ACK / packet capture | → Branch 12 (capture) |
 
 Full diagnosis commands for each: `references/diagnosis-tree.md`
 
@@ -164,6 +167,7 @@ interactive decision-tree walkers for each symptom:
 | High CPU / slow site | `sudo sk-load-investigate` → `sudo sk-why-slow` |
 | 502 / 504 | `sudo sk-why-500` |
 | Can't reach server | `sudo sk-why-cant-connect` |
+| Capture traffic on the wire | `sudo sk-capture --filter 'port 443' --count 200` |
 
 These scripts wrap the manual commands above in a guided walkthrough.
 They are optional — the manual commands are always the source of truth.
@@ -182,3 +186,4 @@ sudo install-skills-bin linux-troubleshooting
 | sk-why-slow | scripts/sk-why-slow.sh | no | Decision-tree entry point: walks load/CPU/memory/disk/network/database to diagnose slowness. |
 | sk-why-500 | scripts/sk-why-500.sh | no | Decision-tree: PHP-FPM up? Nginx up? error log? permissions? AppArmor? disk full? |
 | sk-why-cant-connect | scripts/sk-why-cant-connect.sh | no | Decision-tree: firewall? service listening? DNS? routing? cert expired? rate-limited by fail2ban? |
+| sk-capture | scripts/sk-capture.sh | no | Safe bounded `tcpdump -w` capture: forces a packet-count or size/file ring so it can't fill the disk, excludes your SSH session, asks before writing pcap. Read back with `tcpdump -r` / tshark / Wireshark. |

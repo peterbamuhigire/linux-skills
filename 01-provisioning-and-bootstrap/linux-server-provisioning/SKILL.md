@@ -24,6 +24,9 @@ step differ. Body uses Debian/Ubuntu; substitute per this matrix.
 | Mandatory access control | AppArmor (already on) | **SELinux enforcing** (already on) |
 | Time sync | `systemd-timesyncd` | `chronyd` |
 | Install automation | autoinstall (subiquity) | **Kickstart** (Anaconda) |
+| Regenerate GRUB2 | `update-grub` → `/boot/grub/grub.cfg` | `grub2-mkconfig -o /boot/grub2/grub.cfg` (UEFI: `/boot/efi/EFI/<distro>/`) |
+| Set/list default kernel | `grub-set-default` + `update-grub` | `grubby --set-default` / `grub2-set-default`; `grubby --default-kernel` |
+| Edit kernel boot args | edit `GRUB_CMDLINE_LINUX` + regenerate | `grubby --update-kernel ALL --args/--remove-args` |
 
 See [`../../01-provisioning-and-bootstrap/linux-cloud-init/references/kickstart-reference.md`](../../01-provisioning-and-bootstrap/linux-cloud-init/references/kickstart-reference.md)
 for automated installs and
@@ -78,8 +81,10 @@ for SELinux. In `sk-*` scripts use the `common.sh` primitives (`pkg_install`,
 
 - [`references/provisioning-steps.md`](references/provisioning-steps.md)
 - [`references/post-install-verification.md`](references/post-install-verification.md)
+- [`references/grub2-and-kernel-rollback.md`](references/grub2-and-kernel-rollback.md) — GRUB2 config model per family, default-kernel and boot-parameter management, kernel lifecycle, and rolling back to a known-good kernel after a panic
 - [`../../01-provisioning-and-bootstrap/linux-cloud-init/references/kickstart-reference.md`](../../01-provisioning-and-bootstrap/linux-cloud-init/references/kickstart-reference.md) — Kickstart automated install (RHEL family)
 - [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md) — SELinux on a fresh RHEL server
+- [`../../09-troubleshooting-and-recovery/linux-disaster-recovery/SKILL.md`](../../09-troubleshooting-and-recovery/linux-disaster-recovery/SKILL.md) — GRUB *regeneration after corruption* and initramfs/filesystem repair from a rescue environment (use when GRUB itself is broken, not just the kernel)
 
 **This skill is self-contained.** The 11-section manual procedure below uses
 only standard tools — Debian/Ubuntu by default, with RHEL-family equivalents
@@ -151,6 +156,32 @@ Next step after provisioning: `linux-server-hardening`
 
 ---
 
+## Boot / bootloader management
+
+Part of standing up a host is owning its boot path — GRUB2 config, which kernel
+is the default, boot parameters, and (critically) being able to **roll back to a
+known-good kernel after a panic**. This lives here because it is provisioning-time
+ownership of the boot path; *recovery* of a broken/unbootable GRUB from rescue
+media belongs to `linux-disaster-recovery`.
+
+```bash
+# List installed kernels; mark the running one and the GRUB default
+sudo sk-kernel-rollback --list
+
+# After booting a prior kernel from the GRUB menu post-panic, make it the default
+sudo sk-kernel-rollback                 # interactive pick + confirm
+sudo sk-kernel-rollback --to 5.15.0-91-generic
+
+# Regenerate GRUB after editing /etc/default/grub
+sudo update-grub                         # Debian/Ubuntu
+sudo grub2-mkconfig -o /boot/grub2/grub.cfg   # RHEL family
+```
+
+Full model, per-family commands, and the post-panic rollback workflow:
+`references/grub2-and-kernel-rollback.md`
+
+---
+
 ## Optional fast path (when sk-* scripts are installed)
 
 After the basic OS and linux-skills are in place, running
@@ -159,8 +190,10 @@ After the basic OS and linux-skills are in place, running
 | Task | Fast-path script |
 |---|---|
 | Guided wizard for sections 1–11 | `sudo sk-provision-fresh` |
+| List kernels / roll back to a known-good kernel | `sudo sk-kernel-rollback [--list \| --to <version>]` |
 
-This is an optional wrapper around the 11 manual sections above.
+These are optional wrappers — every action is also a plain command documented in
+the sections and references above.
 
 ## Scripts
 
@@ -173,3 +206,4 @@ sudo install-skills-bin linux-server-provisioning
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
 | sk-provision-fresh | scripts/sk-provision-fresh.sh | no | Guided fresh-server wizard covering hostname, timezone, admin user, SSH, UFW, fail2ban, unattended-upgrades, certbot, and linux-skills clone. |
+| sk-kernel-rollback | scripts/sk-kernel-rollback.sh | no | List installed kernels and set a chosen prior kernel as the GRUB2 default (grubby on RHEL, grub-set-default + update-grub on Debian). Read-only with --list; asks before changing the default; never removes a kernel. |
