@@ -171,15 +171,17 @@ if [[ "$SK_DISTRO_FAMILY" == "debian" ]]; then
 
     UPDATES=$(apt list --upgradable 2>/dev/null | grep -c "upgradable" || true)
 else
-    # RHEL family: dnf-automatic is the unattended-upgrades equivalent
-    if pkg_is_installed dnf-automatic; then
+    # RHEL family: dnf-automatic (dnf4) or dnf5-plugin-automatic (dnf5; the
+    # default on Fedora 41+) is the unattended-upgrades equivalent.
+    if pkg_is_installed dnf-automatic || pkg_is_installed dnf5-plugin-automatic; then
         pass "dnf-automatic is installed"
     else
         fail "dnf-automatic is NOT installed"
     fi
 
     if systemctl is-active dnf-automatic.timer &>/dev/null \
-       || systemctl is-active dnf-automatic-install.timer &>/dev/null; then
+       || systemctl is-active dnf-automatic-install.timer &>/dev/null \
+       || systemctl is-active dnf5-automatic.timer &>/dev/null; then
         pass "Automatic security updates are enabled (dnf-automatic.timer active)"
     else
         fail "Automatic updates not configured (dnf-automatic.timer inactive)"
@@ -200,41 +202,54 @@ fi
 # --- 2. SSH hardening --------------------------------------------------------
 header "2. SSH Configuration"
 
-ROOT_LOGIN=$(ssh_setting "PermitRootLogin")
-if [[ "$ROOT_LOGIN" == "no" ]]; then
-    pass "Root login is disabled"
-elif [[ "$ROOT_LOGIN" == "prohibit-password" ]]; then
-    warn "Root login allowed with keys only (consider 'no')"
+# An absent or stopped SSH server is not a remote-login risk, and reading an
+# unconfigured sshd would false-FAIL on empty values. Gate the whole section.
+if ! pkg_is_installed openssh-server && [[ ! -f /etc/ssh/sshd_config ]]; then
+    info "No SSH server installed — SSH section skipped"
 else
-    fail "Root login is permitted: $ROOT_LOGIN"
-fi
+    if ! systemctl is-active sshd &>/dev/null && ! systemctl is-active ssh &>/dev/null; then
+        info "SSH server present but not running — remote-login exposure is currently nil (policy still checked below)"
+    fi
 
-PASS_AUTH=$(ssh_setting "PasswordAuthentication")
-if [[ "$PASS_AUTH" == "no" ]]; then
-    pass "Password authentication is disabled (key-only)"
-else
-    warn "Password authentication is ON — consider switching to key-only"
-fi
+    ROOT_LOGIN=$(ssh_setting "PermitRootLogin")
+    # Empty = "use sshd compiled default", which on modern OpenSSH is
+    # prohibit-password, NOT "yes" — treat it as such instead of false-failing.
+    [[ -z "$ROOT_LOGIN" ]] && ROOT_LOGIN="prohibit-password"
+    if [[ "$ROOT_LOGIN" == "no" ]]; then
+        pass "Root login is disabled"
+    elif [[ "$ROOT_LOGIN" == "prohibit-password" ]]; then
+        warn "Root login allowed with keys only (consider 'no')"
+    else
+        fail "Root login is permitted: $ROOT_LOGIN"
+    fi
 
-PUBKEY_AUTH=$(ssh_setting "PubkeyAuthentication")
-if [[ "$PUBKEY_AUTH" == "yes" || -z "$PUBKEY_AUTH" ]]; then
-    pass "Public key authentication is enabled"
-else
-    fail "Public key authentication is disabled"
-fi
+    PASS_AUTH=$(ssh_setting "PasswordAuthentication")
+    if [[ "$PASS_AUTH" == "no" ]]; then
+        pass "Password authentication is disabled (key-only)"
+    else
+        warn "Password authentication is ON — consider switching to key-only"
+    fi
 
-MAX_AUTH=$(ssh_setting "MaxAuthTries")
-if [[ -n "$MAX_AUTH" && "$MAX_AUTH" -le 4 ]]; then
-    pass "MaxAuthTries is set to $MAX_AUTH"
-else
-    warn "MaxAuthTries is ${MAX_AUTH:-6 (default)} — consider 3-4"
-fi
+    PUBKEY_AUTH=$(ssh_setting "PubkeyAuthentication")
+    if [[ "$PUBKEY_AUTH" == "yes" || -z "$PUBKEY_AUTH" ]]; then
+        pass "Public key authentication is enabled"
+    else
+        fail "Public key authentication is disabled"
+    fi
 
-EMPTY_PASS=$(ssh_setting "PermitEmptyPasswords")
-if [[ "$EMPTY_PASS" == "no" || -z "$EMPTY_PASS" ]]; then
-    pass "Empty passwords are not permitted"
-else
-    fail "Empty passwords are permitted!"
+    MAX_AUTH=$(ssh_setting "MaxAuthTries")
+    if [[ -n "$MAX_AUTH" && "$MAX_AUTH" -le 4 ]]; then
+        pass "MaxAuthTries is set to $MAX_AUTH"
+    else
+        warn "MaxAuthTries is ${MAX_AUTH:-6 (default)} — consider 3-4"
+    fi
+
+    EMPTY_PASS=$(ssh_setting "PermitEmptyPasswords")
+    if [[ "$EMPTY_PASS" == "no" || -z "$EMPTY_PASS" ]]; then
+        pass "Empty passwords are not permitted"
+    else
+        fail "Empty passwords are permitted!"
+    fi
 fi
 
 # --- 3. Firewall -------------------------------------------------------------
@@ -284,7 +299,15 @@ if systemctl is-active fail2ban &>/dev/null; then
         fail "No jails are active"
     fi
 else
-    fail "fail2ban is NOT running"
+    # fail2ban guards exposed auth surfaces (SSH, web logins). With no running
+    # SSH server and no running web server, its absence is informational.
+    if systemctl is-active sshd &>/dev/null || systemctl is-active ssh &>/dev/null \
+       || systemctl is-active "$(svc_name apache)" &>/dev/null \
+       || systemctl is-active nginx &>/dev/null; then
+        fail "fail2ban is NOT running"
+    else
+        info "fail2ban not running (no SSH/web service exposed — low priority on this host)"
+    fi
 fi
 
 # --- 5. Open ports & services ------------------------------------------------
@@ -401,7 +424,20 @@ sysctl_check "kernel.dmesg_restrict"               "1" "Kernel logs restricted t
 sysctl_check "net.ipv4.tcp_syncookies"             "1" "TCP SYN cookies enabled"
 sysctl_check "net.ipv4.conf.all.accept_redirects"  "0" "ICMP redirects rejected"
 sysctl_check "net.ipv4.conf.all.send_redirects"    "0" "ICMP redirect sending disabled"
-sysctl_check "net.ipv4.conf.all.rp_filter"         "1" "Reverse path filtering enabled"
+# rp_filter takes effect as max(conf.all, conf.<iface>); some distros (Fedora)
+# set it per-interface via conf.default, so checking conf.all alone false-WARNs.
+rp_eff=$(sysctl -n net.ipv4.conf.all.rp_filter 2>/dev/null || echo 0)
+for _rf in /proc/sys/net/ipv4/conf/*/rp_filter; do
+    _ifn=$(basename "$(dirname "$_rf")")
+    [[ "$_ifn" == "lo" || "$_ifn" == "all" ]] && continue
+    _v=$(cat "$_rf" 2>/dev/null || echo 0)
+    (( _v > rp_eff )) && rp_eff=$_v
+done
+if (( rp_eff >= 1 )); then
+    pass "Reverse path filtering enabled (effective rp_filter = $rp_eff)"
+else
+    warn "Reverse path filtering disabled (no interface has rp_filter >= 1, recommended: 1)"
+fi
 sysctl_check "net.ipv4.conf.all.accept_source_route" "0" "Source routing disabled"
 sysctl_check "net.ipv4.conf.all.log_martians"      "1" "Martian packets logged"
 sysctl_check "net.ipv6.conf.all.accept_redirects"  "0" "IPv6 redirects rejected"

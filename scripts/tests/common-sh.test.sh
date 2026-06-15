@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Foundation test: common.sh library correctness
-# Runs inside a fresh LXD container with the repo at /root/linux-skills.
+# Self-locating: runs from any checkout (CI container, ~/.claude/skills, etc.).
 #
 # Author: Peter Bamuhigire <techguypeter.com> +256784464178
 
@@ -12,8 +12,9 @@ PASSED=0
 pass_t() { PASSED=$((PASSED + 1)); printf "  [PASS] %s\n" "$*"; }
 fail_t() { FAILURES=$((FAILURES + 1)); printf "  [FAIL] %s\n" "$*"; }
 
-# Use the repo copy, not the installed one
-SK_LIB=/root/linux-skills/scripts/lib/common.sh
+# Use the repo copy, not the installed one (self-locating from this script's path)
+_TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SK_LIB="${_TEST_DIR}/../lib/common.sh"
 [[ -f "$SK_LIB" ]] || { echo "FATAL: $SK_LIB missing"; exit 1; }
 
 # shellcheck source=/dev/null

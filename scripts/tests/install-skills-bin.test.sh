@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Foundation test: install-skills-bin installer correctness
-# Runs inside a fresh LXD container with the repo at /root/linux-skills.
+# Self-locating, but DESTRUCTIVE (installs/uninstalls under /usr/local) — run
+# only in a throwaway container/VM, never on a workstation you care about.
 #
 # Author: Peter Bamuhigire <techguypeter.com> +256784464178
 
@@ -12,7 +13,7 @@ PASSED=0
 pass_t() { PASSED=$((PASSED + 1)); printf "  [PASS] %s\n" "$*"; }
 fail_t() { FAILURES=$((FAILURES + 1)); printf "  [FAIL] %s\n" "$*"; }
 
-cd /root/linux-skills
+cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)" || { echo "FATAL: cannot locate repo root"; exit 1; }
 
 # -----------------------------------------------------------------------------
 # Test 1: --help exits 0 and prints usage

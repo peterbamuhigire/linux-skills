@@ -347,8 +347,13 @@ password accounts, and wide-open authentication rules.
 
 ```bash
 # ---- MySQL / MariaDB ----
+# RHEL family: config is /etc/my.cnf + /etc/my.cnf.d/. NOTE: Oracle's MySQL
+# Community /etc/my.cnf ships WITHOUT `!includedir /etc/my.cnf.d/` (MariaDB has
+# it), so drop-ins in my.cnf.d/ are silently ignored — verify it is present.
 sudo grep -rE '^bind-address|^skip-networking' \
-    /etc/mysql/mysql.conf.d/ /etc/mysql/mariadb.conf.d/ 2>/dev/null
+    /etc/mysql/mysql.conf.d/ /etc/mysql/mariadb.conf.d/ \
+    /etc/my.cnf /etc/my.cnf.d/ 2>/dev/null
+sudo grep -E '^!includedir' /etc/my.cnf 2>/dev/null   # RHEL: must exist or my.cnf.d/ is dead config
 
 # Anonymous or empty-password users
 sudo mysql -e "SELECT user,host,authentication_string FROM mysql.user \
@@ -365,10 +370,13 @@ sudo -u postgres psql -c '\du' 2>/dev/null
 grep -vE '^\s*#|^\s*$' /etc/postgresql/*/main/pg_hba.conf 2>/dev/null
 grep -E '^listen_addresses' /etc/postgresql/*/main/postgresql.conf 2>/dev/null
 
-# ---- Redis ----
+# ---- Redis / Valkey ----
+# Fedora 41+ ships Valkey in place of Redis: package `valkey`, config
+# /etc/valkey/valkey.conf, with redis.service / redis-server / redis-cli kept
+# as compat aliases. Check both config paths.
 grep -E '^bind|^requirepass|^protected-mode|^rename-command' \
-    /etc/redis/redis.conf 2>/dev/null
-redis-cli ping 2>/dev/null   # should require auth
+    /etc/redis/redis.conf /etc/valkey/valkey.conf 2>/dev/null
+redis-cli ping 2>/dev/null   # should require auth (redis-cli is a Valkey alias on Fedora)
 
 # ---- MongoDB ----
 grep -E 'bindIp|authorization' /etc/mongod.conf 2>/dev/null
