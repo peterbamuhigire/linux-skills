@@ -120,8 +120,8 @@ contains_unsafe_shell_chars() {
     [[ "$s" == *";"* ]] && return 0
     [[ "$s" == *">"* ]] && return 0
     [[ "$s" == *"<"* ]] && return 0
-    [[ "$s" == *"`"* ]] && return 0
-    [[ "$s" == *"$("* ]] && return 0
+    [[ "$s" == *'`'* ]] && return 0
+    [[ "$s" == *'$('* ]] && return 0
     [[ "$s" == *"\${"* ]] && return 0
     [[ "$s" == *"="* && "$s" != *=*/* && "$s" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] && return 0
     return 1
