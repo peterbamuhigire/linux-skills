@@ -1,6 +1,6 @@
 ---
 name: linux-network-admin
-description: Manage Ubuntu/Debian server networking — interfaces, routes, netplan, DNS resolution, NTP, reachability. Handles `ip`, `ss`, `nmcli`, `netplan try/apply`, and diagnostic tooling. Use for any non-firewall, non-mail networking task on a managed server.
+description: Manage Linux server networking across two families — Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Diagnostic tooling (`ip`, `ss`, `dig`, `resolvectl`, `traceroute`) is identical on both; persistent config differs — Netplan on Debian/Ubuntu vs NetworkManager/`nmcli` on RHEL — as does time sync (`systemd-timesyncd` vs `chrony`). Covers interfaces, routes, DNS resolution, NTP, and reachability. Use for any non-firewall, non-mail networking task on a managed server.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -9,6 +9,31 @@ metadata:
 ---
 
 # Linux Network Administration
+
+## Distro support
+
+Two-family skill. Diagnostics (`ip`, `ss`, `ping`, `dig`, `resolvectl`,
+`traceroute`) are **identical** on both families. The difference is **persistent
+configuration**: Debian/Ubuntu use **Netplan**; the RHEL family (Fedora, RHEL,
+CentOS Stream, Rocky, Alma, Oracle) uses **NetworkManager / `nmcli`** —
+**Netplan does not exist on RHEL**. Full detail:
+[`references/networkmanager-reference.md`](references/networkmanager-reference.md).
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Persistent config tool | Netplan (`/etc/netplan/*.yaml`) | NetworkManager (`nmcli`) |
+| Config storage | `/etc/netplan/` | `/etc/NetworkManager/system-connections/` |
+| Set static IP | edit YAML | `nmcli con mod <c> ipv4.addresses …` |
+| Apply | `netplan try` / `netplan apply` | `nmcli con up <c>` |
+| Set DNS | `nameservers:` in YAML | `nmcli con mod <c> ipv4.dns "…"` |
+| Diagnostics (ip/ss/dig) | identical | identical |
+| Time sync daemon | `systemd-timesyncd` | `chronyd` (`chronyc sources`) |
+
+**Over SSH, RHEL has no `netplan try` auto-rollback** — schedule a safety reset
+(see the reference). In `sk-*` scripts gate config tooling on the detected
+family via `common.sh`. See
+[`references/networkmanager-reference.md`](references/networkmanager-reference.md)
+and [`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -55,12 +80,17 @@ metadata:
 ## References
 
 - [`references/netplan-reference.md`](references/netplan-reference.md)
+- [`references/networkmanager-reference.md`](references/networkmanager-reference.md)
 - [`references/diagnostics-tree.md`](references/diagnostics-tree.md)
 
-**This skill is self-contained.** Every command below is a standard
-Ubuntu/Debian tool (`ip`, `ss`, `netplan`, `dig`, `ping`, `mtr`,
-`resolvectl`, `chronyc`). The `sk-*` scripts in the **Optional fast path**
-section are convenience wrappers — never required.
+**This skill is self-contained.** Diagnostic commands below (`ip`, `ss`,
+`dig`, `ping`, `mtr`, `resolvectl`) are standard on **both families**.
+Persistent config differs by family: `netplan` on Debian/Ubuntu, `nmcli`
+(NetworkManager) on the RHEL family — see
+[`references/networkmanager-reference.md`](references/networkmanager-reference.md).
+Time sync is `systemd-timesyncd` or `chrony` (`chronyc`) depending on the
+distro default. The `sk-*` scripts in the **Optional fast path** section are
+convenience wrappers — never required.
 
 This skill owns everything about how a server talks to the network *below*
 the firewall and *above* the application layer: interfaces, addresses,
@@ -312,6 +342,8 @@ journalctl -u chrony -n 50 --no-pager
 
 - [`references/netplan-reference.md`](references/netplan-reference.md) —
   complete netplan YAML syntax and 8 worked examples.
+- [`references/networkmanager-reference.md`](references/networkmanager-reference.md) —
+  NetworkManager / `nmcli` persistent config for the RHEL family.
 - [`references/diagnostics-tree.md`](references/diagnostics-tree.md) —
   symptom-driven decision tree for networking problems.
 - Book: *Linux Network Administrator's Guide* (Kirch & Dawson, 2nd ed.) —

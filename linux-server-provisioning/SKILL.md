@@ -1,6 +1,6 @@
 ---
 name: linux-server-provisioning
-description: Set up a fresh Ubuntu/Debian server from scratch for production web hosting. Interactive step-by-step. Covers hostname, timezone, admin user, SSH hardening, UFW, full stack installation (Nginx, Apache port 8080, PHP-FPM, MySQL 8, PostgreSQL, Redis, Node.js, fail2ban, certbot, rclone, msmtp), Nginx snippet setup, and post-install security verification.
+description: Set up a fresh server from scratch for production web hosting across two families — Debian/Ubuntu and RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). The provisioning sequence is the same; tools differ by package manager (apt/dnf), firewall (ufw/firewalld), MAC (AppArmor/SELinux), admin group (sudo/wheel), auto-updates (unattended-upgrades/dnf-automatic), and install automation (autoinstall/Kickstart). Interactive step-by-step. Covers hostname, timezone, admin user, SSH hardening, firewall, full stack installation (Nginx, Apache port 8080, PHP-FPM, MySQL 8, PostgreSQL, Redis, Node.js, fail2ban, certbot, rclone, msmtp), Nginx snippet setup, and post-install security verification.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -8,6 +8,29 @@ metadata:
   author_contact: "+256784464178"
 ---
 # Server Provisioning
+
+## Distro support
+
+Two-family skill. The provisioning *sequence* is the same; the tools at each
+step differ. Body uses Debian/Ubuntu; substitute per this matrix.
+
+| Provisioning step | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Package manager | `apt` | `dnf` |
+| Update + base packages | `apt update && apt install …` | `dnf install …` (`ensure_epel` for extras on RHEL/Rocky/Alma) |
+| Admin user group | `usermod -aG sudo <u>` | `usermod -aG wheel <u>` |
+| Firewall | `ufw` | `firewalld` |
+| Auto security updates | `unattended-upgrades` | `dnf-automatic` |
+| Mandatory access control | AppArmor (already on) | **SELinux enforcing** (already on) |
+| Time sync | `systemd-timesyncd` | `chronyd` |
+| Install automation | autoinstall (subiquity) | **Kickstart** (Anaconda) |
+
+See [`../linux-cloud-init/references/kickstart-reference.md`](../linux-cloud-init/references/kickstart-reference.md)
+for automated installs and
+[`../linux-server-hardening/references/selinux-reference.md`](../linux-server-hardening/references/selinux-reference.md)
+for SELinux. In `sk-*` scripts use the `common.sh` primitives (`pkg_install`,
+`ensure_epel`, `firewall_allow`, `svc_name`) instead of hardcoding. Plan:
+[`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -55,9 +78,12 @@ metadata:
 
 - [`references/provisioning-steps.md`](references/provisioning-steps.md)
 - [`references/post-install-verification.md`](references/post-install-verification.md)
+- [`../linux-cloud-init/references/kickstart-reference.md`](../linux-cloud-init/references/kickstart-reference.md) — Kickstart automated install (RHEL family)
+- [`../linux-server-hardening/references/selinux-reference.md`](../linux-server-hardening/references/selinux-reference.md) — SELinux on a fresh RHEL server
 
 **This skill is self-contained.** The 11-section manual procedure below uses
-only standard Ubuntu/Debian tools. The `sk-provision-fresh` script in the
+only standard tools — Debian/Ubuntu by default, with RHEL-family equivalents
+per the **Distro support** matrix above. The `sk-provision-fresh` script in the
 **Optional fast path** section is a convenience wrapper — never required.
 
 Sets up a fresh server. Ask first:

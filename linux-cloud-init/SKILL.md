@@ -1,6 +1,6 @@
 ---
 name: linux-cloud-init
-description: Design, validate, and debug cloud-init user-data and Ubuntu autoinstall configurations. Use when bootstrapping fresh servers from YAML — first-boot package installs, user creation, SSH keys, network config, and custom runcmd blocks.
+description: Design, validate, and debug cloud-init user-data and OS-install automation across two families. cloud-init user-data/cloud-config is PORTABLE across Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle), but OS-install automation differs — Ubuntu autoinstall (subiquity) vs RHEL Kickstart (Anaconda); cloud-config must use family-correct package names, default user, and the `wheel` (not `sudo`) admin group on RHEL. Use when bootstrapping fresh servers from YAML — first-boot package installs, user creation, SSH keys, network config, and custom runcmd blocks.
 license: MIT
 metadata:
   author: Peter Bamuhigire
@@ -9,6 +9,32 @@ metadata:
 ---
 
 # Linux cloud-init
+
+## Distro support
+
+Two-family skill — but mind the distinction:
+
+- **cloud-init `user-data` / cloud-config is portable** — the same file runs on
+  Ubuntu and Fedora/RHEL cloud images.
+- **OS-install automation is NOT portable** — Ubuntu uses **autoinstall**
+  (subiquity); the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma,
+  Oracle) uses **Kickstart** (Anaconda). See
+  [`references/kickstart-reference.md`](references/kickstart-reference.md).
+
+| Concept | Debian/Ubuntu | RHEL family |
+|---|---|---|
+| Install automation | autoinstall (subiquity) | **Kickstart** (Anaconda) |
+| Install config | `autoinstall:` schema | `.ks` directives, `inst.ks=` boot arg |
+| First-boot config | cloud-init `user-data` | cloud-init `user-data` (same) |
+| Admin group in cloud-config | `sudo` | `wheel` |
+| Default cloud user | `ubuntu` | `fedora` / `cloud-user` / `ec2-user` |
+| Time pkg in cloud-config | `systemd-timesyncd` | `chrony` |
+| Network rendering | cloud-init → Netplan | cloud-init → NetworkManager |
+
+Write **distro-neutral** cloud-config where possible (use `package_update`,
+network-config v2, and group `wheel` on RHEL). See
+[`references/kickstart-reference.md`](references/kickstart-reference.md) and
+[`docs/multi-distro/plan.md`](../docs/multi-distro/plan.md).
 
 ## Use when
 
@@ -58,15 +84,20 @@ metadata:
 - [`references/autoinstall-reference.md`](references/autoinstall-reference.md)
 - [`references/debugging.md`](references/debugging.md)
 
-**This skill is self-contained.** Every command below is a standard
-Ubuntu/Debian tool (`cloud-init`, `journalctl`, `yamllint`). The `sk-*`
+**This skill is self-contained.** Every command below is a standard tool
+present on both families (`cloud-init`, `journalctl`, `yamllint`) — see the
+**Distro support** matrix above for what is portable versus family-specific.
+The `sk-*`
 scripts in the **Optional fast path** section are convenience wrappers —
 never required.
 
 This skill owns **first-boot provisioning from YAML** — cloud-init
-user-data on cloud images, and Ubuntu's autoinstall flow on the
-installer. It is the mechanism that takes a blank Ubuntu image and turns
-it into a server ready for `linux-server-provisioning` to finish.
+user-data on cloud images (portable across both families), plus the
+OS-install flow on the installer: Ubuntu's autoinstall and the RHEL
+family's Kickstart (see
+[`references/kickstart-reference.md`](references/kickstart-reference.md)).
+It is the mechanism that takes a blank cloud image and turns it into a
+server ready for `linux-server-provisioning` to finish.
 
 It does **not** own:
 
@@ -325,6 +356,7 @@ cd /tmp/autoinstall && python3 -m http.server 3003
   worked templates, idempotency and secrets notes.
 - [`references/autoinstall-reference.md`](references/autoinstall-reference.md) —
   full autoinstall schema, storage, network, 3 complete examples.
+- [`references/kickstart-reference.md`](references/kickstart-reference.md) — Kickstart automated install (RHEL family)
 - [`references/debugging.md`](references/debugging.md) — cloud-init
   logs, status decoding, re-run workflow, autoinstall debug.
 - Book: *Ubuntu Server Guide* (Canonical) — cloud-init, autoinstall.
