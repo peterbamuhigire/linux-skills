@@ -80,6 +80,7 @@ use the `common.sh` primitives (`pkg_install`, `firewall_allow`, `svc_name`).
 - [`references/hardening-checklist.md`](references/hardening-checklist.md)
 - [`references/sysctl-reference.md`](references/sysctl-reference.md)
 - [`references/selinux-reference.md`](references/selinux-reference.md)
+- [`../../01-provisioning-and-bootstrap/linux-package-management/SKILL.md`](../../01-provisioning-and-bootstrap/linux-package-management/SKILL.md) — package hygiene, Flatpak/snap, and workstation AppImage runtime support.
 
 **This skill is self-contained.** Every hardening step below uses standard
 tools on both Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream,
@@ -91,6 +92,12 @@ Applies security fixes interactively. Runs the audit first — never applies
 a change without your confirmation.
 
 **For a full picture first:** run `linux-security-analysis` before hardening.
+
+**Desktop/workstation exception:** AppImage runtime packages such as `fuse3`,
+`desktop-file-utils`, and app-specific media libraries (`mpv-libs` on Fedora)
+belong to workstation package setup, not production server hardening. Keep them
+off headless servers unless a real desktop app requirement exists; use
+`linux-package-management` when such a requirement is present.
 
 ---
 

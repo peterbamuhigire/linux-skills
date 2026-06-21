@@ -33,6 +33,7 @@ RHEL, CentOS Stream, Rocky, Alma, Oracle) equivalents are in the matrix and the
 | Pending reboot | `/var/run/reboot-required` | `dnf needs-restarting -r` |
 | Auto security updates | `unattended-upgrades` | `dnf-automatic` |
 | Sandboxed apps | `snap` | `flatpak` (desktop) / native dnf (server) |
+| Portable desktop apps | AppImage + `fuse3`; legacy AppImages may need `libfuse2`/`libfuse2t64` | AppImage + `fuse3`; app-specific libs such as `mpv-libs` |
 | Extra repos | PPA / `.sources` in `sources.list.d` | `.repo` in `/etc/yum.repos.d/`, **EPEL** |
 
 In `sk-*` scripts, **do not hardcode either column** — call the `common.sh`
@@ -51,6 +52,7 @@ surface is the same for everything here).
 - Installing, upgrading, holding, pinning, or auditing packages.
 - Managing `snap` lifecycle or unattended-upgrades behavior.
 - Investigating package-source or dependency issues on Ubuntu/Debian.
+- Preparing a Linux workstation to run portable desktop packages such as AppImage.
 
 ## Do not use when
 
@@ -326,6 +328,60 @@ journalctl -u dnf-automatic -n 50     # did it run?
 **Third-party repos** live in `/etc/yum.repos.d/*.repo` (analogous to
 `sources.list.d`). Add with `dnf config-manager --add-repo <url>` or
 `dnf install` of a release RPM; import keys with `rpm --import`.
+
+---
+
+## AppImage desktop support
+
+AppImage is a common way to distribute Linux desktop applications outside the
+native package repositories. Treat it as a **workstation compatibility layer**,
+not a production server packaging standard. AppImages are often self-contained,
+but many still depend on host runtime libraries.
+
+Baseline support:
+
+```bash
+# Debian/Ubuntu workstation
+sudo apt install -y fuse3 desktop-file-utils
+
+# Legacy AppImages that require libfuse.so.2 may also need one of:
+sudo apt install -y libfuse2     # Debian/older Ubuntu
+sudo apt install -y libfuse2t64  # newer Ubuntu releases
+
+# Fedora workstation
+sudo dnf install -y fuse3 desktop-file-utils
+
+# RHEL/Rocky/Alma workstation
+sudo dnf install -y fuse3 desktop-file-utils
+```
+
+Media-heavy AppImages may need distro libraries for playback engines or codecs.
+On Fedora, Flutter/Electron media apps commonly need:
+
+```bash
+sudo dnf install -y mpv-libs
+```
+
+Run and diagnose:
+
+```bash
+chmod +x ./SomeApp.AppImage
+./SomeApp.AppImage
+
+# If the AppImage wrapper is broken, inspect the payload.
+./SomeApp.AppImage --appimage-extract
+cd squashfs-root
+ldd ./<real-binary> | grep 'not found'
+```
+
+If the bundled `AppRun` is malformed or assumes the wrong path, install the
+extracted payload under `~/Applications/<AppName>/` and create a launcher in
+`~/.local/bin/` plus a desktop entry in `~/.local/share/applications/`.
+
+Do not add random AppImage download sites as trusted package sources. Prefer the
+vendor's official release page, record the source URL and checksum when installing
+for someone else, and use native packages or Flatpak when an audited distro
+package exists.
 
 ---
 

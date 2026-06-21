@@ -21,6 +21,7 @@ step differ. Body uses Debian/Ubuntu; substitute per this matrix.
 | Admin user group | `usermod -aG sudo <u>` | `usermod -aG wheel <u>` |
 | Firewall | `ufw` | `firewalld` |
 | Auto security updates | `unattended-upgrades` | `dnf-automatic` |
+| Workstation AppImage support | `fuse3 desktop-file-utils`; add `libfuse2`/`libfuse2t64` for legacy AppImages | `fuse3 desktop-file-utils`; add app-specific libs such as `mpv-libs` when needed |
 | Mandatory access control | AppArmor (already on) | **SELinux enforcing** (already on) |
 | Time sync | `systemd-timesyncd` | `chronyd` |
 | Install automation | autoinstall (subiquity) | **Kickstart** (Anaconda) |
@@ -31,7 +32,10 @@ step differ. Body uses Debian/Ubuntu; substitute per this matrix.
 See [`../../01-provisioning-and-bootstrap/linux-cloud-init/references/kickstart-reference.md`](../../01-provisioning-and-bootstrap/linux-cloud-init/references/kickstart-reference.md)
 for automated installs and
 [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md)
-for SELinux. In `sk-*` scripts use the `common.sh` primitives (`pkg_install`,
+for SELinux. Workstation-only AppImage package baselines are owned by
+[`linux-package-management`](../linux-package-management/SKILL.md); add them
+only when the target host is a desktop/workstation, not a headless production
+server. In `sk-*` scripts use the `common.sh` primitives (`pkg_install`,
 `ensure_epel`, `firewall_allow`, `svc_name`) instead of hardcoding. Plan:
 [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
