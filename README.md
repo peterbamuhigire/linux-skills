@@ -25,6 +25,24 @@ in **Codex**. `SKILL.md` is the portable unit; [`CLAUDE.md`](CLAUDE.md) and
 
 ---
 
+## Architecture & cross-cutting engines (updated 2026-06-21)
+
+- **No engine is natively discovered anymore.** This engine — like every other on this
+  machine — is reached only via the user's global engine-routing table
+  (`~/.claude/CLAUDE.md`, or `AGENTS.md` for Codex), by globbing `SKILL.md` directly and
+  reading the matching file (not via the `Skill` tool).
+- **Design / typography / visual formatting routes out to `design-system-skills`.** The
+  cross-cutting **`design-system-skills`** engine (resolve its path per-device from the
+  global routing table — never hardcode) is the single home for ALL design/typography/UI/UX/
+  visual-formatting skills plus the anti-AI-slop doctrine. Consult it **IN ADDITION** to this
+  engine whenever any DOCUMENTATION, runbook, or report needs VISUAL formatting or typography
+  decisions. It is **referenced, not mirrored** — read its `README.md` and glob its
+  `skills/**/SKILL.md` fresh each time.
+- **No skills moved out of linux-skills.** This engine's content is unchanged; the only
+  change is that visual/presentation concerns are now delegated to the design engine.
+
+---
+
 ## How the two-family design works
 
 There are no per-distro forks. One `SKILL.md` serves both families, and the
