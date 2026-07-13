@@ -1,8 +1,12 @@
 ---
 name: linux-access-control
-description: Manage users, groups, SSH keys, sudo access, and file permissions on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Create/delete users, manage the admin group (differs by family — `sudo` on Debian/Ubuntu, `wheel` on RHEL), add/revoke SSH authorized_keys, audit who has access, fix file permissions in web roots and credential files. RHEL family also adds authselect-managed PAM and SELinux user mapping.
+description: Use when creating, revoking, or auditing Linux users, groups, SSH keys, sudo/wheel access, PAM settings, SELinux user mappings, or file permissions. Use linux-secrets for credential material and linux-server-hardening for broader host policy.
 license: MIT
 metadata:
+  portable: true
+  compatible_with:
+  - claude-code
+  - codex
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -32,6 +36,7 @@ SELinux can confine users (`semanage login`, `semanage user`). See
 [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md)
 and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
 ## Use when
 
 - Managing Linux users, groups, sudo access, SSH keys, or file permissions.
@@ -45,9 +50,11 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Required inputs
 
-- The target usernames, groups, paths, or key files.
-- Whether the action is audit-only or will change access.
-- Any expected ownership and permission state to enforce.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Target identities, groups, paths, keys, and requested privileges | Access request or system owner | required | Stay read-only and return the missing identity/scope. |
+| Current account, group, sudoers, SSH, PAM, and file state | Target host | required | Do not mutate; provide inspection commands only. |
+| Approval, expiry, owner, and recovery access | Authorised approver | required for mutation | Stop before granting or revoking access. |
 
 ## Workflow
 
@@ -55,6 +62,8 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 2. Apply the least-privilege change with the manual commands below.
 3. Re-check login access, sudo membership, and file ownership after the change.
 4. Use optional scripts only when they are installed and clearly match the task.
+5. Stop if the approver, target identity, recovery administrator, or ownership boundary is unresolved.
+6. Recover a failed access change through the tested alternate session, restore the saved sudoers/key/file state, and verify login again.
 
 ## Quality standards
 
@@ -64,21 +73,53 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Anti-patterns
 
-- Running recursive `chmod` or `chown` without scoping the target.
-- Granting sudo or shell access without an explicit need.
-- Deleting an account before confirming whether its data or keys are still required.
+- Running recursive `chmod` or `chown` without scoping the target. Fix: inspect boundaries and change only the named tree or files.
+- Granting sudo or shell access without an approved need. Fix: use the least privilege and record the owner and expiry.
+- Deleting an account before reviewing its files, processes, jobs, and keys. Fix: disable first, inventory dependencies, then remove deliberately.
+- Editing `/etc/sudoers` without validation. Fix: use a drop-in and validate with `visudo` before ending the recovery session.
+- Revoking the only working administrator or SSH key. Fix: prove an independent break-glass path first.
 
 ## Outputs
 
-- The access change or audit result.
-- The exact commands or files touched.
-- A verification result showing the final access state.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Access decision/change record | System owner | Names identity, privilege, approver, expiry, files changed, and rationale. |
+| Final-state verification | Operator | Login, group/sudo membership, key fingerprints, and affected permissions match the request. |
+| Recovery note | On-call administrator | Preserves a tested alternate administrator and reversal steps. |
 
 ## References
 
 - [`references/users-sudoers-pam.md`](references/users-sudoers-pam.md)
 - [`references/permissions-reference.md`](references/permissions-reference.md)
 - [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md) — SELinux user confinement (RHEL family)
+
+## Evidence Produced
+
+| Artefact | Acceptance condition |
+|---|---|
+| Access-control evidence | Shows before/after identity state, key fingerprints, sudoers validation, affected modes, tested login/privilege behaviour, and approval. |
+
+## Capability contract
+
+Audit requests default to read-only. Read access to account and permission state is required; editing users, groups, keys, PAM, sudoers, SELinux mappings, or files requires explicit authority. Never expose private keys or revoke the last tested administrator.
+
+## Degraded mode
+
+Without privileged access, report observable state and exact root-level checks as `not assessed`. Without a safe second login or console, stop before lockout-capable changes.
+
+## Decision rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Temporary privileged task | Use narrow sudo command rules with expiry | Permanent broad administration. |
+| Suspected compromised key | Disable that key, preserve evidence, rotate dependants | Continued unauthorised access. |
+| Account departure | Disable, inventory ownership/jobs, transfer, then remove | Orphaned data and services. |
+
+## Worked example
+
+To offboard a deployment user, record current groups, keys, processes, cron jobs, and owned files; disable login; verify the replacement automation identity; transfer required ownership; remove authorised keys; then confirm the account cannot authenticate while the service still deploys.
+
+<!-- dual-compat-end -->
 
 **This skill is self-contained.** Every command below is a standard tool on
 both families (Debian/Ubuntu and RHEL); substitute the admin group and

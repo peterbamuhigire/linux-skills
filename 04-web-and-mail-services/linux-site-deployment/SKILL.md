@@ -1,8 +1,12 @@
 ---
 name: linux-site-deployment
-description: Deploy a new website to a Linux server running Nginx + Apache dual-stack, across both the Debian/Ubuntu and RHEL families (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Interactive — asks domain name and site type (Astro static / PHP app / Astro+PHP hybrid), generates the correct Nginx config, walks the full 8-step deployment, issues SSL, and registers the repo in update-all-repos. Vhost enablement differs (a2ensite symlink on Debian/Ubuntu vs dropping *.conf in conf.d on RHEL), the web user differs (www-data vs apache), and deploying under SELinux on RHEL requires labeling the docroot (httpd_sys_content_t).
+description: Use when deploying a static, PHP, Node.js, or hybrid website to an existing Nginx/Apache host, including build, vhost, TLS, SELinux labelling, verification, and update registration. Use linux-webstack to install or repair the shared web platform.
 license: MIT
 metadata:
+  portable: true
+  compatible_with:
+  - claude-code
+  - codex
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -33,6 +37,7 @@ and [`../../07-security-and-hardening/linux-server-hardening/references/selinux-
 In `sk-*` scripts use `svc_name`, `web_conf_dir`, `web_reload`, `firewall_allow`
 from `common.sh`. Plan: [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
 ## Use when
 
 - Deploying a new website to the standard Nginx plus Apache server model in this repo.
@@ -46,9 +51,11 @@ from `common.sh`. Plan: [`docs/multi-distro/plan.md`](../../docs/multi-distro/pl
 
 ## Required inputs
 
-- The domain name.
-- The site type and repo location.
-- Any build, Apache backend, or deployment-path details needed for the chosen site model.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Domain, repository/revision, site type, build command, runtime, and document root | Release request and repository | required | Stop before cloning or generating a vhost. |
+| Existing stack topology, web user, ports, SELinux state, and DNS readiness | Target host and DNS owner | required | Return a preflight report only. |
+| Release window, secrets source, health check, rollback revision, and cutover authority | Service owner | required for production deployment | Build/stage only; do not publish. |
 
 ## Workflow
 
@@ -56,6 +63,8 @@ from `common.sh`. Plan: [`docs/multi-distro/plan.md`](../../docs/multi-distro/pl
 2. Follow the eight deployment steps in order.
 3. Validate web server config and TLS before making the site live.
 4. Verify the final site response and repo registration state after deployment.
+5. Stop if the release revision, secrets source, DNS/TLS ownership, health check, rollback target, or cutover authority is unresolved.
+6. Recover a failed cutover by restoring the prior release symlink/config, validating and reloading the web service, then proving the prior external health check.
 
 ## Quality standards
 
@@ -65,15 +74,19 @@ from `common.sh`. Plan: [`docs/multi-distro/plan.md`](../../docs/multi-distro/pl
 
 ## Anti-patterns
 
-- Skipping `nginx -t` before reload.
-- Deploying a site without registering its repo in the update workflow.
-- Treating certificate issuance as optional for a production deployment.
+- Reloading without Nginx/Apache syntax validation. Fix: block reload on any config-test failure.
+- Building directly in the live document root. Fix: build a versioned release and switch only after validation.
+- Copying secrets into the repository or web root. Fix: use the authorised runtime secret source outside served paths.
+- Ignoring SELinux labels on RHEL. Fix: define persistent `semanage fcontext` rules and restore contexts.
+- Declaring success from a local `200` alone. Fix: test DNS, TLS, redirects, assets, backend health, and the external URL; register the update path.
 
 ## Outputs
 
-- A deployed site with the correct vhost pattern.
-- The config, TLS, and repo-registration actions taken.
-- Verification that the site resolves and serves as expected.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Versioned site release and vhost | Service owner | Approved revision is served from the family-correct path with valid config and permissions/labels. |
+| TLS and cutover record | Operations | DNS resolves, certificate matches/renews, HTTP redirects as intended, and rollback revision is available. |
+| Deployment evidence | Maintainer | External health/assets/backend checks pass and the repository update mechanism is registered. |
 
 ## References
 
@@ -82,6 +95,34 @@ from `common.sh`. Plan: [`docs/multi-distro/plan.md`](../../docs/multi-distro/pl
 - [`references/apache-backend.md`](references/apache-backend.md)
 - [`../../04-web-and-mail-services/linux-webstack/references/httpd-reference.md`](../../04-web-and-mail-services/linux-webstack/references/httpd-reference.md) — httpd conf.d model (RHEL family)
 - [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md) — SELinux docroot labeling (RHEL family)
+
+## Evidence Produced
+
+| Artefact | Acceptance condition |
+|---|---|
+| Deployment evidence | Includes revision/build output, config tests, release ownership/context, TLS and external checks, update registration, rollback target, and logs. |
+
+## Capability contract
+
+Read/search access to repository and host is required. Building in staging may be authorised separately. Production file changes, web reloads, certificate issuance, DNS/cutover, or public exposure require explicit authority. Destructive cleanup waits until rollback retention expires.
+
+## Degraded mode
+
+Fallback when DNS, certificate issuance, external probing, or production authority is unavailable: stop at the narrowest validated stage and mark cutover gates `not assessed`. A successful local build is not a deployed site.
+
+## Decision rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Static build | Serve immutable release directly through Nginx | Unneeded backend complexity. |
+| PHP/hybrid application | Use approved Apache/PHP-FPM backend pattern | Executing PHP incorrectly or exposing source. |
+| Failed health after cutover | Restore prior config/release, then diagnose | Prolonged outage during investigation. |
+
+## Worked example
+
+For an Astro site on AlmaLinux, build the pinned revision into a versioned release, label it `httpd_sys_content_t`, install a reviewed Nginx vhost, pass `nginx -t`, switch the release, issue/verify TLS after DNS is ready, test the external page and assets, and record rollback plus update registration.
+
+<!-- dual-compat-end -->
 
 This skill is self-contained. Every step below works with only the tools
 that ship with the Debian/Ubuntu and RHEL families (see Distro support above

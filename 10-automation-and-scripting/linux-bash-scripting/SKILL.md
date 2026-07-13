@@ -1,8 +1,10 @@
 ---
 name: linux-bash-scripting
-description: Write interactive, secure, powerful, family-aware Bash scripts for the linux-skills engine. Scripts must run on both families (Debian/Ubuntu + the RHEL family: Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) by calling the common.sh distro primitives instead of hardcoding apt/ufw/apache2. Defines the canonical script template, the common.sh library contract, standard flags, interactive UX rules, and safety patterns every `sk-*` script must follow. Use before writing or reviewing any script in this repo.
+description: "Use when writing or reviewing portable sk-* Bash scripts for this engine, including common.sh primitives, flags, dry runs, and safety gates; use linux-repo-sync for Git-update behaviour and not for one-off commands."
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -31,6 +33,8 @@ family: Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle).
 Full contract: [`references/common-sh-contract.md`](references/common-sh-contract.md).
 Plan: [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
+
 ## Use when
 
 - Writing a new `sk-*` script in this repository.
@@ -42,18 +46,46 @@ Plan: [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 - The task is a one-off shell command or an operational fix that will not become a repo script.
 - The implementation language is not Bash.
 
-## Required inputs
+## Required Inputs
 
-- The target skill or script name.
-- The intended behavior, decision flags, and safety expectations.
-- Any relevant references in `docs/engine-design/` or `references/`.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Target skill, script name, and inventory entry | Request and script inventory | yes | Stop before scaffolding an unowned script |
+| Behaviour, inputs, decision flags, and side effects | Operator and owning specialist skill | yes | Produce a review/questions list; do not invent defaults |
+| Distro support and service/package mappings | Owning skill and `common.sh` contract | yes | Require `any` only when both families are verified |
+| Test fixtures and mutation authority | Maintainer and safe test host | for execution | Limit work to static review and dry-run design |
+
+## Capability Contract
+
+Review uses read/search access and is read-only by default. Editing an owned script requires explicit implementation authority; executing privileged or destructive paths requires separate test-host approval. Never use production state to discover what an unsafe script does.
+
+## Degraded Mode
+
+Without shellcheck, a Bash runtime, root, or both distro families, complete static checks and label runtime, privilege, or family behaviour unassessed. Do not claim portability or safety from source inspection alone.
+
+## Decision Rules
+
+| Choice | Action | Failure avoided |
+|---|---|---|
+| Input requires a prompt | Add a named decision flag and `require_flag` under `--yes` | Invented unattended defaults |
+| Operation changes important config | Backup, atomic write, native validation, then reload | Partial config and outage |
+| Package/service differs by family | Use `common.sh` primitive | Debian-only automation |
+| Operation is destructive | Typed confirmation plus explicit non-interactive flag | Accidental deletion |
 
 ## Workflow
 
-1. Read the engine spec and the relevant script inventory entry.
-2. Start from the canonical template and the `common.sh` contract.
-3. Implement or review the script against standard flags, safety patterns, and interactive UX rules.
-4. Verify help text, dry-run behavior, idempotency expectations, and script manifest alignment.
+1. Read the owning skill, engine spec, inventory, template, and `common.sh` contract.
+2. Define inputs, effects, decisions, exit codes, rollback, and family support; stop on an unresolved destructive default.
+3. Scaffold or review the six-section structure and standard flags.
+4. Implement through shared primitives with quoted inputs, safe temp files, backups, and native validators.
+5. Test help, bad inputs, `--yes`, dry run, interruption, idempotency, and both families where claimed.
+6. Recover failed mutation from backup, then run shellcheck/engine lint and reconcile manifest documentation.
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Script validation evidence | Includes shellcheck/engine lint, help, dry run, negative paths, distro matrix, diff, and manifest alignment |
 
 ## Quality standards
 
@@ -63,15 +95,26 @@ Plan: [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Anti-patterns
 
-- Writing ad-hoc Bash that bypasses `common.sh`.
-- Treating `--yes` as permission to invent defaults.
-- Shipping a script without a matching `## Scripts` manifest entry and verification path.
+- Bypassing `common.sh`. Fix: use its output, guard, package, service, and file primitives.
+- Treating `--yes` as permission to invent defaults. Fix: require every decision flag.
+- Shipping without a manifest entry. Fix: reconcile the owning skill and inventory.
+- Using `set -e`. Fix: handle expected failures and preserve `set -uo pipefail`.
+- Writing important files with direct redirection. Fix: back up and use atomic writes.
+- Claiming family portability after one-family testing. Fix: test both or mark one unassessed.
 
 ## Outputs
 
-- A script or review decision that conforms to the engine contract.
-- The required decision flags, validation steps, and installation manifest entry.
-- Any follow-up test or lint action needed before ship.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Conforming script or review | Maintainer | Contract, flags, safety, and family rules are satisfied |
+| Test evidence | Reviewer | Covers help, errors, dry run, destructive gates, and lint |
+| Manifest update | Installer | Script source, name, core status, and purpose agree |
+
+## Worked Example
+
+For `sk-cifs-mount`, make share, mount point, and credentials source explicit flags. Under `--yes`, missing any required choice exits 2; dry run prints package, credential-file, mount, and fstab actions without exposing the password or writing files.
+
+<!-- dual-compat-end -->
 
 ## References
 

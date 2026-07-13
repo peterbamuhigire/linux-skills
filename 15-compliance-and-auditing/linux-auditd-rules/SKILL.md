@@ -1,8 +1,10 @@
 ---
 name: linux-auditd-rules
-description: Manage the Linux Audit daemon (auditd) for compliance and forensic attribution on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Add and inspect rules with auditctl, persist them in /etc/audit/rules.d/*.rules and load with augenrules, watch files (-w) and syscalls (-a always,exit), tag events with keys (-k), analyse the trail with ausearch and aureport, lock the rule set immutable (-e 2), and tune buffer/rotation of /var/log/audit/audit.log. auditd is identical across both families; RHEL ships pre-built compliance rulesets (PCI-DSS, CIS, STIG) via scap-security-guide. For automated benchmark scanning use linux-benchmark-scanning; for file-hash drift use linux-file-integrity.
+description: Use when inspecting, designing, testing, persisting, or querying auditd rules for forensic attribution on Debian/Ubuntu or RHEL-family hosts. Covers watches, syscalls, loss, and immutable mode; use linux-file-integrity for drift and linux-benchmark-scanning for scoring.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -38,32 +40,53 @@ subsystem. It complements the other two compliance layers: file-hash drift
 SELinux reference in
 [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md).
 
-## Use when
+<!-- dual-compat-start -->
+## Use When
 
 - Adding, listing, or deleting audit rules with `auditctl` or persisting them in `/etc/audit/rules.d/`.
 - Watching files (`-w`) or syscalls (`-a always,exit`) for a compliance or forensic requirement.
 - Searching the audit trail with `ausearch`/`aureport` to attribute a change to a user.
 - Locking the rule set immutable (`-e 2`) or tuning audit-log rotation and buffers.
 
-## Do not use when
+## Do Not Use When
 
 - The task is detecting file-content drift by hash; use `linux-file-integrity` (AIDE).
 - The task is a benchmark/compliance scan with a score; use `linux-benchmark-scanning` (OpenSCAP/Lynis).
 - The task is blocking abusive IPs or rootkit scanning; use `linux-intrusion-detection`.
 
-## Required inputs
+## Required Inputs
 
-- The file path(s) or syscall(s) to audit, and the key (`-k`) to tag them with.
-- Whether the change should be runtime-only (`auditctl`) or persistent (`rules.d`).
-- Whether the rule set should become immutable (`-e 2`) after loading.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Attribution/compliance objective, exact paths/syscalls, architectures, and key | Control owner and system inventory | yes | Stop rule design; do not deploy broad guesses. |
+| Existing rules, event rate, backlog/loss state, and log capacity | Read-only host inspection | yes | Return a proposed read-only assessment plan. |
+| Persistence, immutable-mode, change window, and console recovery approval | Change record | mutation only | Keep runtime inspection; do not load or lock rules. |
+
+## Capability Contract
+
+Default to read-only: read/search rules, status, logs, and reports without changing the host. Runtime/persistent rule changes, daemon config, reload, rotation, and `-e 2` require explicit authority. Immutable mode requires console recovery and separate approval because reversal needs reboot.
+
+## Degraded Mode
+
+Without audit-log access, review supplied rules statically and mark attribution/loss checks `not assessed`. Without workload reproduction, do not claim the rule captures the intended event. Without authority, emit tested commands as a proposal only.
+
+## Decision Rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| File watch or syscall rule | Prefer syscall filters for attributable system calls; use narrow file watches where path monitoring is the requirement. | Excess noise or missing attribution. |
+| Runtime or persistent | Test runtime first, then persist only a proven rule. | Reboot regression or lost rule. |
+| Permission mask | Record only required operations; avoid hot read auditing unless mandated. | Backlog overflow and lost events. |
+| Immutable mode | Set `-e 2` only after complete validation and recovery approval. | Locking a broken/noisy ruleset. |
 
 ## Workflow
 
-1. Inspect the current rule set (`auditctl -l`) and daemon status (`auditctl -s`).
-2. Add the watch or syscall rule, runtime first to validate, then persist in `rules.d`.
-3. Load with `augenrules --load`; confirm with `auditctl -l`.
-4. Generate the event, then attribute it with `ausearch -k <key> -i`.
-5. Once stable, set `-e 2` for production immutability; tune buffer/rotation if events are lost.
+1. Read/search the current rules, daemon/backlog status, log capacity, and relevant events; stop if the target or loss baseline is unknown.
+2. Translate the objective into the narrowest keyed rule and review architecture/path coverage.
+3. With authority, load the rule at runtime first and generate the intended positive event plus a negative control.
+4. Confirm attribution with `ausearch`, event rate, and zero unacceptable loss; abort and delete the runtime rule if noise/loss exceeds the limit.
+5. Persist and reload only the proven rule, then verify active and on-disk sets match.
+6. Consider `-e 2` only after separate approval. Recover from a failed rule by removing/reverting the drop-in and reloading; immutable failures require the approved reboot path.
 
 ## Quality standards
 
@@ -72,18 +95,33 @@ SELinux reference in
 - Watch the narrowest path that meets the requirement — broad watches on busy trees lose events.
 - Ship the log off-box: an attacker with root can delete `/var/log/audit/`.
 
-## Anti-patterns
+## Anti-Patterns
 
-- Auditing read (`-p r`) on hot files — floods the log and drops events.
-- Leaving `-e 2` set during rule development (every edit then needs a reboot).
-- Treating `ausearch` output without `-i` as final — numeric IDs hide the real user.
-- Ignoring a nonzero `lost` count in `auditctl -s`.
+- Auditing reads on hot files. Fix: narrow operations/filters and measure event rate before persistence.
+- Leaving `-e 2` set during development. Fix: test runtime, persist, reload, and lock only after approval.
+- Treating uninterpreted numeric IDs as final. Fix: preserve raw IDs and add `ausearch -i` for human attribution.
+- Ignoring nonzero `lost` counts. Fix: stop acceptance, reduce noise or tune capacity, and rerun the test.
+- Deploying rules without keys. Fix: assign stable descriptive keys tied to the control objective.
+- Copying a benchmark ruleset wholesale. Fix: map each selected rule to the host architecture, workload, and control.
 
 ## Outputs
 
-- The rule added (runtime and/or persistent) and its key.
-- The `ausearch`/`aureport` evidence attributing an event.
-- Verification that the rule loaded and the daemon is healthy (no losses).
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Rule/control record | Compliance and platform owners | Maps objective to exact keyed rule, scope, persistence, approval, and rollback. |
+| Attribution report | Investigator | Positive test identifies expected actor/action/object/time; negative control is excluded. |
+| Health evidence | Operator | Active/persistent rules match and backlog/lost metrics remain within declared limits. |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Rule-load and event evidence | Contains redacted `auditctl` status/list, test event, `ausearch` attribution, event-rate/loss result, and unavailable checks. |
+
+## Worked Example
+
+To attribute edits to `/etc/sudoers`, inspect existing overlap, test a keyed runtime write/attribute rule, make one authorised test change, prove the actor with `ausearch -k`, confirm no loss, then persist. Do not enable immutable mode during this test.
+<!-- dual-compat-end -->
 
 ## References
 

@@ -1,8 +1,10 @@
 ---
 name: linux-firewall-ssl
-description: Manage host firewalls and SSL/TLS certificates across both major Linux families — UFW on Debian/Ubuntu and firewalld (zone-based, firewall-cmd) on the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Firewall rule management (view, add, remove, rate limiting, reload). Certbot operations on both families (issue cert with --nginx plugin, check expiry, force renew, dry run, add domains, troubleshoot renewal, renew timer). ECDSA certificates, TLSv1.2/1.3 only.
+description: Use when inspecting or changing UFW/firewalld policy, issuing or renewing Certbot certificates, or validating host TLS exposure; use linux-webstack for application-server faults.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -43,6 +45,8 @@ targets whichever firewall is active. See
 [`references/firewalld-reference.md`](references/firewalld-reference.md) and
 [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
+
 ## Use when
 
 - Managing UFW rules on a server.
@@ -54,36 +58,76 @@ targets whichever firewall is active. See
 - The task is broader web stack tuning or 502 troubleshooting; use `linux-webstack`.
 - The task is user access or SSH key management; use `linux-access-control`.
 
-## Required inputs
+## Required Inputs
 
-- The target ports, hostnames, or certificate names.
-- Whether the change affects firewall policy, certificate lifecycle, or both.
-- Any maintenance window or production-safety constraints.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Host, management path, and distro | Operator or inventory | yes | Inspect only; do not select UFW/firewalld by guesswork |
+| Required services, sources, ports, and zones | Network/application owner | for firewall change | Do not open a port or range |
+| Certificate names and DNS control | Certificate owner and authoritative DNS | for issuance | Do not request or expand a certificate |
+| Change window and rollback access | Operations owner | for mutation | Return a proposed rule/certificate plan |
+
+## Capability Contract
+
+Read/search inspection may be read-only. Firewall mutation, package installation, certificate issuance, web-server edits, and reloads require explicit change authority and root access. Preserve an independent management session before default-deny or SSH rule changes.
+
+## Degraded Mode
+
+Without DNS, network, root, Certbot, or a second management session, report verified local state and label public reachability, issuance, renewal, or lockout safety `not assessed`. Never interpret an unavailable probe as success.
+
+## Decision Rules
+
+| Condition | Action | Failure avoided |
+|---|---|---|
+| Front-end firewall is active | Change rules through that front end | Reload overwriting hand-written nftables rules |
+| Remote default-deny change | Preserve SSH and established traffic; test from a second session | Administrator lockout |
+| DNS or HTTP-01 path is wrong | Stop issuance and repair prerequisite | Rate-limit consumption and failed renewals |
+| Existing certificate covers required names | Renew; expand only for an authorised new SAN | Unnecessary key/certificate churn |
 
 ## Workflow
 
-1. Inspect the current UFW or certificate state before changing it.
-2. Apply the specific rule or certbot action needed.
-3. Validate renewal or HTTPS behavior after the change.
-4. Record any follow-up work such as DNS fixes, rate limits, or expired chains.
-
-## Quality standards
-
-- Keep firewall rules minimal and intentional.
-- Prefer validated, renewable TLS configurations over one-off fixes.
-- Verify the live result after every certificate or firewall change.
-
-## Anti-patterns
-
-- Opening broad firewall ranges without a clear requirement.
-- Renewing or reissuing certificates without understanding the failure mode.
-- Changing HTTPS state without verifying DNS and web server readiness.
+1. Detect distro, active firewall front end, live rules, listening sockets, certificate inventory, and renewal timer.
+2. Compare requested exposure with actual application listeners and DNS; stop on an unexplained mismatch.
+3. Choose the narrow rule, zone, or certificate action from the decision table and establish rollback access.
+4. Syntax-check configuration or dry-run renewal before applying; recover by restoring the saved rules/config on failure.
+5. Apply the authorised change and reload only the owning service.
+6. Verify local rules, external reachability where available, certificate chain/names/expiry, and renewal dry run.
 
 ## Outputs
 
-- The UFW or TLS action taken.
-- The exact verification commands or checks performed.
-- Any remaining renewal or exposure risk.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Exposure and TLS assessment | Service owner | Maps listeners to allowed sources/ports and certificate names |
+| Change record | Operations | Includes exact rule/config change and rollback command |
+| Verification record | Release owner | Shows active rules, successful TLS/name checks, and renewal status |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Firewall/TLS evidence pack | Includes before/after rules, listeners, config test, Certbot inventory/dry run, external probe result, and redactions |
+
+## Quality Standards
+
+- Rules expose only named services to approved sources or zones.
+- Management access remains independently verified during policy changes.
+- Certificate identity, chain, expiry, and automated renewal are checked.
+- Failed external checks remain failures or unassessed, never passes.
+
+## Anti-Patterns
+
+- Opening a broad port range for convenience. Fix: map each listener to an approved service.
+- Mixing raw nftables rules with an active UFW/firewalld owner. Fix: use one control plane.
+- Enabling default-deny over the only SSH session. Fix: preserve and test a second session.
+- Reissuing before diagnosing DNS or ACME failure. Fix: validate prerequisites and use a dry run.
+- Treating a local HTTPS response as proof of public reachability. Fix: use an external probe or mark it unassessed.
+- Storing private keys or credentials in evidence. Fix: record paths, permissions, and fingerprints only.
+
+## Worked Example
+
+A Rocky host must expose HTTPS publicly and SSH only from `198.51.100.0/24`. Confirm `public` is the interface zone, preserve a second SSH session, add `https` and the source-limited SSH rule permanently, reload, then verify both runtime and permanent rules before running `certbot renew --dry-run`.
+
+<!-- dual-compat-end -->
 
 ## References
 

@@ -1,8 +1,10 @@
 ---
 name: linux-image-hygiene
-description: Reclaim disk from the container engine across Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Prune dangling and unused images, stopped containers, unused volumes and networks, and build cache to stop /var/lib/docker and Podman storage from filling the disk. Covers docker system prune, docker image prune, podman image prune -a, podman system prune, and a scheduled prune via a systemd timer. Use this skill when a container host is running out of disk or to set up automatic cleanup.
+description: Use when measuring or reclaiming Docker/Podman storage and scheduling safe cleanup on Debian/Ubuntu or RHEL-family hosts. Covers images, cache, networks, and authorised volume pruning; use linux-container-engine for engine setup.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -35,23 +37,47 @@ touch it; run `podman system prune` as the owning user. A scheduled prune for a
 rootless user needs a `--user` timer plus `loginctl enable-linger`. See
 [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
-## Use when
+<!-- dual-compat-start -->
+## Use When
 
 - A container host is filling its disk (`/var/lib/docker`, container storage).
 - Removing dangling images, stopped containers, unused volumes/networks, build cache.
 - Setting up automatic, scheduled cleanup with a systemd timer.
 
-## Do not use when
+## Do Not Use When
 
 - Installing or configuring the engine; use `linux-container-engine`.
 - Running or supervising containers; use `linux-container-deployment`.
 - General host disk triage outside containers; use `linux-disk-storage`.
 
-## Required inputs
+## Required Inputs
+
+| Artefact | Required? | Source | If absent |
+|---|---|---|---|
+| Engine, execution user, storage root, and pressure target | yes | Host inventory and filesystem metrics | Measure only; do not prune. |
+| Object ownership and retention policy | yes for `-a`/volumes | Workload owners | Limit to dangling objects or stop. |
+| Approved destructive scope and rollback/re-pull plan | mutation | Change approval | Produce a candidate list only. |
 
 - The engine in use (Docker daemon vs rootless Podman) and whose storage to clean.
 - How aggressive the prune may be (dangling-only vs `-a --volumes`).
 - For scheduling: the cadence and whether it is a system or rootless-user timer.
+
+## Capability Contract
+
+Storage measurement and candidate listing are read-only. Every prune is destructive and requires explicit scope; `--volumes` requires separate confirmation from data owners. Scheduled cleanup requires authority to create and enable units.
+
+## Degraded Mode
+
+Without engine access, return measurement commands only. If object ownership cannot be established, do not classify it as unused. If reclaim cannot be measured, report the result as unverified.
+
+## Decision Rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Dangling versus all unused | Start with dangling; use `-a` only after reconciling stopped workloads and rollback images. | Deleting needed rollback artefacts. |
+| Volumes | Exclude by default; prune only named approved volumes after backup/ownership checks. | Irrecoverable state loss. |
+| Rootful versus rootless | Inspect each relevant user's storage separately. | Cleaning the wrong store. |
+| Scheduled prune | Schedule only a conservative, logged scope with disk thresholds. | Unattended destructive cleanup. |
 
 ## Workflow
 
@@ -60,23 +86,54 @@ rootless user needs a `--user` timer plus `loginctl enable-linger`. See
 3. Prune from least to most aggressive; confirm before `-a --volumes`.
 4. Optionally install a scheduled prune (systemd timer) and verify it ran.
 
-## Quality standards
+5. Stop before any object whose owner or retention need is unresolved; recover deleted images by re-pulling recorded digests, while volumes require the separately proven backup restore path.
+
+## Quality Standards
 
 - Always run `system df` before pruning so the reclaim is measured, not guessed.
 - Start with safe prunes; reserve `-a --volumes` for hosts you fully understand.
 - Volumes hold data — never auto-prune volumes on a stateful host without review.
 
-## Anti-patterns
+## Anti-Patterns
+
+- Pruning volumes by default. Fix: exclude them unless owners separately approve named targets.
+- Treating unused as ownerless. Fix: reconcile stopped workloads and rollback images.
+- Cleaning the wrong user store. Fix: record engine, rootful/rootless mode, and execution user.
+- Reporting estimated savings as reclaimed. Fix: compare pre/post engine and filesystem usage.
+- Scheduling aggressive cleanup silently. Fix: use conservative scope with logs, thresholds, and alerts.
 
 - Running `docker system prune -a --volumes` on a host with paused-to-investigate images, or with data-bearing volumes.
 - Scheduling an aggressive `-a --volumes` prune unattended on a DB/stateful host.
 - Cleaning root Docker storage and assuming rootless Podman storage was also freed.
+- Treating "unused" as ownerless. Correction: reconcile stopped stacks, rollback images, and named volumes with owners.
+- Reporting estimated savings as reclaimed. Correction: capture before/after filesystem and engine measurements.
+- Scheduling cleanup without logs or alerting. Correction: retain unit output and alert on failure or low space.
 
 ## Outputs
+
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Prune plan | Host owner | Lists engine/user, exact candidate classes, exclusions, approvals, and commands. |
+| Reclaim report | Capacity owner | Shows before/after engine and filesystem usage plus objects removed. |
+| Timer evidence | On-call operator | Conservative scope, schedule, logs, next run, and failure status are verifiable. |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Reclaim evidence | Contains engine/user context, pre/post usage, candidate scope, approval, prune output, and timer status. |
+
+Capture engine/user context, pre/post `system df`, filesystem free space, candidate list, approval for aggressive scopes, prune output, and timer status. Never call an unmeasured action successful.
+
+## Worked Example
+
+For rootless Podman pressure, inspect the affected user's store, preserve images referenced by stopped rollback containers, prune dangling build artefacts only, and compare both Podman and filesystem bytes before and after.
 
 - The disk reclaimed (before/after `system df`).
 - Exactly which objects were pruned (images/containers/volumes/networks/cache).
 - Any scheduled timer installed and its next-run time.
+
+<!-- dual-compat-end -->
 
 ## References
 

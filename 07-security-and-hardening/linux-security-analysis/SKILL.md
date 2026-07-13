@@ -1,8 +1,10 @@
 ---
 name: linux-security-analysis
-description: Deep read-only security audit for Debian/Ubuntu and RHEL-family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) servers. Runs 10-layer analysis (kernel, users, network, firewall, web server, databases, filesystem, IDS, backups, packages) and produces a CRITICAL/HIGH/MEDIUM/LOW severity report. The audit must check the mandatory-access-control layer per family — SELinux must be Enforcing on RHEL vs AppArmor profiles loaded on Debian — and use family-specific package and firewall tooling (rpm/dnf + firewalld on RHEL vs dpkg/apt + ufw on Debian). Never modifies the system — use linux-server-hardening to fix findings.
+description: Use when performing a read-only, evidence-backed Linux security assessment across kernel, identity, network, services, storage, backups, and packages; use linux-server-hardening to remediate.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -29,6 +31,8 @@ stray `permissive` domains, and unreviewed AVC denials (`ausearch -m AVC`). See
 [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md)
 and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
+
 ## Use when
 
 - Performing a deep, read-only security audit of an Ubuntu/Debian server.
@@ -40,18 +44,46 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 - The task requires making changes; use `linux-server-hardening`.
 - The task is limited to one narrower area such as secrets, firewalling, or access control.
 
-## Required inputs
+## Required Inputs
 
-- The target host and its role.
-- The desired scope or urgency of the audit.
-- Any known concerns that should receive extra scrutiny during the ten-layer review.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Host, distro, role, and exposure | Inventory and system owner | yes | Audit visible state; qualify context-sensitive severity |
+| Approved scope and read-only access | Assessment owner | yes | Stop rather than exceed scope |
+| Accepted risks and prior findings | Risk register or prior report | no | Report current state without claiming regression |
+| Service/config evidence | Host and approved configuration sources | per control | Mark the check `not assessed` |
+
+## Capability Contract
+
+Default to read-only mode with read/search access only. Inspect files, services, packages, sockets, and logs without installing, reloading, rewriting, quarantining, or hardening. Mutation requires explicit authority in a separate linux-server-hardening task.
+
+## Degraded Mode
+
+When privileges, logs, tools, or probes are unavailable, finish the narrow observable checks and list every unassessed control. Do not score inaccessible evidence as compliant.
+
+## Decision Rules
+
+| Context | Action | Failure avoided |
+|---|---|---|
+| Internet-exposed exploitable weakness | Rank CRITICAL/HIGH with evidence | Understating immediate risk |
+| Defence-in-depth gap without exposed path | Rank MEDIUM/LOW with rationale | Severity inflation |
+| Control cannot be inspected | Mark `not assessed` | False assurance |
+| Active compromise indicator | Preserve evidence and invoke incident process | Destructive audit activity |
 
 ## Workflow
 
-1. Confirm the audit is read-only and gather the target server context.
-2. Run the fast-path audit if useful, then work through all ten layers.
-3. Record findings with severity and concrete evidence.
-4. Hand off remediation items to `linux-server-hardening` or the relevant specialist skill.
+1. Confirm scope, role, distro, exposure, time, and read-only boundary; stop if authority is unclear.
+2. Collect command output across every applicable layer with family-specific tools.
+3. Correlate config, listeners, identities, logs, backups, and packages; separate fact from inference.
+4. Assign severity and confidence, recording every unassessed check.
+5. Review findings for duplication and reproducibility; do not apply fixes.
+6. Deliver the report and separate remediation handoff; recover from failed collection by retaining errors as evidence gaps and leaving system state unchanged.
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Security assessment evidence | Includes timestamped commands/config references, package/service/socket state, severity rationale, coverage matrix, and redactions |
 
 ## Quality standards
 
@@ -61,15 +93,26 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Anti-patterns
 
-- Mixing fixes into the audit workflow.
-- Reporting vague risk without command output or config evidence.
-- Declaring a host secure after checking only one or two layers.
+- Mixing fixes into the audit. Fix: create a separately authorised remediation task.
+- Reporting vague risk. Fix: cite command or configuration evidence.
+- Declaring a host secure after two layers. Fix: include the complete coverage matrix.
+- Treating a missing tool as a pass. Fix: mark the check not assessed.
+- Copying generic severity. Fix: tie it to exposure and impact.
+- Dumping secrets into evidence. Fix: redact values and cite protected paths.
 
 ## Outputs
 
-- A CRITICAL/HIGH/MEDIUM/LOW security report with evidence.
-- The highest-priority remediation targets.
-- A clear handoff to the skill that should fix each class of issue.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Severity-ranked report | Risk owner | Each finding has evidence, impact, confidence, and remediation |
+| Evidence index | Reviewer | Commands and timestamps reproduce observations without secrets |
+| Coverage statement | System owner | Lists passed, failed, and not-assessed layers |
+
+## Worked Example
+
+On a public RHEL web host, record `getenforce` returning `Permissive` alongside external exposure and relevant config. Rate the finding from role and exposure, but do not run `setenforce 1`; hand remediation to linux-server-hardening with compatibility checks.
+
+<!-- dual-compat-end -->
 
 ## References
 

@@ -1,8 +1,10 @@
 ---
 name: linux-rsync-sync
-description: Advanced rsync for offsite and incremental backups on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). rsync itself is identical on both families; only the install package differs (rsync via apt vs dnf, and openssh-server for rsync-over-SSH). Covers archive mode (-a), checksum verification (--checksum), safe previews (--dry-run), bandwidth throttling (--bwlimit), mirror deletion (--delete), include/exclude filters (--exclude / --exclude-from), hard-linked incremental snapshots (--link-dest), rsync over SSH, and restartable/resumable transfers (--partial / --append-verify). Always dry-runs before a real --delete mirror.
+description: Use when designing, previewing, running, or verifying rsync copies, mirrors, offsite transfers, or hard-linked backups on Debian/Ubuntu or RHEL-family hosts. Covers SSH, filters, deletion, checksums, and resume; use linux-archive-integrity for tar archives.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -36,7 +38,8 @@ rather than hardcoding apt/dnf. See
 [`../../10-automation-and-scripting/linux-bash-scripting/SKILL.md`](../../10-automation-and-scripting/linux-bash-scripting/SKILL.md)
 and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
-## Use when
+<!-- dual-compat-start -->
+## Use When
 
 - Mirroring a directory tree to another disk, host, or offsite target.
 - Building space-efficient incremental snapshot backups with `--link-dest`.
@@ -44,7 +47,7 @@ and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
   not saturate a production link.
 - Verifying a copy by content (`--checksum`) rather than size/mtime.
 
-## Do not use when
+## Do Not Use When
 
 - You need a *restore* of an existing GPG-encrypted backup or an emergency
   recovery checklist; use
@@ -55,12 +58,35 @@ and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 - You need a crash-consistent point-in-time image of a live database volume;
   use [`../linux-filesystem-snapshots/SKILL.md`](../linux-filesystem-snapshots/SKILL.md).
 
-## Required inputs
+## Required Inputs
+
+| Artefact | Required? | Source | If absent |
+|---|---|---|---|
+| Canonical source and destination paths, including trailing-slash intent | yes | Data owner | Stop before transfer. |
+| Mirror/history mode, deletion scope, excludes, retention, and ownership needs | yes | Backup policy | Run preview-only and request decisions. |
+| SSH identity/host key and bandwidth window | remote transfer | Secret/network policy | Do not weaken host verification or saturate production. |
 
 - The source path and the destination (local path, or `user@host:path`).
 - Whether the run is a one-shot mirror, a `--delete` mirror, or a `--link-dest`
   incremental snapshot.
 - Any bandwidth ceiling, exclude list, and whether SSH transport is required.
+
+## Capability Contract
+
+Source/destination inspection and dry-run are read-only. Transfer writes require destination authority; `--delete` requires explicit destructive approval tied to the reviewed preview. Remote access uses approved keys and verified host identity.
+
+## Degraded Mode
+
+Without destination access, produce a dry-run command and verification plan. Without delete approval, omit `--delete`. Without checksum capacity, report metadata-based verification and label content integrity unassessed.
+
+## Decision Rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| `src` or `src/` | Choose deliberately from desired destination layout and prove it in dry-run output. | Nested/flattened path error. |
+| Mirror or history | Use `--delete` only for an exact mirror; use `--link-dest` snapshots for recovery history. | Mistaking deletion propagation for backup. |
+| Quick check or checksum | Use checksum for integrity/clock uncertainty; otherwise size+mtime for routine efficiency. | False integrity or needless load. |
+| Interrupted large files | Use partial/append verification only where source files are stable during transfer. | Corrupt resumed copy. |
 
 ## Workflow
 
@@ -70,14 +96,22 @@ and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 4. Verify with a second `--dry-run` (should report nothing to do) or
    `--checksum`.
 
-## Quality standards
+5. Stop when dry-run layout, deletion scope, host identity, or destination capacity differs from plan; recover deleted data only from the recorded backup-dir/history and rerun verification.
+
+## Quality Standards
 
 - A trailing slash on the source means "contents of"; no slash means "the
   directory itself". Decide deliberately — this is the most common rsync bug.
 - Preview `--delete` before running it. Deletion is unrecoverable.
 - Throttle (`--bwlimit`) any transfer that shares a production link.
 
-## Anti-patterns
+## Anti-Patterns
+
+- Running deletion without preview. Fix: review itemised dry-run output and obtain destructive approval.
+- Guessing slash semantics. Fix: prove the intended tree layout in a temporary/dry-run destination.
+- Calling a mirror historical backup. Fix: add retained `--link-dest` snapshots or another history layer.
+- Disabling SSH host verification. Fix: provision and verify the destination host key.
+- Using append resume on changing files. Fix: use stable sources and `--append-verify`, or restart transfer.
 
 - Running `--delete` without a prior `--dry-run`.
 - Confusing `src/` and `src` and silently nesting or flattening the tree.
@@ -85,12 +119,34 @@ and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
   (use `--checksum`).
 - Treating an rsync mirror as a backup with history — a mirror has no
   point-in-time recovery unless you use `--link-dest` snapshots.
+- Disabling SSH host verification. Correction: provision and verify the destination host key.
+- Using `--append` on changing source files. Correction: use `--append-verify` only for stable files or restart transfer.
 
 ## Outputs
+
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Reviewed transfer plan | Operator | Records exact paths, slash semantics, flags, excludes, deletion preview, bandwidth, and rollback/history. |
+| Transfer report | Data owner | Exit status, bytes/files changed, deletions, and destination capacity are recorded. |
+| Verification evidence | Recovery owner | Second dry-run is empty or approved checksum comparison passes; exceptions are named. |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Transfer evidence | Contains itemised preview, approved deletion scope, transfer statistics, host verification, and post-run comparison. |
+
+Capture the itemised dry-run, approved destructive scope, command with secrets omitted, transfer statistics, SSH identity verification, post-run comparison, and snapshot link target where used.
+
+## Worked Example
+
+Mirror `/srv/data/` to an offsite `data/` path over SSH with a reviewed exclude file and bandwidth cap. Approve deletion only after inspecting itemised dry-run output, then require an empty second dry-run before declaring sync success.
 
 - The exact rsync command run and the dry-run preview that justified it.
 - Bytes transferred, files deleted (if any), and the verification result.
 - The snapshot directory created, for incremental runs.
+
+<!-- dual-compat-end -->
 
 ## References
 

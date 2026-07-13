@@ -1,8 +1,12 @@
 ---
 name: linux-mail-server
-description: Manage mail servers on Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) — Postfix, Exim, Dovecot, SPF/DKIM/DMARC email authentication, queue inspection, SMTP testing, TLS. Postfix/Dovecot are portable and config paths (/etc/postfix, /etc/dovecot) are largely identical across both families; opendkim packaging (EPEL), SELinux, and the mail log path differ. Use for outbound relay servers, full mailboxes, and debugging mail delivery.
+description: Use when operating or diagnosing Postfix, Exim, Dovecot, SMTP submission, mail queues, TLS, or SPF/DKIM/DMARC on a Linux mail host. Use linux-network-admin for general reachability and linux-dns-server when the task is authoritative zone operation.
 license: MIT
 metadata:
+  portable: true
+  compatible_with:
+  - claude-code
+  - codex
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -41,6 +45,7 @@ In `sk-*` scripts use the `common.sh` primitives (`pkg_install`, `ensure_epel`,
 [`linux-bash-scripting`](../../10-automation-and-scripting/linux-bash-scripting/SKILL.md) and
 [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
 ## Use when
 
 - Managing Postfix, Exim, Dovecot, queue behavior, or SMTP testing.
@@ -54,9 +59,11 @@ In `sk-*` scripts use the `common.sh` primitives (`pkg_install`, `ensure_epel`,
 
 ## Required inputs
 
-- The mail stack in use and the affected domain or hostname.
-- The symptom: queue growth, spam placement, auth failure, TLS issue, or delivery failure.
-- Any target destination, sender identity, or test recipient involved.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Mail role, software, domain/hostname, and current configuration | Mail host and service owner | required | Return discovery commands; do not edit a guessed topology. |
+| Symptom, timestamps, queue IDs, sender/recipient domain, and relevant redacted logs | Incident report and host | required for diagnosis | Mark the affected transport stage `not assessed`. |
+| DNS/TLS/relay ownership and approved test recipient | Domain and service owners | required for change/test | Stop before publishing records or sending mail. |
 
 ## Workflow
 
@@ -64,6 +71,8 @@ In `sk-*` scripts use the `common.sh` primitives (`pkg_install`, `ensure_epel`,
 2. Inspect current config, queue state, and relevant logs.
 3. Apply the matching workflow below for reputation, submission, queue, or domain changes.
 4. Re-test SMTP flow and authentication to confirm the result.
+5. Stop if relay scope, DNS/TLS ownership, queue impact, test-recipient authority, or rollback is unresolved.
+6. Recover by restoring the prior validated config/records, reloading the service, and retesting a controlled message before resuming the queue.
 
 ## Quality standards
 
@@ -73,21 +82,53 @@ In `sk-*` scripts use the `common.sh` primitives (`pkg_install`, `ensure_epel`,
 
 ## Anti-patterns
 
-- Treating spam-folder placement as only an SMTP connectivity issue.
-- Flushing or deleting queue entries before inspecting why they accumulated.
-- Mixing DNS, TLS, and relay changes without verifying each layer independently.
+- Treating spam placement as only connectivity. Fix: inspect SPF, DKIM, DMARC, reverse DNS, TLS, reputation, and message evidence separately.
+- Flushing/deleting a queue before diagnosis. Fix: sample queue IDs, reasons, age, destination patterns, and logs first.
+- Enabling an open relay or broad trusted network. Fix: restrict relay to authenticated/explicit clients and test rejection externally.
+- Publishing mail-authentication records without alignment tests. Fix: validate selectors, policy, envelope/header domains, and authoritative DNS.
+- Logging or sharing message bodies/credentials unnecessarily. Fix: use queue IDs, headers, and redacted protocol traces.
 
 ## Outputs
 
-- The mail-path diagnosis or change.
-- The commands used to verify queue, auth, or delivery state.
-- Any remaining reputation, DNS, or relay follow-up needed.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Mail-path diagnosis or configuration change | Mail operator | Locates failure at submission, queue, DNS, transport, policy, mailbox, or reputation layer with evidence. |
+| Authentication/TLS evidence | Domain owner | SPF/DKIM/DMARC alignment and certificate/hostname checks are observed, or explicitly unassessed. |
+| Delivery verification | Service owner | Approved test mail receives expected SMTP codes and reaches the intended mailbox without creating an open relay. |
 
 ## References
 
 - [`references/postfix-reference.md`](references/postfix-reference.md)
 - [`references/email-authentication.md`](references/email-authentication.md)
 - [`references/debugging-delivery.md`](references/debugging-delivery.md)
+
+## Evidence Produced
+
+| Artefact | Acceptance condition |
+|---|---|
+| Mail-operation evidence | Includes redacted config, queue samples, log timeline, SMTP transcript, DNS/authentication/TLS results, authorised headers, and rollback. |
+
+## Capability contract
+
+Diagnosis defaults to read-only. Mail configuration, queue mutation, DNS publication, certificate changes, service reloads, or sending external test mail require explicit authority. Never expose mailbox credentials, private keys, or message content beyond approved evidence.
+
+## Degraded mode
+
+Without host, DNS, or recipient access, assess only available layers and label the rest `not assessed`. A successful TCP connection is not a delivery or reputation pass.
+
+## Decision rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Queue deferral cluster | Inspect enhanced status/log cause before retry | Amplifying a persistent failure. |
+| Authentication passes but spam persists | Examine reputation/content/provider feedback | Rewriting healthy transport config. |
+| Submission auth failure | Test SASL/TLS listener and policy | Weakening relay controls. |
+
+## Worked example
+
+For a growing Postfix queue to one provider, sample deferred queue IDs, correlate enhanced status codes and logs, verify DNS/TLS/authentication, correct the evidenced cause, reload only after config validation, retry a small sample, and record delivery before releasing the remainder.
+
+<!-- dual-compat-end -->
 
 **This skill is self-contained.** Every command below is a standard mail
 tool (`postfix`, `postqueue`, `postconf`, `swaks`, `openssl`, `dig`) present on

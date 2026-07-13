@@ -121,6 +121,10 @@ Available skills (use `linux-sysadmin` as the entry point):
 ## Engine design
 
 - All conventions live in [`docs/engine-design/spec.md`](docs/engine-design/spec.md).
+- Skill authoring and July 2026 release gates live in
+  [`docs/engine-design/skill-authoring-standard.md`](docs/engine-design/skill-authoring-standard.md).
+- The zero-debt gates are `python -X utf8 scripts/validate_skills.py --baseline quality-baseline.json`
+  and `python -X utf8 scripts/routing_smoke_test.py`; run both after changing a skill contract or route.
 - The curated script catalogue (~88 scripts) is in [`docs/engine-design/script-inventory.md`](docs/engine-design/script-inventory.md).
 - Scripts install to `/usr/local/bin/` with the `sk-` prefix via `install-skills-bin`.
 - Hybrid install: `sudo install-skills-bin core` at setup, per-skill lazy install on first use.

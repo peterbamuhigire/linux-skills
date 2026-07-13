@@ -1,8 +1,12 @@
 ---
 name: linux-secrets
-description: Handle secrets on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) — scan for leaked credentials, encrypt config with age/sops/gpg, rotate managed credential files. The tooling is portable across both families; only installation differs. Use whenever sensitive material touches the filesystem or a repo.
+description: Use when scanning for leaked credentials, encrypting configuration with age, sops, or GPG, rotating secrets, or checking credential-file handling. Use linux-access-control for user and permission administration and linux-server-hardening for wider host controls.
 license: MIT
 metadata:
+  portable: true
+  compatible_with:
+  - claude-code
+  - codex
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -33,6 +37,7 @@ In `sk-*` scripts use the `common.sh` primitives (`pkg_install`, `ensure_epel`)
 rather than hardcoding the family. See [`linux-bash-scripting`](../../10-automation-and-scripting/linux-bash-scripting/SKILL.md)
 and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
 ## Use when
 
 - Scanning for leaked secrets in repos or filesystems.
@@ -46,9 +51,11 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Required inputs
 
-- The repo, path, or credential set involved.
-- Whether the task is scan, encryption, rotation, or permission audit.
-- Any uptime or coordination constraints for credential rotation.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Repository/path or named credential and suspected exposure | Operator, scanner alert, or service owner | required | Do not run an unbounded filesystem scan; request scope. |
+| Secret owner, dependants, storage system, and rotation authority | Service inventory and owner | required for rotation | Contain exposure but stop before replacement/cutover. |
+| Recovery/rollback and availability constraints | Change owner | required for live rotation | Return a staged rotation plan only. |
 
 ## Workflow
 
@@ -56,6 +63,8 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 2. Inspect current storage and exposure state before modifying anything.
 3. Follow the matching workflow below for scanning, encrypting, rotating, or auditing permissions.
 4. Verify both technical success and operational follow-through, such as dependent service updates.
+5. Stop if owner, dependant inventory, provider authority, rollback, or redaction boundary is unresolved.
+6. Recover a failed rotation by reverting consumers to the still-valid prior credential when safe, then repair the failed consumer before revocation.
 
 ## Quality standards
 
@@ -65,21 +74,53 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Anti-patterns
 
-- Rotating credentials without updating every dependent service.
-- Declaring a secret encrypted without testing decryption and usage.
-- Scanning for secrets but leaving confirmed leaks uncontained.
+- Rotating without enumerating dependants. Fix: map issuer, consumers, caches, jobs, and rollback before cutover.
+- Declaring encryption successful without decryption/use tests. Fix: test with an authorised recipient and application path.
+- Finding a leak without containment. Fix: revoke/disable first, preserve minimal evidence, then remove history according to policy.
+- Printing secret values into logs or evidence. Fix: record identifiers, fingerprints, locations, and redacted matches only.
+- Committing encrypted data while committing the decryption key beside it. Fix: keep recipients/keys in an independent trust boundary.
 
 ## Outputs
 
-- The scan finding, encryption state, or rotation result.
-- The commands and files involved in the change.
-- Verification that the new secret state is both secure and usable.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Redacted exposure report | Security/service owner | Names location, secret type, status, owner, and containment without reproducing the value. |
+| Encryption or rotation record | Service owner | Authorised recipients/consumers work, the prior credential is revoked, and rollback/expiry is recorded. |
+| Verification evidence | Reviewer | Scanner rerun and application authentication test pass with secret values redacted. |
 
 ## References
 
 - [`references/secret-scanning.md`](references/secret-scanning.md)
 - [`references/age-and-sops.md`](references/age-and-sops.md)
 - [`references/rotation-playbook.md`](references/rotation-playbook.md)
+
+## Evidence Produced
+
+| Artefact | Acceptance condition |
+|---|---|
+| Redacted secret-handling evidence | Includes findings, fingerprints, rotation/revocation time, dependant checklist, use tests, and clean rescan without secret values. |
+
+## Capability contract
+
+Read-only scanning is the default. Reading secret contents, editing encrypted files, contacting a secret provider, revoking credentials, or restarting consumers requires explicit authority and least-privilege access. Do not send secrets through chat or command output.
+
+## Degraded mode
+
+If provider access or a consumer test is unavailable, contain what can be contained and mark revocation or cutover `not assessed`; return a sequenced owner handoff. A successful file edit is not a successful rotation.
+
+## Decision rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Confirmed active leak | Revoke/disable, then rotate and remediate history | Ongoing compromise. |
+| Shared encrypted configuration | Use SOPS with managed recipients | Manual plaintext handling. |
+| Single file transfer/backup | Use age/GPG for named recipients | Excess key distribution. |
+
+## Worked example
+
+For a leaked database password in a repository, record only the file/line and credential identifier, revoke the credential at the issuer, create a replacement, update each named consumer, restart them in an approved order, test authentication, remove the leaked value from reachable history, and rescan.
+
+<!-- dual-compat-end -->
 
 **This skill is self-contained.** Every command below is a standard tool
 (`trufflehog`, `gitleaks`, `age`, `sops`, `gpg`, `stat`, `find`). The

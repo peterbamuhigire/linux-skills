@@ -1,8 +1,12 @@
 ---
 name: linux-service-management
-description: Manage systemd services on both Debian/Ubuntu and RHEL-family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) servers. systemd itself is identical across both families — only a few unit names and the package manager differ. Start, stop, restart, reload, enable/disable on boot, view status and logs via journalctl. Covers all web server services (nginx, apache2/httpd, mysql/mariadb, postgresql, php-fpm, redis, fail2ban, certbot, cron/crond, msmtp) and Node.js product services. Includes crashed-service diagnosis workflow.
+description: Use when operating or diagnosing systemd units, timers, targets, journal logs, restart policy, dependencies, or cgroup limits. Use a service-specific skill for application configuration and linux-virtualization for VM or system-container lifecycle.
 license: MIT
 metadata:
+  portable: true
+  compatible_with:
+  - claude-code
+  - codex
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -36,6 +40,7 @@ In `sk-*` scripts, resolve unit names with the `svc_name` helper from
 hardcoding — see [`linux-bash-scripting`](../../10-automation-and-scripting/linux-bash-scripting/SKILL.md) and
 [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
 ## Use when
 
 - Managing `systemd` services on a Linux server.
@@ -49,9 +54,11 @@ hardcoding — see [`linux-bash-scripting`](../../10-automation-and-scripting/li
 
 ## Required inputs
 
-- The service name and symptom.
-- Whether the task is inspection, restart/reload, enablement, or diagnosis.
-- Any expected dependencies or recent changes affecting the service.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Unit name, host family, symptom, timestamp, and expected service behaviour | Incident/change request | required | Use read-only unit discovery; do not guess an alias. |
+| Unit definition/drop-ins, status, journal, dependencies, and recent config/package changes | Host and change history | required for diagnosis | Return collection commands and mark root cause unresolved. |
+| Change window, health check, and rollback/recovery authority | Service owner | required for reload/restart/edit | Stop before mutation. |
 
 ## Workflow
 
@@ -59,6 +66,8 @@ hardcoding — see [`linux-bash-scripting`](../../10-automation-and-scripting/li
 2. Apply the smallest restart, reload, or enablement change needed.
 3. Follow the crashed-service workflow when a normal restart is insufficient.
 4. Confirm the unit is healthy and serving traffic after the change.
+5. Stop if the unit identity, config validation, dependency impact, health probe, rollback, or action authority is unresolved.
+6. Recover by restoring the prior unit/drop-in/config, running `daemon-reload` when needed, and returning the service to its last verified state.
 
 ## Quality standards
 
@@ -68,21 +77,53 @@ hardcoding — see [`linux-bash-scripting`](../../10-automation-and-scripting/li
 
 ## Anti-patterns
 
-- Repeatedly restarting a failed service without reading why it failed.
-- Assuming `active (running)` means the application is actually healthy.
-- Reloading config-dependent services without validating their config first.
+- Repeatedly restarting without reading status/journal. Fix: capture the first failure and resolve its cause.
+- Treating `active (running)` as application health. Fix: probe the service's real socket, protocol, or job outcome.
+- Reloading after an invalid config edit. Fix: use the service's native validator before systemd action.
+- Editing vendor unit files in `/usr/lib` or `/lib`. Fix: use a reviewed drop-in and `daemon-reload`.
+- Using `enable` as proof the service is running. Fix: verify enablement and current runtime state separately.
 
 ## Outputs
 
-- The service action or diagnosis.
-- The status and log evidence used to justify it.
-- Post-change verification for the live unit and dependent service path.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Unit diagnosis or controlled action | System operator | Names unit/load/active/sub state, failure cause, dependencies, and exact action. |
+| Unit/drop-in change record | Reviewer | `systemd-analyze verify` or service-native config checks pass and rollback is documented. |
+| Runtime verification | Service owner | Unit remains stable and its real endpoint/job/timer behaviour succeeds. |
 
 ## References
 
 - [`references/service-reference.md`](references/service-reference.md)
 - [`references/timers-and-cron.md`](references/timers-and-cron.md)
 - [`references/resource-control-and-targets.md`](references/resource-control-and-targets.md)
+
+## Evidence Produced
+
+| Artefact | Acceptance condition |
+|---|---|
+| Service-management evidence | Includes unit identity/status, journal timeline, dependencies, config validation, before/after properties, action result, and application health. |
+
+## Capability contract
+
+Diagnosis defaults to read-only. Read/execute access is required for systemd and journal inspection. Editing units/drop-ins, changing enablement/resource limits, or reloading/restarting a production unit requires explicit authority; masking, stopping critical units, or changing targets needs separate confirmation.
+
+## Degraded mode
+
+Without host execution, review supplied unit/config/logs and label runtime stability and application health `not assessed`. Without a service-specific validator, require a documented low-risk test and rollback before reload.
+
+## Decision rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Config supports reload | Validate then reload | Avoidable connection interruption. |
+| Binary/environment/dependency changed | Controlled restart after validation | Old process retaining stale state. |
+| Rapid restart loop | Stop retries, inspect first failure and limits | Log flooding and dependency damage. |
+
+## Worked example
+
+When `httpd` enters a restart loop on AlmaLinux, capture status and first-failure journal entries, inspect overrides and config syntax, correct the evidenced error, reset the failed state only after validation, start once, then verify the HTTP endpoint and absence of renewed failures.
+
+<!-- dual-compat-end -->
 
 **This skill is self-contained.** Every command below is a standard systemd
 tool that works identically on both the Debian/Ubuntu and RHEL family (Fedora,

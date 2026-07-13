@@ -1,274 +1,110 @@
 ---
 name: skill-writing
-description: Guide for creating effective skills that work across Claude Code, Codex, Gemini CLI, and other portable skill systems. Use when creating a new skill or updating an existing skill for cross-agent reuse.
+description: Use when creating or upgrading a portable Linux operations skill in this engine; distinguishes authoring contracts from executing `linux-sysadmin` workflows and from the read-only `skill-safety-audit` review gate.
 license: Complete terms in LICENSE.txt
-compatibility: Designed for Claude Code, Codex, and Gemini CLI with a portable SKILL.md plus repo-level instructions where needed
+metadata:
+  author: Peter Bamuhigire
+  author_url: techguypeter.com
+  author_contact: "+256784464178"
+  portable: true
+  compatible_with:
+    - claude-code
+    - codex
 ---
 
-# Skill Creator
+# Skill Writing
 
-## Use when
+Create compact, executable Linux skill contracts that route cleanly and remain useful without optional scripts.
 
-- Creating a new portable skill package.
-- Upgrading an existing `SKILL.md` to be clearer, smaller, and more cross-platform.
-- Deciding what belongs in `SKILL.md` versus `references/`, `scripts/`, or `assets/`.
+<!-- dual-compat-start -->
+## Use When
 
-## Do not use when
+- Creating a specialist Linux skill or changing an existing skill's trigger, contract, or resources.
+- Extracting an entrypoint over 500 lines into directly linked references.
+- Adding routing fixtures, acceptance evidence, or a safe degraded mode to a skill.
 
-- The task is only to execute an existing skill rather than author one.
-- The change is repo-specific policy that belongs in `AGENTS.md` or `CLAUDE.md`, not in a skill package.
+## Do Not Use When
 
-## Required inputs
+- Executing a Linux administration task; route through `linux-sysadmin` or the matching specialist.
+- Reviewing an already written skill for unsafe instructions only; use `skill-safety-audit`.
+- Changing repository-wide policy without also updating the shared authoring standard and gates.
 
-- The skill name, target workflow, and likely trigger phrases.
-- Any scripts, references, assets, or templates the skill needs.
-- The platforms the skill must support and any non-portable features to avoid.
+## Required Inputs
+
+| Artefact | Source | Required? | If absent |
+|---|---|---:|---|
+| Reusable problem and candidate trigger prompts | Request or issue | yes | Stop; a skill without real prompts cannot be routed or evaluated. |
+| Neighbour skill descriptions | Active filesystem catalogue | yes | Discover active `SKILL.md` files before drafting. |
+| Domain procedures and safety limits | Existing skill, references, and engine policy | yes | Return a gap list; do not invent operating doctrine. |
+| Runner capabilities | Task environment | conditional | Specify capability-based fallbacks without naming a runner tool. |
 
 ## Workflow
 
-1. Define the skill boundary, trigger description, and expected outputs.
-2. Keep the active `SKILL.md` concise and move heavy detail into `references/`.
-3. Use only portable frontmatter fields unless a platform-specific extension is truly required.
-4. Validate naming, description quality, workflow clarity, and packaging before publishing.
+1. Discover the active catalogue and decide whether an existing skill owns the reusable problem.
+2. Define positive, negative, neighbour-collision, limited-capability, and failure-path prompts.
+3. Draft the input, output, evidence, capability, degraded-mode, decision, recovery, and acceptance contracts before expanding procedures.
+4. Preserve the `## Distro support` matrix as the first H2 for every specialist skill; route family differences through `common.sh` primitives in `sk-*` guidance.
+5. Keep the entrypoint at or below 500 lines. Extract depth to `references/`, link it directly, and add a parent link to each extracted reference.
+6. Run the local validator, routing smoke test, canonical quick validator, canonical engine scanner, link checks, and distro-matrix test.
+7. Stop release on any structural or routing finding. Recover by fixing the named contract or by narrowing the trigger; never lower the zero-debt baseline.
 
-## Quality standards
+## Quality Standards
 
-- The skill must be execution-oriented, not essay-like.
-- Discovery text should make activation obvious from natural user phrasing.
-- Supporting resources should be progressive: `SKILL.md` first, references/scripts on demand.
+- Keep domain decisions, stop conditions, recovery steps, and observable acceptance in the entrypoint.
+- Use only `name`, `description`, `license`, `allowed-tools`, and `metadata` frontmatter keys.
+- Preserve manual Linux commands as the baseline; scripts are optional accelerators.
+- Use British English and evidence-backed examples; qualify anything not executed or observed.
 
-## Anti-patterns
+## Anti-Patterns
 
-- Packing large reference dumps into `SKILL.md`.
-- Mixing unrelated workflows into one skill.
-- Relying on one platform's proprietary fields when portability is a goal.
+- Copying a generic contract into every skill. Fix: name the actual server evidence, failure, and operator decision.
+- Describing only a positive trigger. Fix: distinguish the closest neighbour in `Do Not Use When` and routing fixtures.
+- Claiming a check passed when execution was unavailable. Fix: mark it `not assessed` and return the narrowest useful result.
+- Granting mutation rights to an audit skill. Fix: default audit, analysis, critique, and planning to read-only.
+- Keeping a 600-line command catalogue in `SKILL.md`. Fix: extract it to a linked reference that points back to the parent.
+- Naming a runner-specific tool in the portable procedure. Fix: state the required read, search, edit, execute, network, or delegation capability.
 
 ## Outputs
 
-- A portable `SKILL.md` with clear activation guidance and workflow.
-- Any supporting `references/`, `scripts/`, or `assets/` that the workflow requires.
-- Packaging or validation steps for distribution.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Normalised `SKILL.md` | Linux operator and routing hub | Local and canonical validators report no finding; entrypoint is at most 500 lines. |
+| Directly linked resources | Skill user | Each link resolves and every extracted reference links back to its parent. |
+| Routing fixtures | Release gate | Expected skill ranks in the top three and negative routes do not select it. |
+
+## Evidence Produced
+
+| Category | Artefact | Acceptance condition |
+|---|---|---|
+| Correctness | Validator and quick-validation output | Every changed skill passes. |
+| Routing | Positive, negative, collision, degraded, and failure fixtures | No failed fixture at the documented top-three threshold. |
+| Safety | Skill safety review | No unexplained installer, credential request, privilege escalation, or hidden mutation. |
+
+<!-- dual-compat-end -->
+
+## Capability Contract
+
+Read and search are required. Editing is permitted only for an authorised authoring task. Execute repository validators only within the task boundary; network and delegation are optional. Never mutate a server while writing a skill.
+
+## Degraded Mode
+
+If editing is unavailable, return a file-specific patch plan. If execution is unavailable, mark every validator and routing check `not assessed`. If domain evidence is missing, preserve the existing procedure and report the missing decision instead of fabricating it.
+
+## Decision Rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Existing skill has the same trigger and output | Normalise that skill | Duplicate routes and drift |
+| Stable procedure has a distinct trigger and consumer | Create one skill | Overloaded neighbour entrypoint |
+| Detail is needed only after routing | Put it in `references/` | Context waste and line-limit failure |
+| Instruction is runner-specific | Put it in an adapter or repository policy | Non-portable skill body |
+
+## Worked Example
+
+Prompt: "Add guidance for diagnosing slow PostgreSQL queries." Inspect `linux-postgresql` and `linux-perf-profiling`; route database query and configuration diagnosis to the former, host-wide bottleneck attribution to the latter, and add a collision fixture that keeps both in the top three for the ambiguous prompt.
 
 ## References
 
-- [`references/generation-template.md`](references/generation-template.md)
-- [`references/skill-authoring-best-practices.md`](references/skill-authoring-best-practices.md)
-- [`references/output-patterns.md`](references/output-patterns.md)
-- [`references/workflows.md`](references/workflows.md)
-
-Skills are modular, self-contained packages that extend AI agent capabilities with specialized
-knowledge, workflows, and tools. The most portable form is a concise `SKILL.md` plus optional
-`references/`, `scripts/`, and `assets/`. Claude Code and Gemini CLI both align closely with the
-**Agent Skills open standard** (agentskills.io); Codex can use the same skill packages effectively
-when the repo also exposes clear routing and working rules through `AGENTS.md`.
-
----
-
-## The Agent Skills Open Standard
-
-Both Claude Code and Gemini CLI implement the same base standard. Skills you write using only
-standard fields work on **all compatible platforms** without modification.
-
-### Standard SKILL.md Format
-
-```yaml
----
-name: skill-name          # Required. Lowercase, hyphens only. Must match directory name.
-description: What this skill does and when to use it.  # Required. Max 1024 chars.
-license: MIT              # Optional. License name or reference to LICENSE.txt.
-compatibility: Requires Python 3.10+  # Optional. Environment requirements.
-metadata:                 # Optional. Arbitrary key-value store.
-  author: your-name
-  version: "1.0"
-allowed-tools: Read Grep  # Optional. Pre-approved tools (experimental, cross-platform).
----
-
-Skill body content here — any Markdown.
-```
-
-### Standard Frontmatter Fields
-
-| Field | Required | Standard Rule |
-|-------|----------|---------------|
-| `name` | Yes | 1–64 chars. Lowercase `a-z`, digits, hyphens. No leading/trailing/consecutive hyphens. **Must match directory name.** |
-| `description` | Yes | 1–1024 chars. Describe what + when. Front-load the key use case. |
-| `license` | No | License name or bundled file reference |
-| `compatibility` | No | Max 500 chars. Environment or platform requirements. |
-| `metadata` | No | Key-value map. Use for author, version, tags. |
-| `allowed-tools` | No | Space-delimited. Pre-approved tools. Experimental. |
-
----
-
-## Claude Code Extensions (Claude Code Only)
-
-Claude Code adds fields beyond the standard. Use these only when targeting Claude Code:
-
-| Field | Purpose | Default |
-|-------|---------|---------|
-| `disable-model-invocation: true` | Only you can invoke it (not auto-triggered by Claude) | false |
-| `user-invocable: false` | Hide from `/` menu — Claude loads it, user doesn't invoke it | true |
-| `argument-hint: [issue-number]` | Hint shown in autocomplete for expected arguments | — |
-| `context: fork` | Run in isolated subagent context | inline |
-| `agent: Explore` | Which subagent type to use with `context: fork` | general-purpose |
-| `model: claude-opus-4-6` | Override model for this skill | session model |
-| `effort: high` | Effort level override. Options: low/medium/high/max | session default |
-| `paths: src/**/*.ts` | Glob patterns — auto-activates only when working these files | all files |
-| `shell: powershell` | Shell for inline commands. `bash` (default) or `powershell` | bash |
-| `hooks` | Skill lifecycle hooks | — |
-
-### Claude Code: String Substitutions (Body)
-
-Available in skill body when invoked in Claude Code:
-
-| Variable | Expands to |
-|----------|-----------|
-| `$ARGUMENTS` | All arguments after `/skill-name` |
-| `$ARGUMENTS[0]`, `$0` | First argument |
-| `${CLAUDE_SESSION_ID}` | Current session ID |
-| `${CLAUDE_SKILL_DIR}` | Absolute path to skill directory |
-
-### Claude Code: Dynamic Context Injection
-
-Run shell commands before Claude sees the skill. Output replaces the placeholder:
-
-```markdown
-## PR context
-- Diff: !`gh pr diff`
-- Files: !`gh pr diff --name-only`
-```
-
----
-
-## Gemini CLI Discovery
-
-Skills activate via the `activate_skill` tool. User confirms, then full SKILL.md loads.
-
-**Discovery paths:**
-```
-.agents/skills/<name>/SKILL.md     ← workspace (highest priority)
-.gemini/skills/<name>/SKILL.md     ← workspace (alternative)
-~/.agents/skills/<name>/SKILL.md   ← user-level
-~/.gemini/skills/<name>/SKILL.md   ← user-level (alternative)
-```
-
-Management: `gemini skills list|install|link|uninstall|enable|disable`
-
----
-
-## Directory Structure
-
-```
-skill-name/           ← Directory name MUST match name field
-├── SKILL.md          ← Required: frontmatter + instructions
-├── scripts/          ← Optional: executable code (Python, Bash, JS)
-├── references/       ← Optional: docs loaded on demand
-└── assets/           ← Optional: templates, images, fonts
-```
-
-### What Goes Where
-
-| Content | Location | When Loaded |
-|---------|----------|-------------|
-| Core instructions and workflow | SKILL.md | Every activation |
-| Detailed reference / large docs | references/*.md | When Claude reads them |
-| Executable utilities | scripts/ | When Claude runs them |
-| Templates, images, fonts | assets/ | When used in output |
-
-**Never create:** README.md, INSTALLATION_GUIDE.md, CHANGELOG.md, or other meta-docs inside a skill.
-
----
-
-## Core Principles
-
-### 1. Context Window is a Public Good
-Only add content Claude doesn't already have. Every token in SKILL.md costs context on every
-activation. Challenge every paragraph: "Does Claude really need this?"
-
-### 2. Set the Right Degree of Freedom
-- **High freedom (prose):** Multiple valid approaches, context-dependent decisions
-- **Medium freedom (pseudocode + params):** A preferred pattern, some variation OK
-- **Low freedom (exact scripts):** Fragile operations, consistency critical
-
-### 3. Description is the Trigger Mechanism
-The `description` field is the only thing agents read before deciding to activate.
-Make it scannable. Front-load the use case. Include keywords users naturally say.
-Claude Code truncates descriptions at 250 chars in the listing — keep the core use case first.
-
-### 4. Progressive Disclosure
-```
-Level 1: name + description (~100 tokens) — always in context, all skills
-Level 2: SKILL.md body (<500 lines) — loaded on activation
-Level 3: references/, scripts/, assets/ — loaded only when needed
-```
-
----
-
-## Writing Cross-Platform Skills
-
-To ensure a skill works on Claude Code **and** Gemini CLI:
-
-✅ Use only standard fields: `name`, `description`, `license`, `compatibility`, `metadata`, `allowed-tools`  
-✅ Keep `name` lowercase, hyphens only, matching the directory name  
-✅ Keep `description` under 250 chars (Claude Code truncation limit)  
-✅ Reference supporting files from SKILL.md body so both platforms discover them  
-✅ Keep SKILL.md under 500 lines  
-
-❌ Don't use `disable-model-invocation`, `context: fork`, `$ARGUMENTS`, `` !`cmd` `` if targeting both platforms  
-
-## Codex Compatibility
-
-Codex is not hard-wired to the same discovery paths as Claude Code or Gemini CLI, so portability
-depends on instruction design more than folder names.
-
-To make a skill work well in Codex:
-
-✅ Keep the main execution contract in `SKILL.md`: use cases, required inputs, workflow, quality bar, anti-patterns, outputs  
-✅ Keep heavy reference content in `references/` and point to it explicitly  
-✅ Add or update a repo-level `AGENTS.md` so Codex knows the repo purpose, routing rules, and baseline expectations  
-✅ Avoid hidden assumptions that the repo must live under `~/.claude/skills` or `.agents/skills` unless that path is only an example for one platform  
-✅ Preserve any Claude-specific optimizations as optional layers, not as the only way the skill makes sense  
-
-For dual-compatible repos, treat `SKILL.md` as the portable unit and `AGENTS.md`/`CLAUDE.md` as the
-host-specific instruction layer.
-
----
-
-## Skill Creation Process
-
-1. **Understand** — Get concrete examples of how the skill will be used
-2. **Plan** — Identify what scripts, references, and assets belong in the skill
-3. **Initialize** — Run `scripts/init_skill.py <skill-name> --path <dir>`
-4. **Build** — Write SKILL.md + resources. Use imperative language ("Use X", "Follow Y")
-5. **Package** — Run `scripts/package_skill.py <skill-folder>` → creates `.skill` zip file
-6. **Iterate** — Test on real tasks, update based on how Claude performs
-
-### SKILL.md Generation Prompt
-
-See **[references/generation-template.md](references/generation-template.md)** for the full
-generation template to use when asking Claude to write a SKILL.md from scratch.
-
-### Best Practices
-
-- Write in imperative/infinitive form: "Use X", "Follow Y", "Implement Z"
-- Keep SKILL.md under 500 lines — move depth to `references/`
-- Keep references one level deep from SKILL.md (no deep nesting)
-- Add a table of contents to reference files longer than 100 lines
-- Test description triggers across multiple phrasings
-- One skill per workflow — split unrelated workflows into separate skills
-- Security: run `skill-safety-audit` on new skills before deploying
-
-### Security Checklist
-
-- No secrets, API keys, or credentials in any skill file
-- Inspect scripts for hidden installers or data exfiltration
-- Watch for prompt injection patterns in references
-- Run `skill-safety-audit` workflow before sharing
-
----
-
-## Authoring Best Practices
-
-See **[references/skill-authoring-best-practices.md](references/skill-authoring-best-practices.md)**
-for detailed patterns, output format guidance, and workflow design.
-
-See **[references/output-patterns.md](references/output-patterns.md)** for template and example patterns.
+- [Local skill authoring standard](../../docs/engine-design/skill-authoring-standard.md)
+- [Skill template](../../templates/skill-template.md)
+- [Engine specification](../../docs/engine-design/spec.md)

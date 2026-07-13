@@ -1,55 +1,98 @@
 ---
 name: linux-sysadmin
-description: Linux server management hub for Ubuntu/Debian production servers. Use for any server management task — security analysis, hardening, services, deployment, monitoring, troubleshooting, disaster recovery, networking, mail, virtualization, secrets, observability, databases and caching, containers and orchestration, backup and archiving, performance and kernel tuning, compliance and auditing. Routes to the right specialist skill across 15 categories.
+description: Use when a Debian/Ubuntu or RHEL-family server request needs routing across provisioning, security, services, networking, recovery, databases, containers, storage, performance, or compliance; use linux-troubleshooting when an unexplained symptom spans components.
 license: MIT
 metadata:
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
+  portable: true
+  compatible_with:
+    - claude-code
+    - codex
 ---
 # Linux Server Admin Hub
 
-## Use when
+<!-- dual-compat-start -->
+## Use When
 
 - The user has a Linux server task but has not yet chosen the right specialist skill.
 - You need routing across provisioning, security, networking, operations, recovery, or script work.
 - You need the default repo-wide operating rules before entering a narrower workflow.
 
-## Do not use when
+## Do Not Use When
 
 - The task is already clearly scoped to a specialist skill below and you can move there directly.
 - The task is about authoring or reviewing `sk-*` scripts; load `linux-bash-scripting`.
 
-## Required inputs
+## Required Inputs
 
-- The server role or symptom the user is dealing with.
-- Whether the task is read-only analysis or a system-changing action.
-- Any known constraints such as production impact, maintenance window, or missing access.
+| Artefact | Source | Required? | If absent |
+|---|---|---:|---|
+| Server role, intended outcome, or observed symptom | User request | yes | Ask for or gather only the context needed to route safely. |
+| Distro family and version | `/etc/os-release` or user | conditional | Route provisionally and require detection before family-specific commands. |
+| Authority boundary and operational constraints | User and environment | yes for mutation | Default to read-only diagnosis; do not infer production-change authority. |
 
 ## Workflow
 
 1. Classify the task using the routing table.
 2. Load the matching specialist skill and follow its manual workflow as the source of truth.
 3. Use the optional `sk-*` scripts only when they are installed and fit the task.
-4. Verify the result with service checks, config validation, or follow-up inspection before closing.
+4. Stop before destructive, externally visible, or production-changing work that lacks explicit authority.
+5. If the first route fails, recover by returning to the observed symptom and select the nearest diagnostic skill rather than guessing a repair.
+6. Verify the result with service checks, config validation, or follow-up inspection before closing.
 
-## Quality standards
+## Quality Standards
 
 - Route quickly and explicitly; do not leave the user in the hub longer than necessary.
 - Preserve the repo's safety rules: confirm destructive work, validate configs before reload, and prefer idempotent changes.
 - Keep script guidance aligned with `docs/engine-design/spec.md`.
 
-## Anti-patterns
+## Anti-Patterns
 
-- Trying to solve every task from the hub instead of handing off to a specialist skill.
-- Guessing which skill applies without checking the routing table.
-- Assuming scripts are installed or that a task must use automation when manual steps are available.
+- Solving a database backup from the hub. Fix: hand off to `linux-mysql-mariadb` or `linux-postgresql` and follow its evidence contract.
+- Guessing a route from one keyword. Fix: compare the requested outcome with the nearest neighbour descriptions.
+- Assuming an `sk-*` command is installed. Fix: keep the manual procedure as the baseline and verify any accelerator before use.
+- Treating an unknown distro as Ubuntu. Fix: detect the family before selecting packages, paths, services, firewall, or MAC controls.
+- Turning a request for analysis into an authorised repair. Fix: keep the first pass read-only unless mutation is explicit.
+- Claiming completion after a command exits zero. Fix: inspect the service, configuration, logs, backup, or system state named by the specialist acceptance condition.
 
 ## Outputs
 
-- The selected specialist skill.
-- The next manual workflow or script entry point to run.
-- The verification step needed to prove the task is complete.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Ranked specialist route | Operator or downstream agent | Primary skill is named and the closest rejected neighbour is explained when ambiguous. |
+| Authority and context handoff | Selected specialist | Distro, server role, change boundary, and missing evidence are explicit. |
+| Verification target | Operator | A concrete service, configuration, log, backup, or system state proves completion. |
+
+## Evidence Produced
+
+| Category | Artefact | Acceptance condition |
+|---|---|---|
+| Routing | Route record | Selected skill, trigger evidence, neighbour distinction, and verification target are present. |
+
+<!-- dual-compat-end -->
+
+## Capability Contract
+
+Routing requires read access to the request and skill catalogue. System inspection is read-only by default. Editing, package changes, service reloads, network changes, destructive actions, and production mutation are governed by the selected specialist and require explicit authority.
+
+## Degraded Mode
+
+If the server or catalogue cannot be inspected, return the top three plausible skills with the missing fact that separates them. Do not issue family-specific or mutating commands and do not treat unobserved system state as healthy.
+
+## Decision Rules
+
+| Choice | Route or action | Failure or risk avoided |
+|---|---|---|
+| Cause is unknown and symptom spans components | `linux-troubleshooting` first | Premature repair of the wrong subsystem |
+| User asks for a security posture report | `linux-security-analysis` read-only | Accidental hardening changes during assessment |
+| User explicitly asks to apply security fixes | `linux-server-hardening` | Audit workflow that cannot implement authorised repairs |
+| Work creates or reviews an `sk-*` script | `linux-bash-scripting` before domain skill | Distro-specific and unsafe script drift |
+
+## Worked Example
+
+"The website is returning 502 after a PHP upgrade" routes first to `linux-webstack`, with `linux-service-management` and `linux-log-management` as neighbours. The handoff records the distro family, affected virtual host, recent package change, and a read-only first pass before any reload.
 
 ## References
 

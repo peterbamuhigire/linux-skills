@@ -1,8 +1,12 @@
 ---
 name: linux-virtualization
-description: Manage KVM/libvirt virtual machines and LXD system containers across Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). KVM/libvirt (virsh, virt-install) is portable across both families; LXD system containers are Ubuntu-centric. Use for VM and system-container lifecycle, snapshots, backups, and host-level inspection. For application containers (Docker/Podman, compose, image cleanup) use the 12-containers-and-orchestration skills instead.
+description: Use when operating KVM/libvirt virtual machines or LXD system containers, including lifecycle, snapshots, backups, storage, networking, and host inspection. Use linux-container-engine and linux-container-deployment for Docker or Podman application containers.
 license: MIT
 metadata:
+  portable: true
+  compatible_with:
+  - claude-code
+  - codex
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -40,6 +44,7 @@ across families. SELinux relabels bind-mounted host storage — append `:z`
 [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md)
 and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
 ## Use when
 
 - Managing LXD system containers or KVM/libvirt VMs on a host.
@@ -54,9 +59,11 @@ and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Required inputs
 
-- The virtualization layer involved: LXD system container or KVM/libvirt VM.
-- The guest or container name.
-- Whether the task is inspection, lifecycle management, snapshotting, or troubleshooting.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Host family, hypervisor/container layer, target identity, and desired lifecycle outcome | Operator and host inventory | required | Discover read-only; do not act on an ambiguous name. |
+| Current guest definition, storage/network attachments, state, and host capacity | libvirt/LXD host | required for mutation | Return a preflight report only. |
+| Backup/snapshot policy, downtime window, recovery target, and change authority | Workload owner | required for destructive or disruptive action | Stop before mutation. |
 
 ## Workflow
 
@@ -64,6 +71,8 @@ and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 2. Inspect current state before changing it.
 3. Apply the matching workflow below for lifecycle, snapshot, backup, or startup diagnosis.
 4. Verify the guest or container state and host-level impact after the action.
+5. Stop if the target, storage/network ownership, capacity, backup consistency, rollback, downtime, or action authority is unresolved.
+6. Recover by reverting the recorded definition/snapshot or restoring the independent backup, then verify both guest state and workload health.
 
 ## Quality standards
 
@@ -73,20 +82,52 @@ and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Anti-patterns
 
-- Treating all container technologies as interchangeable.
-- Deleting or pruning workloads before identifying what they belong to.
-- Debugging a guest failure without checking host-level status and logs.
+- Treating LXD system containers and Docker/Podman application containers as interchangeable. Fix: route application containers to category 12.
+- Deleting a guest, disk, snapshot, or image before proving ownership. Fix: inventory attachments, dependants, backup, and retention first.
+- Debugging only inside the guest. Fix: inspect host capacity, libvirt/LXD state, storage, networking, and logs.
+- Calling a snapshot a backup. Fix: export or copy recovery data to an independent failure domain and test restore metadata.
+- Starting a migration or resize without capacity/downtime checks. Fix: preflight destination compatibility and define rollback.
 
 ## Outputs
 
-- The container or VM diagnosis or action taken.
-- The host- and guest-level checks used to validate it.
-- Any backup, snapshot, or cleanup follow-up required.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Guest diagnosis or lifecycle action | Virtualisation operator | Correct target/layer is identified and host plus guest state match the requested outcome. |
+| Snapshot/backup/recovery record | Workload owner | Artifact location, consistency method, retention, restore command, and verification are recorded. |
+| Capacity and impact evidence | Infrastructure owner | CPU, memory, storage, network attachments, downtime, and rollback are checked before change. |
 
 ## References
 
 - [`references/lxd-reference.md`](references/lxd-reference.md)
 - For Docker/Podman application containers: **`linux-container-engine`**, **`linux-container-deployment`**, and **`linux-image-hygiene`** in `12-containers-and-orchestration`.
+
+## Evidence Produced
+
+| Artefact | Acceptance condition |
+|---|---|
+| Virtualisation evidence | Includes target definition, host capacity, attachments, state/logs, backup or snapshot identity/location, lifecycle result, and workload health. |
+
+## Capability contract
+
+Inspection defaults to read-only. Read/execute access to the host is required. Start/stop, snapshot, backup, resize, migration, XML/profile edits, storage/network changes, or deletion require explicit authority. Deletion and overwrite require named target verification and a recoverable backup.
+
+## Degraded mode
+
+Without host or guest access, review supplied definitions/logs and mark capacity, storage consistency, runtime, and workload health `not assessed`. Without a verified backup or recovery path, stop before destructive or irreversible work.
+
+## Decision rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Full OS isolation/legacy kernel workload | Use KVM/libvirt | Container-host coupling. |
+| Lightweight system container on supported Ubuntu host | Use LXD | Unneeded VM overhead. |
+| Packaged application container | Route to category 12 | Competing lifecycle tools. |
+
+## Worked example
+
+Before changing a production libvirt VM, identify its disks and networks, check host capacity, create an application-consistent backup to independent storage, record restore steps, take a short-lived snapshot, apply the approved change, verify guest and application health, then remove the snapshot only after the retention gate.
+
+<!-- dual-compat-end -->
 
 **This skill is self-contained.** Every command below uses standard tools
 (`lxc`, `virsh`); the body shows Debian/Ubuntu, with RHEL-family substitutions

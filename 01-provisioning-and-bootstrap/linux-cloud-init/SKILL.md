@@ -1,8 +1,12 @@
 ---
 name: linux-cloud-init
-description: Design, validate, and debug cloud-init user-data and OS-install automation across two families. cloud-init user-data/cloud-config is PORTABLE across Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle), but OS-install automation differs — Ubuntu autoinstall (subiquity) vs RHEL Kickstart (Anaconda); cloud-config must use family-correct package names, default user, and the `wheel` (not `sudo`) admin group on RHEL. Use when bootstrapping fresh servers from YAML — first-boot package installs, user creation, SSH keys, network config, and custom runcmd blocks.
+description: Use when authoring, validating, or debugging cloud-init user-data, Ubuntu autoinstall, or RHEL-family Kickstart for first-boot provisioning. Use linux-server-provisioning for interactive post-boot setup and linux-config-management for ongoing desired state.
 license: MIT
 metadata:
+  portable: true
+  compatible_with:
+  - claude-code
+  - codex
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -36,6 +40,7 @@ network-config v2, and group `wheel` on RHEL). See
 [`references/kickstart-reference.md`](references/kickstart-reference.md) and
 [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
 ## Use when
 
 - Designing or validating `cloud-init` user-data for first boot.
@@ -49,9 +54,11 @@ network-config v2, and group `wheel` on RHEL). See
 
 ## Required inputs
 
-- The target YAML file, image type, or installer context.
-- The desired first-boot actions such as users, packages, SSH keys, or commands.
-- Any cloud platform constraints or failure symptoms.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| User-data, autoinstall file, Kickstart file, or failure logs | Operator, image build, or affected host | required | Stop authoring or diagnosis and request the actual input. |
+| Target distribution, release, image, and cloud/installer context | Operator or image metadata | required | Return a family-neutral outline; do not claim deployability. |
+| Desired users, keys, packages, network state, and commands | Provisioning requirement | required for authoring | Produce a validation-only report if requirements are incomplete. |
 
 ## Workflow
 
@@ -59,6 +66,8 @@ network-config v2, and group `wheel` on RHEL). See
 2. Validate the YAML structure and cloud-init semantics before deployment.
 3. Follow the matching workflow below for user-data, autoinstall, or bootstrap scenarios.
 4. Inspect logs and rendered state after boot to prove the config applied as intended.
+5. Stop if parsing fails, the target family is unknown, required access would be lost, or a secret is embedded.
+6. Recover a failed test by correcting the source and rebuilding a disposable instance; do not treat rerunning once-per-instance modules as recovery.
 
 ## Quality standards
 
@@ -68,21 +77,53 @@ network-config v2, and group `wheel` on RHEL). See
 
 ## Anti-patterns
 
-- Shipping unvalidated YAML to multiple servers.
-- Mixing cloud-init responsibilities with unrelated post-boot manual procedures.
-- Assuming a failed first-boot action ran without checking cloud-init status and logs.
+- Shipping unvalidated YAML to multiple servers. Fix: run schema and syntax checks, then boot one disposable instance.
+- Mixing first-boot responsibilities with ongoing state management. Fix: hand repeatable post-boot state to `linux-config-management`.
+- Assuming a failed command ran. Fix: inspect `cloud-init status --long`, stage logs, and rendered configuration.
+- Using Ubuntu package names or the `sudo` group on a RHEL image. Fix: branch on the target family and use `wheel` plus family-correct packages.
+- Retrying a poisoned instance indefinitely. Fix: correct the source input and rebuild because most cloud-init modules run once per instance.
 
 ## Outputs
 
-- A validated cloud-init or autoinstall configuration.
-- A diagnosis of why a prior run failed.
-- The verification commands needed after first boot.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Validated provisioning configuration | Image builder or cloud operator | Parser/schema checks pass and family-specific values match the target image. |
+| Failure diagnosis | Incident owner | Names the failed stage, log evidence, root cause, and safe retry/rebuild path. |
+| First-boot verification record | Provisioning handoff | Required users, SSH access, packages, services, and network state are observed on a test instance. |
 
 ## References
 
 - [`references/user-data-reference.md`](references/user-data-reference.md)
 - [`references/autoinstall-reference.md`](references/autoinstall-reference.md)
 - [`references/debugging.md`](references/debugging.md)
+
+## Evidence Produced
+
+| Artefact | Acceptance condition |
+|---|---|
+| Provisioning validation evidence | Contains parser output, test-instance `cloud-init status --long`, relevant log excerpts, and checks for every declared outcome. |
+
+## Capability contract
+
+Read access to the source configuration is required. Execution on a disposable target is preferred. Editing, image publication, or production rebuilds require explicit authority; never place private keys or plaintext secrets in evidence.
+
+## Degraded mode
+
+If no parser or disposable instance is available, perform a read-only structural review, label runtime checks `not assessed`, and return the exact commands the operator must run. An unbooted configuration is not validated.
+
+## Decision rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Existing cloud image first boot | Use cloud-config/user-data | Installer-only directives being ignored. |
+| Bare-metal or ISO install | Use Ubuntu autoinstall or RHEL Kickstart | Applying the wrong installer schema. |
+| Ongoing configuration drift | Hand off to `linux-config-management` | Re-running once-per-instance modules as a configuration manager. |
+
+## Worked example
+
+For a Rocky Linux image that must create an administrator and install Nginx, select cloud-config, use the `wheel` group and RHEL package names, validate the YAML, boot one disposable VM, then record the created user, key-only login, package version, and service state before scaling out.
+
+<!-- dual-compat-end -->
 
 **This skill is self-contained.** Every command below is a standard tool
 present on both families (`cloud-init`, `journalctl`, `yamllint`) — see the

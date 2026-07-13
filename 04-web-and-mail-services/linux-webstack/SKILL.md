@@ -1,8 +1,12 @@
 ---
 name: linux-webstack
-description: Manage the web stack on Debian/Ubuntu AND RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) — Nginx reverse proxy (config, reload, debug 502), Apache backend (port 8080 vhosts), PHP-FPM (pool tuning, restart), and Node.js API services (systemd). Nginx is portable (conf.d on both); Apache differs the most — on RHEL it is `httpd` with a flat `/etc/httpd/conf.d/` model (no sites-available/a2ensite), PHP-FPM service and socket paths differ (`php-fpm` / `/etc/php-fpm.d/` / `/run/php-fpm/www.sock`), and SELinux governs web access on RHEL. Covers the Nginx+Apache dual-stack pattern where Nginx fronts all traffic and proxies PHP apps to Apache on port 8080.
+description: Use when installing, configuring, tuning, or diagnosing the shared Nginx, Apache/httpd, PHP-FPM, or Node.js service stack on Linux. Use linux-site-deployment for one site's release and linux-service-management for generic systemd operations.
 license: MIT
 metadata:
+  portable: true
+  compatible_with:
+  - claude-code
+  - codex
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -34,6 +38,7 @@ In `sk-*` scripts use `svc_name apache`, `web_conf_dir apache`, and
 [`references/httpd-reference.md`](references/httpd-reference.md) and
 [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
 ## Use when
 
 - Managing Nginx, Apache, PHP-FPM, or Node.js services in the standard web stack.
@@ -47,9 +52,11 @@ In `sk-*` scripts use `svc_name apache`, `web_conf_dir apache`, and
 
 ## Required inputs
 
-- The site, vhost, or service involved.
-- Which layer is failing: Nginx, Apache, PHP-FPM, or Node.js.
-- Any recent config or deployment changes that could explain the symptom.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Host family/release, stack topology, service/vhost, ports, sockets, and expected request path | Host and architecture/runbook | required | Inspect read-only; do not assume the proxy chain. |
+| Current configuration, status, logs, recent changes, and reproducible request | Host/change record | required for diagnosis | Return targeted collection commands and mark root cause unresolved. |
+| Change window, config backup, health check, and rollback authority | Service owner | required for mutation | Stop before reload/restart. |
 
 ## Workflow
 
@@ -57,6 +64,8 @@ In `sk-*` scripts use `svc_name apache`, `web_conf_dir apache`, and
 2. Apply the matching workflow below for reverse proxy, Apache backend, PHP-FPM, or Node.js.
 3. Validate config before any reload or restart.
 4. Confirm end-to-end request flow after the change.
+5. Stop if the failing hop, configuration validator, rollback copy, maintenance authority, or SELinux consequence is unresolved.
+6. Recover by restoring the prior config/context, validating it, reloading only the affected service, and repeating the end-to-end request.
 
 ## Quality standards
 
@@ -66,15 +75,19 @@ In `sk-*` scripts use `svc_name apache`, `web_conf_dir apache`, and
 
 ## Anti-patterns
 
-- Restarting multiple web services at once without isolating the failing layer.
-- Editing configs without a validation step.
-- Treating a 502 as only an Nginx problem when the upstream may be down or misconfigured.
+- Restarting every web service at once. Fix: trace the request and isolate the first failing hop.
+- Reloading unvalidated configuration. Fix: run the native syntax/config test for each changed daemon first.
+- Treating every 502 as Nginx. Fix: inspect upstream listener/socket, protocol, permissions/context, and application logs.
+- Disabling SELinux to make a proxy or docroot work. Fix: set the correct labels/booleans and keep enforcement.
+- Tuning PHP-FPM or workers without memory/request evidence. Fix: measure workload and preserve capacity headroom.
 
 ## Outputs
 
-- The web-stack diagnosis or change.
-- The config tests and service checks performed.
-- Confirmation of restored request flow or the next subsystem to inspect.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Layered diagnosis or reviewed config change | Web operator | Identifies the failing hop and uses family-correct units, paths, sockets, and SELinux controls. |
+| Reload/recovery evidence | On-call operator | Config tests pass, reload/restart succeeds, errors do not increase, and rollback config is retained. |
+| Request-path verification | Service owner | External request, proxy/backend hop, dynamic response, and required assets behave as specified. |
 
 ## References
 
@@ -82,6 +95,34 @@ In `sk-*` scripts use `svc_name apache`, `web_conf_dir apache`, and
 - [`references/config-patterns.md`](references/config-patterns.md)
 - [`references/php-fpm-tuning.md`](references/php-fpm-tuning.md)
 - [`references/httpd-reference.md`](references/httpd-reference.md) — Apache httpd + conf.d model + SELinux (RHEL family)
+
+## Evidence Produced
+
+| Artefact | Acceptance condition |
+|---|---|
+| Web-stack evidence | Includes config diff, services/listeners, config-test output, logs, relevant SELinux findings, reload status, and end-to-end request result. |
+
+## Capability contract
+
+Diagnosis defaults to read-only. Read/execute access is required to inspect config, services, ports, sockets, logs, and requests. Editing config, changing labels/booleans, or reloading/restarting production services requires explicit authority and rollback.
+
+## Degraded mode
+
+Without host or request access, produce a request-hop diagnosis tree and label live configuration, runtime, SELinux, and health checks `not assessed`. Do not infer health from static snippets alone.
+
+## Decision rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Static content only | Serve through Nginx | Unnecessary proxy/backend failure modes. |
+| Existing dual-stack PHP host | Keep Nginx front and family-correct Apache/PHP backend | Conflicting listeners or unsupported layout. |
+| Node service | Run under systemd and proxy to loopback/Unix socket | Fragile shell-managed processes. |
+
+## Worked example
+
+For a 502 on Rocky Linux, trace the Nginx upstream, confirm the backend listener, inspect `httpd`/PHP-FPM status and logs, check socket permissions and SELinux denials, correct the evidenced layer, pass daemon config tests, reload only that service, and verify the external request.
+
+<!-- dual-compat-end -->
 
 **This skill is self-contained.** Every command below is a standard tool on
 both the Debian/Ubuntu and RHEL families (note the per-family naming in the

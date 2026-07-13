@@ -1,8 +1,10 @@
 ---
 name: linux-disaster-recovery
-description: Restore from GPG-encrypted backups on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Covers MySQL database restore (single DB or full), app file restore, config snapshots, and emergency recovery checklist. Backup/restore logic is portable across both families; recovery-time tooling differs at a few critical points — bootloader paths and GRUB regeneration, initramfs rebuild tooling, and filesystem repair tools — get these wrong and a box won't boot. Backups are AES256 GPG encrypted, stored locally and on Google Drive via rclone. Always confirms before any destructive restore.
+description: Use when recovering MySQL data, application files, configuration, boot state, or filesystems from a verified backup after loss or corruption; use linux-troubleshooting first when the fault may be recoverable without restore.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -51,18 +53,50 @@ use the `common.sh` package primitives.
   `linux-filesystem-snapshots` (LVM/ZFS/Btrfs). This skill stays focused on
   *restore* and emergency recovery.
 
-## Required inputs
+<!-- dual-compat-start -->
 
-- The incident time window and affected data set.
-- The candidate backup location, timestamp, and encryption details.
-- Explicit confirmation that a destructive restore is acceptable.
+## Required Inputs
+
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Incident timeline, affected scope, and recovery objective | Incident commander/data owner | yes | Stop; do not choose a restore point |
+| Backup catalogue, timestamp, checksum, and encryption access | Backup system/secret provider | yes | Do not restore or claim recoverability |
+| Restore authority, target, and outage window | Change/data owner | yes for mutation | Produce a recovery plan only |
+| Validation queries/files and rollback path | Application owner | yes | Stop before overwriting live state |
+
+## Capability Contract
+
+Read/search access may assess backups and recovery options. Decryption, filesystem repair, database replacement, bootloader/initramfs work, service stops, and destructive restores require explicit authority, protected credentials, and a recovery target. Never overwrite the sole surviving copy.
+
+## Degraded Mode
+
+Fallback when restore verification is unavailable: report the narrowest recoverable scope and blocking gap. Missing checksums, keys, isolated space, capacity, or application validation mean the recovery point has not passed.
+
+## Decision Rules
+
+| Condition | Action | Failure avoided |
+|---|---|---|
+| Fault may be configuration/service-only | Troubleshoot before restore | Unnecessary data rollback |
+| Latest backup may contain corruption | Select last verified pre-incident point | Restoring bad state |
+| Partial restore satisfies objective | Restore smallest isolated scope first | Excessive data loss/downtime |
+| Source and target filesystem differ | Use family/filesystem-specific recovery path | Unbootable or damaged host |
 
 ## Workflow
 
-1. Confirm this is true data loss or corruption, not a recoverable service issue.
-2. Locate the newest safe backup from before the incident.
-3. Follow the matching restore path and confirm destructive impact before execution.
-4. Verify service health, data integrity, and post-restore access before closing the incident.
+1. Stabilise the incident, preserve current state, and confirm restore is necessary.
+2. Define RPO/RTO, exact scope, target, authority, and rollback; stop if any required decision is absent.
+3. Inventory candidate backups and verify timestamp, checksum, decryptability, and pre-incident status.
+4. Test the smallest suitable restore in isolation and run application validation.
+5. Confirm destructive impact, back up current target, execute the authorised restore, and record commands.
+6. Validate data/service/access; on failure recover the pre-restore target and keep the incident open.
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Backup qualification | Shows source, timestamp, checksum, decrypt test, and incident relation |
+| Restore execution record | Includes approval, target backup, commands, before-state backup, and timestamps |
+| Recovery validation | Proves application queries/files, service health, access, and residual data gap |
 
 ## Quality standards
 
@@ -72,15 +106,26 @@ use the `common.sh` package primitives.
 
 ## Anti-patterns
 
-- Restoring over live data without explicit confirmation.
-- Choosing the latest backup without checking whether it already contains the bad state.
-- Ending the incident after the restore command without service and data validation.
+- Restoring over live data without confirmation. Fix: record authority, target, impact, and before-state backup.
+- Choosing the latest backup blindly. Fix: select a verified point before the incident/corruption.
+- Ending after the restore command. Fix: run application, integrity, service, and access checks.
+- Testing decryption for the first time during production restore. Fix: qualify the backup in isolation first.
+- Repairing the wrong filesystem with family assumptions. Fix: detect filesystem and use its supported tooling.
+- Overwriting the only surviving copy. Fix: restore into isolated space or clone current state first.
 
 ## Outputs
 
-- The selected backup and restore path.
-- The recovery commands and confirmations required.
-- A post-restore verification summary with any remaining risk.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Recovery plan | Incident commander | Names RPO/RTO, restore point, scope, authority, validation, and rollback |
+| Restored service/data | Application owner | Meets defined validation without destroying the source backup |
+| Residual-loss statement | Data/risk owner | Quantifies time/data gap and unresolved controls |
+
+## Worked Example
+
+A table was corrupted at 10:20 EAT. Verify and decrypt the 10:00 database backup into an isolated database, validate row counts and application queries, then restore only the affected database after approval. Keep a dump of the damaged live database for rollback and investigation.
+
+<!-- dual-compat-end -->
 
 ## References
 

@@ -64,6 +64,12 @@ Use `linux-sysadmin` as the default entry point for server work, then route quic
 When the task is about creating or upgrading skills in this repo, use `skill-writing`. When the
 task is about script authoring or review under `scripts/`, use `linux-bash-scripting` first.
 
+Skill authoring and release follow [`docs/engine-design/skill-authoring-standard.md`](docs/engine-design/skill-authoring-standard.md).
+Start new skills from [`templates/skill-template.md`](templates/skill-template.md), add routing
+fixtures, and run the zero-debt validator, routing smoke test, canonical quick validator, canonical
+engine scanner, distro-matrix test, safety review, and anti-slop release gate. Never add findings to
+`quality-baseline.json`; it is a zero-debt assertion, not a waiver.
+
 ## How To Use Skills In This Repo
 
 1. Read the target skill's `SKILL.md` first.

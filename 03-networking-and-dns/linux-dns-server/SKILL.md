@@ -1,8 +1,12 @@
 ---
 name: linux-dns-server
-description: Run and manage authoritative DNS servers on Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) — BIND and unbound. The tools (dig, rndc, named-checkconf, named-checkzone) are portable; package names, config paths, and the RHEL-family SELinux requirement differ. Use for zone file authoring, record validation, zone reloads, reverse zones, and DNS server hardening. For client-side DNS resolution on a server, use linux-network-admin instead.
+description: Use when operating BIND or Unbound as an authoritative or recursive DNS server, including zone authoring, validation, reloads, reverse zones, transfers, and SELinux contexts. Use linux-network-admin for client-side resolution or interface configuration.
 license: MIT
 metadata:
+  portable: true
+  compatible_with:
+  - claude-code
+  - codex
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -37,6 +41,7 @@ In `sk-*` scripts use the `common.sh` primitives (`pkg_install`, `svc_name`)
 instead of hardcoding the family. See [`linux-bash-scripting`](../../10-automation-and-scripting/linux-bash-scripting/SKILL.md)
 and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
 ## Use when
 
 - Managing authoritative DNS zones, records, serials, or server reloads.
@@ -50,9 +55,11 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Required inputs
 
-- The zone name, record set, or reverse subnet involved.
-- Whether the server uses BIND9, unbound, or a master/slave arrangement.
-- The desired DNS change and any propagation or serial constraints.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Zone name, current zone/config, server role, and software | Authoritative host or version control | required | Stay read-only and return discovery commands. |
+| Requested records, TTL/serial policy, and delegation/transfer constraints | DNS owner/change request | required for change | Stop before editing or reloading. |
+| Maintenance and rollback path | Service owner | required for mutation | Produce a proposed diff and validation plan only. |
 
 ## Workflow
 
@@ -60,6 +67,8 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 2. Make the smallest correct record or config change and validate syntax first.
 3. Reload the service only after passing the relevant checks.
 4. Query the authoritative server directly to verify the expected answer.
+5. Stop if zone ownership, serial policy, validator output, transfer/recursion scope, or rollback is unresolved.
+6. Recover a failed reload by restoring the saved zone/config, validating it, reloading the prior version, and querying each authority again.
 
 ## Quality standards
 
@@ -69,20 +78,52 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Anti-patterns
 
-- Editing zone files without incrementing serials where required.
-- Reloading named blindly without validation.
-- Confusing authoritative DNS management with client resolver troubleshooting.
+- Editing a zone without advancing its serial. Fix: apply the site's serial policy exactly once per published change.
+- Reloading `named` before `named-checkconf` and `named-checkzone`. Fix: block reload on either validator failure.
+- Querying only a caching resolver. Fix: query each authoritative server directly and then check public delegation.
+- Allowing unrestricted recursion or zone transfer. Fix: restrict by role, network, TSIG, and explicit ACL.
+- Bypassing an SELinux denial with permissive mode. Fix: restore correct zone paths/contexts and keep enforcement.
 
 ## Outputs
 
-- The DNS change or diagnosis.
-- The validation and reload commands required.
-- A direct query proving the authoritative answer.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Zone/config change or diagnosis | DNS operator | Correct owner/name/type/value/TTL/serial and family-specific path/context are explicit. |
+| Validation/reload evidence | Reviewer | Config and every changed zone validate before a successful reload. |
+| Authoritative query record | Service owner | Expected answers and SOA serial are returned directly by every authoritative server. |
 
 ## References
 
 - [`references/bind9-reference.md`](references/bind9-reference.md)
 - [`references/zone-file-syntax.md`](references/zone-file-syntax.md)
+
+## Evidence Produced
+
+| Artefact | Acceptance condition |
+|---|---|
+| DNS change evidence | Includes reviewed diff, validators, reload result, direct answers from each authority, SOA serial, transfer result where relevant, and rollback. |
+
+## Capability contract
+
+Read-only inspection is the default for diagnosis. Editing zones/configuration, reloading DNS, changing delegation, opening firewall access, or enabling transfer/recursion requires explicit authority. Do not expose TSIG private material.
+
+## Degraded mode
+
+Without access to the authoritative host, validate supplied text where possible and mark live reload, delegation, propagation, and SELinux checks `not assessed`. Do not treat a local syntax pass as published DNS success.
+
+## Decision rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Authoritative record change | Edit owner zone, advance serial, validate, reload, query authority | Stale or unpublished answers. |
+| Client cannot resolve | Route to `linux-network-admin` first | Editing healthy authoritative zones. |
+| Recursive resolver service | Restrict recursion to approved clients | Open-resolver abuse. |
+
+## Worked example
+
+To add `api.example.org A 192.0.2.40`, confirm the authoritative zone and serial policy, edit the managed source, validate configuration and zone, reload, query each authoritative server with recursion disabled, and record the returned address, TTL, and new SOA serial.
+
+<!-- dual-compat-end -->
 
 **This skill is self-contained.** Every command below is a standard BIND
 tool (`named`, `rndc`, `named-checkconf`, `named-checkzone`, `dig`) present on

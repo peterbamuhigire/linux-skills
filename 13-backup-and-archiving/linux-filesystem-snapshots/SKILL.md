@@ -1,8 +1,10 @@
 ---
 name: linux-filesystem-snapshots
-description: Point-in-time filesystem snapshots on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). The three technologies are LVM snapshots (block-level COW, works under any filesystem and is identical on both families), Btrfs (Fedora's default; btrfs subvolume snapshot + btrfs send|receive), and ZFS (out-of-tree on Linux; zfs snapshot + zfs send|recv + rollback). Covers when a snapshot beats a file/tar backup (crash-consistent images of live databases, instant rollback) and when it does not (snapshots share a failure domain with production — they are not offsite backups). Explains COW fill/invalidate risks for LVM snapshots.
+description: Use when creating, monitoring, replicating, mounting, or rolling back LVM, Btrfs, or ZFS snapshots on Debian/Ubuntu or RHEL-family hosts. Covers consistency, COW, and rollback; use linux-rsync-sync or linux-archive-integrity for independent backups.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -38,7 +40,8 @@ apt/dnf. See
 [`../../10-automation-and-scripting/linux-bash-scripting/SKILL.md`](../../10-automation-and-scripting/linux-bash-scripting/SKILL.md)
 and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
-## Use when
+<!-- dual-compat-start -->
+## Use When
 
 - You need a crash-consistent point-in-time image of a busy volume (e.g. a live
   database) so you can back it up without stopping the service.
@@ -46,7 +49,7 @@ and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 - You want to ship an efficient block/filesystem-level delta to another host
   (`zfs send`, `btrfs send`).
 
-## Do not use when
+## Do Not Use When
 
 - You need an **offsite** backup — a snapshot lives on the same pool/VG as
   production and dies with it. Pair snapshots with
@@ -58,11 +61,34 @@ and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 - Day-to-day LVM volume/VG/fstab management; that lives in
   [`../../06-storage-and-filesystems/linux-disk-storage/SKILL.md`](../../06-storage-and-filesystems/linux-disk-storage/SKILL.md).
 
-## Required inputs
+## Required Inputs
+
+| Artefact | Required? | Source | If absent |
+|---|---|---|---|
+| Exact LV/subvolume/dataset, technology, mount relation, and objective | yes | Storage inventory and owner | Stop; do not infer a target. |
+| Consistency/quiesce procedure and allowed pause | stateful workload | Application owner | Create only a crash-consistent plan and label its limits. |
+| COW/free capacity, retention, replication target, and rollback approval | yes | Storage metrics and recovery plan | Do not create or roll back. |
 
 - The volume/subvolume/dataset to snapshot and its filesystem type.
 - Whether the snapshot is for backup capture, rollback, or replication.
 - For LVM: enough free space in the VG for the COW area.
+
+## Capability Contract
+
+Topology and capacity inspection are read-only. Snapshot creation/deletion, application quiesce, send/receive, mount, and rollback require explicit storage authority. Rollback is destructive and requires separate confirmation naming the exact target and discarded interval.
+
+## Degraded Mode
+
+Without storage access, provide technology-qualified commands only. Without application quiesce evidence, label consistency crash-only. Without COW monitoring or a replication target, do not call the snapshot a backup.
+
+## Decision Rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Snapshot purpose | Use snapshot for stable capture/short rollback; replicate or back it up off-host for recovery. | Shared-failure-domain loss. |
+| Consistency | Quiesce stateful applications or use their native snapshot hook. | Transactionally inconsistent image. |
+| LVM COW size | Size from expected changed blocks and monitor `Data%`; abort before exhaustion. | Silent snapshot invalidation. |
+| Rollback | Require named target, backup of later data, and explicit discard approval. | Rolling back the wrong dataset. |
 
 ## Workflow
 
@@ -74,7 +100,9 @@ and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
    (send/receive) to get the data offsite.
 4. Release/delete the snapshot when done — never leave LVM snapshots around.
 
-## Quality standards
+5. Stop on quiesce failure, target ambiguity, or unsafe COW growth; recover by resuming the application, removing the incomplete snapshot when safe, and verifying the source workload before retry.
+
+## Quality Standards
 
 - Treat a snapshot as a *consistency tool*, not a backup. Always copy off-host.
 - Size LVM COW space generously and monitor `lvs` `Data%` — a full COW snapshot
@@ -82,19 +110,48 @@ and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 - Quiesce or use `--single-transaction` dumps for databases; a raw snapshot of
   a busy DB can still be mid-transaction.
 
-## Anti-patterns
+## Anti-Patterns
+
+- Calling a local snapshot a backup. Fix: copy or send it to a separate failure domain.
+- Snapshotting a busy database blindly. Fix: use the approved quiesce/native backup hook.
+- Ignoring LVM COW growth. Fix: size from change rate and monitor `Data%`.
+- Rolling back an ambiguous target. Fix: name the dataset and obtain explicit discarded-interval approval.
+- Leaving temporary snapshots indefinitely. Fix: verify export then delete and confirm reclaimed capacity.
 
 - Calling a snapshot "the backup" — it shares the failure domain of production.
 - Leaving long-lived LVM snapshots (every write doubles into the COW area;
   performance degrades and the snapshot can fill and drop).
 - `zfs rollback`/`btrfs` rollback on the wrong dataset — rollback is
   destructive and discards everything after the snapshot.
+- Snapshotting a busy database without a consistency method. Correction: quiesce or use the database's backup protocol.
+- Omitting COW monitoring. Correction: poll capacity and abort/copy before invalidation.
+- Keeping only local snapshots. Correction: replicate or export into a separate failure domain.
 
 ## Outputs
+
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Snapshot record | Storage operator | Names exact source, snapshot, timestamp, consistency mode, capacity, and retention. |
+| Replication/backup evidence | Recovery owner | Off-host target and integrity check are recorded, or shared-domain limitation is explicit. |
+| Cleanup/rollback report | Service owner | Snapshot is removed after capture, or authorised rollback and post-checks are documented. |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Snapshot evidence | Contains topology/capacity, quiesce proof, listing, mount/read, replication/integrity, and cleanup or rollback. |
+
+Capture topology, free/COW space, quiesce evidence, snapshot listing, mount/read test, replication status, integrity result, and final cleanup or rollback checks.
+
+## Worked Example
+
+For an LVM-backed database, invoke the approved quiesce hook, create a monitored short-lived snapshot, resume writes, back up from the read-only mount, verify the copy, then remove the snapshot before COW pressure grows.
 
 - The snapshot created (LV/subvolume/dataset name) and how it was made.
 - How the data was moved offsite (tar/rsync/send) or that rollback was used.
 - Confirmation the snapshot was released and free space reclaimed.
+
+<!-- dual-compat-end -->
 
 ## References
 

@@ -1,8 +1,10 @@
 ---
 name: linux-file-integrity
-description: File Integrity Monitoring (FIM) with AIDE on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Build the baseline database (aideinit / aide --init), run drift checks (aide --check), accept legitimate changes (aide --update), schedule nightly checks with a systemd timer or cron, tune /etc/aide.conf (or /etc/aide/aide.conf.d/) rule groups, handle the RHEL vs Debian packaging and path differences, and store the baseline DB safely off-box so an attacker cannot edit it. AIDE answers "which files changed since we last knew they were good?" — pair it with linux-auditd-rules for attribution and linux-benchmark-scanning for compliance scoring.
+description: Use when establishing, checking, tuning, or safely updating an AIDE baseline on Debian/Ubuntu or RHEL-family hosts. Covers drift triage, scheduling, and off-box trust; use linux-auditd-rules for attribution and linux-benchmark-scanning for scoring.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -36,7 +38,8 @@ attribution (`linux-auditd-rules`, auditd) and benchmark scoring
 (`linux-benchmark-scanning`, OpenSCAP/Lynis). See
 [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
-## Use when
+<!-- dual-compat-start -->
+## Use When
 
 - Installing AIDE and building the first baseline on a known-clean host.
 - Running a drift check (`aide --check`) and triaging the report.
@@ -44,26 +47,46 @@ attribution (`linux-auditd-rules`, auditd) and benchmark scoring
 - Tuning `/etc/aide.conf` rule groups, or scheduling nightly checks.
 - Deciding how to store the baseline DB safely off-box.
 
-## Do not use when
+## Do Not Use When
 
 - The task is attributing *who* changed a file; use `linux-auditd-rules` (auditd).
 - The task is a benchmark/compliance scan with a score; use `linux-benchmark-scanning`.
 - The task is rootkit signature scanning; use `linux-intrusion-detection` (rkhunter/chkrootkit).
 
-## Required inputs
+## Required Inputs
 
-- Whether the host is known-clean (a baseline built on a compromised host is worthless).
-- Which paths matter (system binaries, `/etc`, web root) and which are noisy (logs, caches).
-- Whether a reported change is legitimate (accept it) or suspicious (investigate).
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Known-clean attestation and trusted package/deployment state | Host owner and provenance records | baseline only | Stop; do not establish or update trust. |
+| Monitored paths, attributes, exclusions, and alert destination | Control owner | yes | Run read-only config review only. |
+| Baseline location/checksum, change ticket, and accept/escalate authority | FIM custody/change process | update only | Preserve current baseline and escalate drift. |
+
+## Capability Contract
+
+Default assessment is read-only: read/search AIDE config, database metadata, and drift output. Installation, baseline creation/replacement, config edits, scheduling, and accepting changes require explicit authority. A drift investigation never updates the baseline implicitly.
+
+## Degraded Mode
+
+Without a trusted baseline, report FIM as unavailable rather than clean. Without off-box comparison or provenance, qualify trust. If noisy paths prevent a complete run, list exclusions and unassessed scope; never convert it to a pass.
+
+## Decision Rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Build baseline | Proceed only from a known-clean, patched, attested state. | Blessing attacker modifications. |
+| Drift severity | Escalate executable/config hash or ownership changes; contextualise expected volatile attributes. | Missing high-impact tampering. |
+| Accept change | Require ticket, package/deployment evidence, and reviewed diff before update. | Blind re-baselining. |
+| Baseline custody | Store checksum/database in a separately protected or off-box location. | Attacker rewriting evidence. |
 
 ## Workflow
 
-1. Install AIDE and build the baseline on a freshly provisioned, not-yet-exposed host.
-2. Smoke-test: `aide --check` reports no differences; touch a file and confirm it appears.
-3. Tune the config so deploys and log churn don't flood the report.
-4. Schedule a nightly check that mails or alerts only on real drift.
-5. On a report: triage by path (binary drift = critical), then either accept (`aide --update`) or escalate.
-6. Store the baseline DB off-box; an on-box DB an attacker can rewrite is no integrity check.
+1. Read/search host provenance, AIDE config, baseline custody, and last result; stop if known-clean status is unavailable for baseline work.
+2. Define monitored attributes and justified exclusions, then validate configuration syntax.
+3. With authority, build the baseline, checksum/copy it to protected custody, and run a clean check.
+4. Generate an authorised canary change and confirm AIDE reports it; restore the canary and verify expected state.
+5. Schedule bounded checks and alerting, then inspect first execution and delivery.
+6. Triage every drift item against trusted package/deployment/change evidence. Block baseline update for unexplained drift.
+7. Recover from a bad configuration/baseline by restoring the last trusted database/config and rerunning the canary; update trust only with explicit acceptance authority.
 
 ## Quality standards
 
@@ -72,18 +95,33 @@ attribution (`linux-auditd-rules`, auditd) and benchmark scoring
 - Keep a written log of every accepted baseline update and why.
 - Protect or externalise the baseline DB so it cannot be silently rewritten.
 
-## Anti-patterns
+## Anti-Patterns
 
-- Running `aideinit`/`aide --init` on a server already exposed to the internet.
-- Re-baselining blindly after a suspicious change ("make the alert go away").
-- Leaving the trusted DB world-readable/writable on the same host AIDE protects.
-- Watching `/var/log`, `/tmp`, `/proc` without `!` ignores — every run then reports noise.
+- Baselining an exposed, unattested host. Fix: rebuild/attest or validate against trusted package and deployment sources first.
+- Re-baselining to silence suspicious drift. Fix: investigate and require evidence-backed acceptance.
+- Keeping a writable trusted DB beside the target. Fix: protect separately and retain an off-box checksum/copy.
+- Watching volatile trees without exclusions. Fix: scope attributes and exclude justified churn paths.
+- Treating "no differences" as host security proof. Fix: state only that monitored attributes match the trusted baseline.
+- Updating without a ticket. Fix: record approver, reason, diff, and provenance before database replacement.
 
 ## Outputs
 
-- The baseline state (built, verified) or the drift report with a triage verdict per path.
-- The accept/escalate decision and, if accepted, the logged reason.
-- Confirmation the DB is stored safely off-box.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Baseline custody record | Control owner | Known-clean basis, config, database path/checksum, protected copy, scope, and exclusions are recorded. |
+| Drift triage | Incident/change owner | Each change has severity, provenance, accept/escalate decision, and approver where applicable. |
+| Scheduled-check evidence | Operator | Canary detection, run status, alert delivery, and unassessed paths are documented. |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| FIM evidence pack | Contains baseline checksum/custody, config validation, clean and canary checks, redacted drift report, change provenance, and acceptance/escalation record. |
+
+## Worked Example
+
+After an authorised package update changes `/usr/bin/example`, compare package provenance and the AIDE attributes, verify the ticket and signature, accept only that reviewed delta, protect the new database checksum off-box, and rerun a clean check.
+<!-- dual-compat-end -->
 
 ## References
 

@@ -1,8 +1,10 @@
 ---
 name: linux-container-engine
-description: Install and manage the container engine — Docker (daemon, dockerd) AND Podman (daemonless, rootless) across Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Engine install from upstream repos on both families, rootless Podman vs the Docker daemon, storage drivers (overlay2), default network bridges, /etc/docker/daemon.json and /etc/containers/registries.conf, and daemon hardening (userns-remap, no-new-privileges, docker.sock permissions). Use this skill to stand up, configure, or harden the engine itself — not to run individual containers.
+description: Use when installing, configuring, hardening, or diagnosing Docker or Podman engines on Debian/Ubuntu or RHEL-family hosts. Covers daemon/rootless mode, registries, storage, and sockets; use linux-container-deployment to run workloads.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -41,25 +43,49 @@ relabels bind-mounted volumes: append `:z` (shared) or `:Z` (private) to
 [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md)
 and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
-## Use when
+<!-- dual-compat-start -->
+## Use When
 
 - Installing Docker or Podman on a fresh host (either family).
 - Choosing between the Docker daemon and rootless Podman for a workload.
 - Writing or auditing `/etc/docker/daemon.json` or `/etc/containers/registries.conf`.
 - Hardening the engine: userns-remap, `no-new-privileges`, socket permissions.
 
-## Do not use when
+## Do Not Use When
 
 - Running, stopping, or scheduling individual containers / compose stacks; use `linux-container-deployment`.
 - Reclaiming disk from images, volumes, and networks; use `linux-image-hygiene`.
 - Managing KVM/libvirt virtual machines; use `linux-virtualization`.
 - Host firewall rules for published ports; use `linux-firewall-ssl`.
 
-## Required inputs
+## Required Inputs
+
+| Artefact | Required? | Source | If absent |
+|---|---|---|---|
+| Distro, engine/version, tenancy model, and workload needs | yes | Host inventory and service owner | Stop before installation or replacement. |
+| Registry, proxy, storage, network, and logging requirements | config work | Platform design | Keep vendor defaults and report the decision gap. |
+| Change window and rollback | mutation | Approved change record | Inspect only; do not restart or replace the engine. |
 
 - Which engine the host should run (Docker daemon, rootless Podman, or both).
 - The family (Debian/Ubuntu vs RHEL) so install and config paths are correct.
 - Whether containers must run rootless and any registry / mirror requirements.
+
+## Capability Contract
+
+Inspection is read-only. Repository changes, package installation, daemon configuration, socket permissions, user/group changes, and restarts require explicit host-mutation authority. Treat Docker socket access and `docker` group membership as root-equivalent.
+
+## Degraded Mode
+
+Without host access, provide family-qualified install and verification steps. If storage-driver, cgroup, SELinux, or rootless prerequisites cannot be checked, mark them `not assessed` and do not declare the engine ready.
+
+## Decision Rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Docker or Podman | Prefer rootless Podman for daemonless/multi-tenant needs; choose Docker when its daemon/API ecosystem is required. | Unjustified privileged daemon. |
+| Rootless or rootful | Use rootless unless privileged ports, devices, or host integration are proven requirements. | Host-wide compromise. |
+| Registry trust | Allow only intended registries/mirrors and keep signature/TLS controls. | Untrusted image supply. |
+| Storage driver | Verify backing filesystem compatibility before selecting overlay storage. | Corruption or engine startup failure. |
 
 ## Workflow
 
@@ -68,23 +94,54 @@ and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 3. Write `daemon.json` / `registries.conf` for storage, logging, registries, hardening.
 4. Verify the engine reports the expected storage driver, registries, and security flags.
 
-## Quality standards
+5. Stop if the socket, storage driver, registry trust, or rootless checks fail; recover with the saved engine config/package state and verify a test container before handoff.
+
+## Quality Standards
 
 - Pin the storage driver (`overlay2`) and cap logs in `daemon.json` from day one.
 - Treat `docker` group membership and `docker.sock` as root-equivalent; restrict both.
 - Prefer rootless Podman on multi-tenant hosts; justify any root daemon in writing.
 
-## Anti-patterns
+## Anti-Patterns
+
+- Granting Docker group membership casually. Fix: restrict it and record root-equivalent risk.
+- Disabling registry TLS verification. Fix: install the correct CA and scope trust.
+- Changing storage driver in place. Fix: plan export/re-pull, downtime, and rollback.
+- Running rootful by habit. Fix: prove privileged requirements or use rootless mode.
+- Calling engine startup readiness. Fix: verify socket, storage, network, namespace, and test container.
 
 - Installing `docker.io` from the distro archive on production (lags upstream).
 - Bind-mounting `/var/run/docker.sock` into a container without a hard reason.
 - Running every container as root because `:Z` SELinux labelling "was easier" to skip.
+- Disabling TLS verification for a registry. Correction: install the correct CA and scope registry trust explicitly.
+- Changing storage drivers in place. Correction: plan image export/re-pull and rollback before migration.
+- Adding broad Docker group membership. Correction: grant narrowly and record its root-equivalent risk.
 
 ## Outputs
+
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Engine configuration record | Platform operator | Names engine/version, mode, registries, storage, logging, security settings, and rollback. |
+| Readiness evidence | Deployment owner | Version/info checks, expected socket ownership, storage driver, network, and rootless/daemon health pass. |
+| Residual-risk record | Security owner | Records every privileged boundary or unavailable check. |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Engine readiness evidence | Contains source/version, redacted config, engine info, socket ownership, namespace, storage/network, and unit results. |
+
+Capture package/repository source, version, redacted config, engine info, socket ownership, user namespace status, storage/network checks, unit state, and rollback result if invoked.
+
+## Worked Example
+
+On a multi-tenant RHEL host, select rootless Podman, verify subordinate IDs and user lingering, allow only approved registries, then confirm an unprivileged test container starts after reboot. Do not substitute Docker merely because its CLI is familiar.
 
 - The engine installed and its verified version / storage driver.
 - The `daemon.json` / `registries.conf` applied and why each key is set.
 - Any hardening (userns-remap, `no-new-privileges`, socket perms) and residual risk.
+
+<!-- dual-compat-end -->
 
 ## References
 

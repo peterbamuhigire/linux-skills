@@ -1,8 +1,10 @@
 ---
 name: linux-sysctl-tuning
-description: PERFORMANCE kernel tuning via sysctl on both Linux families (Debian/Ubuntu and the RHEL family — Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). High-throughput networking (net.core.rmem_max/wmem_max, net.ipv4.tcp_rmem/tcp_wmem, BBR congestion control with net.core.default_qdisc=fq), connection scaling (somaxconn, tcp_max_syn_backlog), and memory behaviour (vm.swappiness, vm.dirty_ratio, vm.overcommit_memory). Persist tunables in /etc/sysctl.d/*.conf and apply with `sysctl --system`. For SECURITY sysctl (rp_filter, syncookies, kptr_restrict) use linux-server-hardening instead.
+description: Use when measured Linux performance evidence justifies persistent network, queue, writeback, swap, or congestion-control sysctl changes on Debian/Ubuntu or RHEL-family hosts. Profile first; use linux-server-hardening for security sysctls.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -32,14 +34,15 @@ RHCSA grounding corpus; authored from kernel networking docs (Documentation/
 networking, Documentation/admin-guide/sysctl) and tcp(7)/sysctl(8) man pages.
 Deepen with Systems Performance 2e (Brendan Gregg).]`
 
-## Use when
+<!-- dual-compat-start -->
+## Use When
 
 - Raising socket buffers / TCP window for high-throughput (10GbE+) transfers.
 - Scaling a server to many concurrent connections (`somaxconn`, syn backlog).
 - Enabling **BBR** congestion control with the `fq` qdisc.
 - Tuning memory writeback / swap behaviour (`swappiness`, `dirty_ratio`).
 
-## Do not use when
+## Do Not Use When
 
 - The goal is SECURITY hardening (rp_filter, tcp_syncookies, kptr_restrict,
   redirects). That sysctl lives in `linux-server-hardening`
@@ -48,12 +51,35 @@ Deepen with Systems Performance 2e (Brendan Gregg).]`
   (cgroup limits) instead.
 - You are diagnosing, not tuning; profile first with `linux-perf-profiling`.
 
-## Required inputs
+## Required Inputs
+
+| Artefact | Required? | Source | If absent |
+|---|---|---|---|
+| Measured bottleneck, workload/SLO, baseline, and candidate key rationale | yes | `linux-perf-profiling` evidence | Stop; do not tune from a generic recipe. |
+| Kernel/version, current/effective values, config precedence, and feature availability | yes | Host inspection | Produce read-only discovery only. |
+| Load test, window, rollback threshold, and authority | mutation | Change plan | Do not apply persistent or live values. |
 
 - The workload class (throughput-bound transfer, connection-heavy server, or
   balanced general server).
 - The NIC speed and expected concurrent-connection count.
 - Whether a maintenance window applies (most keys are live, but verify).
+
+## Capability Contract
+
+Reading sysctls and drop-ins is read-only. Live writes, drop-in edits, module loading, load generation, and rollback require explicit authority. Security sysctls route to `linux-server-hardening`.
+
+## Degraded Mode
+
+Without representative load testing, return candidate keys and an experiment design only. If a key/algorithm is unavailable, do not force it. If rollback cannot be observed, do not apply the change.
+
+## Decision Rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Tune or retain | Change only a key linked to measured saturation and a testable hypothesis. | Cargo-cult tuning. |
+| Live or persistent | Test the narrow live delta, then persist only a verified winner in one owned drop-in. | Boot-time regression. |
+| BBR | Select only when available and pair with supported pacing qdisc after workload comparison. | Unsupported congestion setup. |
+| Keep or rollback | Keep only if target metric improves without crossing guardrails; otherwise restore previous values. | Hidden latency/memory regression. |
 
 ## Workflow
 
@@ -65,20 +91,48 @@ Deepen with Systems Performance 2e (Brendan Gregg).]`
 4. Apply with `sudo sysctl --system` and re-read the keys to confirm.
 5. Load-test, then keep or roll back by deleting the one drop-in.
 
-## Quality standards
+6. Stop when target improvement is absent or a guardrail regresses; recover by removing the owned drop-in, restoring recorded live values, and rerunning the baseline test.
+
+## Quality Standards
 
 - One owned drop-in file, high number prefix (e.g. `60-`/`99-`) so it wins.
 - Set only keys you can justify against a measured bottleneck.
 - Confirm BBR is available before selecting it (`tcp_available_congestion_control`).
 
-## Anti-patterns
+## Anti-Patterns
+
+- Copying a tuning blob. Fix: link every key to measured saturation and a hypothesis.
+- Editing vendor/global config. Fix: use one owned drop-in with documented precedence.
+- Claiming improvement without comparable load. Fix: repeat baseline and candidate under identical workload.
+- Forcing unavailable BBR or qdisc support. Fix: inspect kernel features before selection.
+- Keeping a regressing change. Fix: enforce guardrails and restore prior effective values.
 
 - Copy-pasting a giant "ultimate sysctl" blob without measuring.
 - Editing `/etc/sysctl.conf` directly (use a drop-in — easy diff/rollback).
 - Setting `vm.swappiness=0` (can trigger OOM under pressure; 10 is the safe low).
 - Mixing security and performance keys in one file (split ownership).
+- Claiming improvement without a comparable load test. Correction: repeat baseline and candidate runs under the same workload.
+- Ignoring config precedence. Correction: inspect effective values and every supplying drop-in before choosing the filename.
 
 ## Outputs
+
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Tuning hypothesis | Performance owner | Links each key to measured evidence, target metric, guardrail, and rollback threshold. |
+| Owned drop-in/change record | Operator | Contains only approved deltas plus before/after effective values and rollback. |
+| Experiment result | Service owner | Comparable test shows improvement and guardrails, or records successful rollback. |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Tuning experiment evidence | Contains kernel/config provenance, before/after values, comparable load metrics, guardrails, and rollback result. |
+
+Capture kernel, feature availability, config provenance, before/after keys, load-test parameters and metrics, errors, guardrails, and rollback result.
+
+## Worked Example
+
+After profiling shows a connection-accept queue bottleneck, record current `somaxconn`, application backlog, and saturation, test one bounded increase under the same load, then persist only if latency improves without memory or error regression.
 
 - The drop-in file written and the keys it changed.
 - Before/after values for each tuned key.
@@ -170,6 +224,8 @@ sudo install-skills-bin linux-sysctl-tuning
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
 | sk-sysctl-tune | scripts/sk-sysctl-tune.sh | no | Show live vs target for a PERFORMANCE profile (throughput/web/balanced), read-only by default; with --apply writes a `/etc/sysctl.d/` drop-in and runs `sysctl --system` after confirmation. Dry-run-aware; verifies BBR availability. Both families. |
+
+<!-- dual-compat-end -->
 
 ## References
 

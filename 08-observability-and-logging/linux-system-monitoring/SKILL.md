@@ -1,8 +1,10 @@
 ---
 name: linux-system-monitoring
-description: Monitor system health on Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) production servers. Monitoring commands are identical across both families; only install steps and a couple of package names differ. CPU load, memory, disk I/O, network connections, process inspection. Covers htop, iostat, vmstat, ss, and backup health verification. Includes what warning signs to watch for. Reference-style — outputs commands and how to read them.
+description: Use when taking a read-only host-health snapshot or investigating CPU, memory, I/O, network, process, and backup pressure; use linux-observability for persistent telemetry and linux-troubleshooting for incident branching.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -41,18 +43,49 @@ In `sk-*` scripts use the `common.sh` primitives (`pkg_install`, `svc_name`,
 - The task is a specific incident diagnosis with a known symptom; use `linux-troubleshooting`.
 - The task is telemetry system design rather than local host inspection; use `linux-observability`.
 
-## Required inputs
+<!-- dual-compat-start -->
 
-- The host and timeframe of interest.
-- Any symptom or suspected pressure area.
-- Whether the goal is a quick health snapshot or a deeper subsystem review.
+## Required Inputs
+
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Host role and observation timeframe | Inventory/incident owner | yes | Return generic command guidance only |
+| Symptom, impact, and baseline | Alert, user report, or monitoring history | for diagnosis | Produce a snapshot without causal claim |
+| Read/search access | System owner | yes | State monitoring could not be performed |
+
+## Capability Contract
+
+Default mode is read-only using process, kernel, socket, filesystem, and backup status commands. Installing tools, changing priorities/limits, killing processes, tuning kernel values, or restarting services requires explicit authority and a specialist handoff.
+
+## Degraded Mode
+
+If tools, privileges, historical baselines, or repeated samples are unavailable, report the instantaneous measurements and missing context. Do not classify a transient snapshot as sustained health or pressure.
+
+## Decision Rules
+
+| Observation | Action | Failure avoided |
+|---|---|---|
+| High load with high I/O wait | Inspect devices and blocked tasks | Misdiagnosing storage pressure as CPU |
+| Low free memory with healthy available memory | Check reclaim/swap before escalation | False memory alarm |
+| Brief spike without sustained impact | Sample across a defined interval | Tuning for noise |
+| Backup age exceeds policy | Route to backup owner with timestamp evidence | Silent recovery gap |
 
 ## Workflow
 
-1. Capture a quick health snapshot first.
-2. Drill into the resource area showing abnormal behavior.
-3. Compare the observed metrics to the warning signs reference.
-4. Hand off to the owning skill when the issue becomes service-, storage-, or network-specific.
+1. Confirm host role, clock, symptom, impact, and timeframe.
+2. Capture a read-only broad snapshot of load, memory, I/O, sockets, filesystems, processes, and backup age.
+3. Sample abnormal resources over time and compare with workload baseline.
+4. Correlate metrics before selecting a failure domain; stop when a single snapshot cannot support causality.
+5. Route to the owning skill with evidence rather than applying tuning.
+6. If collection fails, recover by using available core commands and mark omitted checks unassessed.
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Host-health snapshot | Includes host, role, timestamps, commands, units, and all core resource areas |
+| Pressure diagnosis | Correlates repeated samples with impact and states confidence |
+| Specialist handoff | Names the failure domain, reproducing evidence, and unassessed checks |
 
 ## Quality standards
 
@@ -62,15 +95,26 @@ In `sk-*` scripts use the `common.sh` primitives (`pkg_install`, `svc_name`,
 
 ## Anti-patterns
 
-- Jumping into deep tuning before a basic health snapshot.
-- Treating one abnormal metric as the whole story.
-- Ignoring backup-health checks during routine host reviews.
+- Tuning before a health snapshot. Fix: collect broad read-only evidence first.
+- Treating one metric as the whole story. Fix: correlate load, CPU, memory, I/O, and impact.
+- Ignoring backup health. Fix: record last successful backup against policy.
+- Reading `free` as free-memory exhaustion. Fix: interpret available memory and reclaim behaviour.
+- Calling one spike sustained pressure. Fix: sample across a defined interval.
+- Killing a process during monitoring. Fix: hand remediation to an authorised specialist task.
 
 ## Outputs
 
-- A host-health snapshot and identified pressure points.
-- The commands used to confirm or rule out resource contention.
-- The next owning skill or remediation direction when deeper work is needed.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Health summary | On-call operator | States healthy/pressured/unassessed areas with measurements |
+| Failure-domain handoff | Specialist owner | Includes timeframe, impact, correlated evidence, and next check |
+| Coverage note | Service owner | Identifies missing history, tools, privileges, or backup checks |
+
+## Worked Example
+
+Load average is 12 on an eight-core host, but CPU idle remains 70% and I/O wait is 25%. Repeated `vmstat`/`iostat` samples show blocked tasks on one volume, so route to linux-disk-storage instead of changing CPU limits.
+
+<!-- dual-compat-end -->
 
 ## References
 

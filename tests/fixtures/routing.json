@@ -1,0 +1,31 @@
+[
+  {"id":"positive-cloud-init","kind":"positive","prompt":"Create cloud-init user-data for a new Ubuntu VM","expected":"linux-cloud-init"},
+  {"id":"positive-dns","kind":"positive","prompt":"Configure an authoritative BIND DNS zone with DNSSEC","expected":"linux-dns-server"},
+  {"id":"positive-mail","kind":"positive","prompt":"Set up Postfix Dovecot SPF DKIM and DMARC","expected":"linux-mail-server"},
+  {"id":"positive-observability","kind":"positive","prompt":"Deploy Prometheus node exporter and log shipping with health checks","expected":"linux-observability"},
+  {"id":"positive-redis","kind":"positive","prompt":"Tune and secure a Redis or Memcached server","expected":"linux-inmemory-stores"},
+  {"id":"positive-auditd","kind":"positive","prompt":"Create persistent auditd rules for privileged command attribution","expected":"linux-auditd-rules"},
+  {"id":"positive-aide","kind":"positive","prompt":"Configure AIDE file integrity monitoring and verify its baseline","expected":"linux-file-integrity"},
+  {"id":"positive-rsync","kind":"positive","prompt":"Build an incremental offsite rsync backup with retention","expected":"linux-rsync-sync"},
+  {"id":"positive-perf","kind":"positive","prompt":"Use perf to profile CPU hotspots before tuning","expected":"linux-perf-profiling"},
+
+  {"id":"negative-audit-vs-harden","kind":"negative","prompt":"Apply authorised SSH firewall and sysctl hardening fixes","expected":"linux-server-hardening","forbidden":["linux-security-analysis"]},
+  {"id":"negative-monitor-vs-observe","kind":"negative","prompt":"Check current CPU memory disk and network health on one host","expected":"linux-system-monitoring","forbidden":["linux-observability"]},
+  {"id":"negative-engine-vs-deploy","kind":"negative","prompt":"Install Docker Engine or Podman and configure the daemon","expected":"linux-container-engine","forbidden":["linux-container-deployment"]},
+  {"id":"negative-writing-vs-bash","kind":"negative","prompt":"Write and review an sk shell script using common.sh primitives","expected":"linux-bash-scripting","forbidden":["skill-writing"]},
+
+  {"id":"collision-webstack-service","kind":"collision","prompt":"Diagnose an nginx PHP-FPM 502 and validate the service configuration","expected":"linux-webstack","also_top_three":["linux-service-management"]},
+  {"id":"collision-storage-image","kind":"collision","prompt":"Container image cleanup is needed after disk storage usage filled the root filesystem; diagnose usage and reclaim space","expected":"linux-image-hygiene","also_top_three":["linux-disk-storage"]},
+  {"id":"collision-postgres-perf","kind":"collision","prompt":"PostgreSQL is slow; use perf profiling to separate query tuning from a host bottleneck","expected":"linux-postgresql","also_top_three":["linux-perf-profiling"]},
+  {"id":"collision-firewall-access","kind":"collision","prompt":"SSH access is blocked after a firewall and user policy change","expected":"linux-access-control","also_top_three":["linux-firewall-ssl"]},
+  {"id":"collision-archive-snapshot","kind":"collision","prompt":"Choose between a metadata-preserving tar archive and a point-in-time filesystem snapshot","expected":"linux-archive-integrity","also_top_three":["linux-filesystem-snapshots"]},
+
+  {"id":"limited-no-server","kind":"limited-capability","prompt":"Without server access, troubleshoot an unexplained outage and provide a qualified diagnostic plan","expected":"linux-troubleshooting"},
+  {"id":"limited-no-network","kind":"limited-capability","prompt":"With no network access, plan package updates for Debian and RHEL without claiming repositories are reachable","expected":"linux-package-management"},
+  {"id":"limited-readonly-security","kind":"limited-capability","prompt":"Perform a read-only Linux security posture analysis with no authority to change the host","expected":"linux-security-analysis"},
+
+  {"id":"failure-restore","kind":"failure-path","prompt":"Backup restore failed and the server will not boot; recover services and verify data","expected":"linux-disaster-recovery"},
+  {"id":"failure-repo-diverged","kind":"failure-path","prompt":"Git repository pull diverged while local changes exist; preserve work and recover safely","expected":"linux-repo-sync"},
+  {"id":"failure-service-reload","kind":"failure-path","prompt":"A systemd service failed after reload; inspect status journal and roll back configuration","expected":"linux-service-management"},
+  {"id":"failure-sysctl","kind":"failure-path","prompt":"A sysctl performance change caused instability; restore the previous kernel parameters","expected":"linux-sysctl-tuning"}
+]

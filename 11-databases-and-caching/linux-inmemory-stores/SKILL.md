@@ -1,8 +1,10 @@
 ---
 name: linux-inmemory-stores
-description: Operate Redis and Memcached in-memory data stores across both major Linux families — install (redis-server / memcached on Debian/Ubuntu; redis / memcached on the RHEL family: Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle), secure the network surface (bind address, Redis protected-mode, requirepass / ACL, Memcached -l listen and SASL), set eviction policy (maxmemory, maxmemory-policy allkeys-lru / volatile-lru / noeviction), and configure Redis persistence (RDB save snapshots vs AOF appendonly — Memcached has none). systemd management and a hard warning against exposing either daemon to an untrusted network.
+description: Use when installing, securing, sizing, or diagnosing Redis or Memcached on Debian/Ubuntu or RHEL-family hosts; covers bind/auth, eviction, and Redis persistence. Use linux-mysql-mariadb for relational databases and linux-firewall-ssl for host policy.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -41,14 +43,15 @@ one script runs on both families; see
 > on official redis.io and memcached.org / GitHub wiki documentation; deepen with
 > the Redis docs (redis.io/docs) and the memcached(1) man page and wiki.]
 
-## Use when
+<!-- dual-compat-start -->
+## Use When
 
 - Installing and locking down a fresh Redis or Memcached instance.
 - Choosing and applying an eviction policy for a cache workload.
 - Configuring Redis persistence (RDB snapshots, AOF, or both) or deciding none.
 - Diagnosing memory pressure, eviction, client limits, or an exposed daemon.
 
-## Do not use when
+## Do Not Use When
 
 - The task is a relational engine (MySQL/MariaDB, PostgreSQL); use
   `linux-mysql-mariadb` (or the PostgreSQL skill).
@@ -56,26 +59,44 @@ one script runs on both families; see
   to manage the `requirepass`/SASL secret, then return here to apply it.
 - The task is host firewalling of the exposed port; use `linux-firewall-ssl`.
 
-## Required inputs
+## Required Inputs
 
-- Which store (Redis, Memcached, or both) and the intended role (cache vs
-  durable store — only Redis can be durable).
-- Memory budget (`maxmemory` for Redis, `-m` for Memcached) and whether eviction
-  or hard-refusal (`noeviction`) is the correct behavior on a full cache.
-- Whether any non-localhost client needs access, and from which trusted network.
+| Artefact | Required? | Source | If absent |
+|---|---|---|---|
+| Store, version, distro family, and role (cache or durable Redis) | yes | Operator and host inventory | Stop before package or config changes; report the missing facts. |
+| Memory budget and full-cache behaviour | yes | Capacity plan or measured workload | Inspect available memory read-only; propose measurements, but do not apply a ceiling or eviction policy. |
+| Client networks and authentication requirement | yes | Application topology and security policy | Keep loopback binding; do not expose the service. |
+| Persistence and recovery objective | Redis only | Service owner | Treat Redis as a cache and warn that restart data loss is expected. |
+
+## Capability Contract
+
+Inspection requires read access to service state, sockets, and configuration. Installation, configuration edits, firewall changes, restarts, and secret placement require explicit host-mutation authority and least-privilege elevation. Never print authentication material.
+
+## Degraded Mode
+
+Without host access, return a family-specific change plan and verification commands. Without workload measurements, do not invent a memory ceiling. If authentication or socket exposure cannot be checked, mark the service posture `not assessed`, never safe.
+
+## Decision Rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Memcached versus Redis | Use Memcached only for disposable cache data; use Redis when data structures or optional persistence are required. | False durability assumptions. |
+| Local versus remote clients | Retain loopback unless trusted client CIDRs, authentication, and firewall controls are all defined. | Unauthenticated remote takeover. |
+| Redis eviction | Use `allkeys-lru` for a pure cache, `volatile-lru` for TTL-scoped eviction, or `noeviction` where failed writes are safer than data loss. | Silent eviction of durable keys. |
+| Redis persistence | Select RDB, AOF, both, or none from the recovery objective and test restart recovery. | Unrecoverable data loss. |
 
 ## Workflow
 
-1. Install the package for the family; start and enable the unit.
-2. Confirm the bind address before exposing anything — both default to localhost.
-3. Set authentication (Redis `requirepass`/ACL; Memcached SASL) before binding to
+1. Confirm the input contract and identify the distro family, store, role, authority, and rollback path; stop if exposure or durability requirements are unknown.
+2. Inspect installed package, active unit, socket, memory use, and current configuration before changing anything.
+3. Decide the store, memory ceiling, eviction, persistence, and access model with the decision table.
+4. With explicit mutation authority, install the family package and start the correct unit.
+5. Set authentication (Redis ACL/password or Memcached SASL) before binding to
    any non-loopback address. Pull the secret via `linux-secrets`.
-4. Set the memory ceiling and eviction policy to match the workload.
-5. For Redis, decide persistence: RDB, AOF, both, or none (pure cache).
-6. Verify: `redis-cli INFO` / `memcached-tool ... stats`; confirm the listen
-   socket and that auth is required.
+6. Apply memory, eviction, and Redis persistence decisions, validate syntax, then restart or reload only as required.
+7. Verify with `redis-cli INFO` or `memcached-tool ... stats`, socket inspection, an unauthenticated rejection test, and a persistence recovery test when applicable. On failure, restore the saved config, restart the prior unit state, and re-check the socket.
 
-## Quality standards
+## Quality Standards
 
 - Never expose Redis or Memcached to an untrusted network. Bind to localhost or a
   private interface, require authentication, and firewall the port.
@@ -83,21 +104,42 @@ one script runs on both families; see
   RAM and be OOM-killed.
 - Keep the secret out of the world-readable config where possible; reference
   `linux-secrets` for password handling.
+- Record unit, socket, ceiling, authentication result, and persistence result without exposing secrets.
 
-## Anti-patterns
+## Anti-Patterns
 
-- `bind 0.0.0.0` (or removing the `bind` line) with `protected-mode no` and no
-  `requirepass` — this is the classic remote-takeover footgun.
-- Running Redis as a persistent store with persistence disabled (no RDB, no AOF)
-  and assuming data survives a restart — it does not.
-- Treating Memcached as durable: it has **no persistence** — every restart starts
-  empty.
+- Exposing a cache before authentication. Fix: keep loopback binding until auth and firewall checks pass.
+- Choosing eviction from a generic recipe. Fix: inspect workload role, TTLs, and memory statistics first.
+- Leaving Redis memory unbounded. Fix: set a measured ceiling with OS and persistence headroom.
+- Claiming Redis durability without recovery. Fix: restart-test the selected RDB/AOF mode.
+- Putting credentials in commands or evidence. Fix: use approved secret retrieval and redact output.
+
+- Exposing `0.0.0.0` with protected mode disabled and no auth. Correction: bind narrowly, authenticate, and firewall before remote access.
+- Running Redis without `maxmemory`. Correction: set a measured ceiling that leaves headroom for the OS and fork operations.
+- Treating Memcached as durable. Correction: document it as disposable and rebuild cache contents after restart.
+- Enabling Redis persistence without a recovery test. Correction: restore or restart-test RDB/AOF on a non-production instance.
+- Placing passwords in command history or evidence. Correction: retrieve secrets through the approved channel and redact outputs.
+- Changing eviction policy without checking key TTL patterns. Correction: inspect keyspace statistics and choose policy from workload semantics.
 
 ## Outputs
 
-- The bind address, auth method, and firewall posture chosen.
-- The eviction policy and memory ceiling set, with the rationale.
-- For Redis, the persistence mode (RDB/AOF/both/none) and where files live.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Store configuration record | Service owner | Names bind address, auth method, ceiling, eviction, and Redis persistence without secrets. |
+| Verification result | Operator | Unit is healthy, expected socket is present, unauthenticated access is rejected, and authorised stats are readable. |
+| Recovery evidence | Service owner | Redis persistence test passes, or cache-only data loss is explicitly accepted. |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Store evidence pack | Contains redacted config, version, socket, authentication, memory/eviction, and recovery results; unavailable checks are marked. |
+
+Capture redacted config excerpts, package/unit versions, socket output, authentication rejection, memory/eviction statistics, and recovery-test result. Unavailable checks remain `not assessed`.
+
+## Worked Example
+
+A 2 GiB Redis cache with disposable keys and private application clients receives a measured `maxmemory` below host capacity and `allkeys-lru`; ACL authentication is configured before the private bind. Acceptance requires the expected private socket, rejected unauthenticated `PING`, authorised `INFO memory`, and a documented decision that persistence is disabled.
 
 ## Install
 
@@ -207,6 +249,8 @@ sudo systemctl status redis-server      # RHEL: redis
 sudo systemctl restart memcached
 journalctl -u redis-server --no-pager | tail -30
 ```
+
+<!-- dual-compat-end -->
 
 ## References
 

@@ -1,8 +1,10 @@
 ---
 name: linux-intrusion-detection
-description: Manage ACTIVE intrusion detection on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). fail2ban (check jails, unban IPs, add custom jails, tune bans, read logs) and rootkit scanning with rkhunter and chkrootkit (install, baseline with `--propupd`, scheduled scans, interpreting warnings, reducing false positives) — both run on both families, need EPEL on RHEL/Rocky/Alma, and fail2ban reads journald/`/var/log/secure` via `backend = systemd`. On the RHEL family, SELinux AVC denials are an additional intrusion-detection signal. For the compliance/forensic side — auditd system-call auditing and AIDE file-integrity monitoring — use the dedicated skills linux-auditd-rules and linux-file-integrity in 15-compliance-and-auditing.
+description: Use when operating fail2ban, investigating its bans, or running qualified rkhunter/chkrootkit checks; use linux-auditd-rules or linux-file-integrity for compliance-grade auditing.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -34,6 +36,8 @@ as a triage signal. See
 [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md)
 and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
+
 ## Use when
 
 - Managing fail2ban or rootkit scanners (rkhunter/chkrootkit) on Ubuntu/Debian or RHEL-family servers.
@@ -47,18 +51,45 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 - The task is system-call auditing (auditd); use `linux-auditd-rules` (15-compliance-and-auditing).
 - The task is file-integrity / hash drift (AIDE); use `linux-file-integrity` (15-compliance-and-auditing).
 
-## Required inputs
+## Required Inputs
 
-- Which subsystem is involved: fail2ban or the rootkit scanners.
-- The host, jail, file path, or event pattern under investigation.
-- Whether the task is inspection, tuning, or first-time setup.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Host, distro, time window, and signal | Incident owner, alert, or host logs | yes | Inspect current status only; do not claim an incident |
+| Known-good baseline and change history | Configuration management or owner | for attribution | Treat integrity warnings as unresolved leads |
+| Response authority | Incident commander | for mutation | Preserve evidence; do not ban, tune, or re-baseline |
+
+## Capability Contract
+
+Default investigation uses read/search access and is read-only. Bans, unbans, jail changes, package installation, quarantine, and `rkhunter --propupd` require explicit response authority. Never refresh a baseline merely to silence an unexplained finding.
+
+## Degraded Mode
+
+If logs were rotated, tools are absent, or no trusted baseline exists, report available signals and missing coverage. Mark attribution and compromise status undetermined; a clean partial scan is not a clean host.
+
+## Decision Rules
+
+| Evidence | Action | Failure avoided |
+|---|---|---|
+| Failures match a jail and policy | Apply authorised ban or tuning | Blocking an address without evidence |
+| Warning matches an approved package change | Record benign disposition | Persistent false positive |
+| Unexpected change lacks explanation | Preserve evidence and escalate | Baseline laundering |
+| SELinux AVC alone | Investigate context | False intrusion declaration |
 
 ## Workflow
 
-1. Confirm which detection layer matches the symptom.
-2. Inspect current status, logs, and configured watches or jails.
-3. Apply the minimum tuning or recovery change needed.
-4. Re-run the relevant check to prove the monitoring layer behaves as expected.
+1. Establish host, clock, log coverage, and authorised boundary; stop when scope is unclear.
+2. Preserve the alert and correlated auth, journal, or SELinux records before mutation.
+3. Compare the signal with package history and trusted baselines; stop if attribution is unsupported.
+4. Classify it as explained, suspicious, confirmed, or unassessed.
+5. Apply only authorised reversible containment; restore saved config if validation fails.
+6. Re-run the narrow check and record unresolved indicators.
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Detection evidence pack | Includes jail status, timestamped triggering logs, scanner output, package correlation, authorised diff/action, and post-change status |
 
 ## Quality standards
 
@@ -68,15 +99,26 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Anti-patterns
 
-- Disabling a noisy jail without understanding why it fired.
-- Re-baselining a rootkit scanner blindly after a suspicious change.
-- Treating intrusion-detection tooling as a substitute for root-cause analysis.
+- Disabling a noisy jail without understanding why it fired. Fix: test its filter against the triggering logs.
+- Re-baselining blindly after a suspicious change. Fix: attribute the change before updating properties.
+- Treating detection tooling as root-cause analysis. Fix: correlate the signal with system and application evidence.
+- Banning an address from an alert summary alone. Fix: cite triggering records and policy.
+- Treating a partial clean scan as a clean host. Fix: state tool and time coverage.
+- Updating properties before explanation. Fix: preserve and attribute changes first.
 
 ## Outputs
 
-- The status or finding for the selected detection layer.
-- The tuning or remediation step taken.
-- Verification that the jail, baseline, or audit rule now behaves correctly.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Finding disposition | Incident owner | Links each signal to timestamped evidence and confidence |
+| Response record | Operations | Names authorised action and reversal |
+| Coverage note | Security owner | States tools, logs, time range, and unassessed areas |
+
+## Worked Example
+
+When `/usr/bin/ssh` changes after an approved OpenSSH update, preserve the warning, match package timestamps and verification, and document the benign cause. Update properties only after approval; an unmatched hash blocks re-baselining.
+
+<!-- dual-compat-end -->
 
 ## References
 

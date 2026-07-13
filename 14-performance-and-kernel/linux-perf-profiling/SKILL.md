@@ -1,8 +1,10 @@
 ---
 name: linux-perf-profiling
-description: PERFORMANCE diagnosis — find the bottleneck before tuning, on both Linux families (Debian/Ubuntu and the RHEL family — Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Read load average and `top`/`htop`, sample with `vmstat 1`, `iostat -x 1` (read `await`/`%util` for disk saturation), `mpstat -P ALL` (per-CPU), `pidstat` (per-process), and `sar` (sysstat historical). Classify the symptom as CPU-bound vs high I/O-wait vs memory pressure, then profile CPU on-CPU time with `perf` (`perf top`, `perf record -g` + `perf report`, `perf stat`). Covers sysstat/perf install and `kernel.perf_event_paranoid`. For tuning the kernel after you measure, hand off to linux-sysctl-tuning.
+description: Use when diagnosing a Linux performance regression or bottleneck with load, vmstat, iostat, mpstat, pidstat, sar, and perf on Debian/Ubuntu or RHEL-family hosts. Produces read-only evidence before any tuning; hand changes to linux-sysctl-tuning.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -38,14 +40,15 @@ both families. `perf` is the only tool whose package name differs.
 `htop` is in the default repos on both (`apt install htop` / `dnf install
 htop`); on minimal RHEL it may need EPEL on older releases.
 
-## Use when
+<!-- dual-compat-start -->
+## Use When
 
 - A host is "slow" and you must locate the bottleneck before changing anything.
 - Deciding whether the limit is CPU, disk I/O, or memory before tuning.
 - You need a CPU profile (which functions burn cycles) via `perf`.
 - You want historical context (`sar`) for an incident that already happened.
 
-## Do not use when
+## Do Not Use When
 
 - You already know the bottleneck and only need to apply kernel tunables; use
   `linux-sysctl-tuning`.
@@ -53,7 +56,13 @@ htop`); on minimal RHEL it may need EPEL on older releases.
   `linux-service-priority` (cgroups).
 - You are tracing application logic, not system resources (use app-level APM).
 
-## Required inputs
+## Required Inputs
+
+| Artefact | Required? | Source | If absent |
+|---|---|---|---|
+| Symptom, affected service, time window, baseline/SLO, and change timeline | yes | Incident owner and monitoring | Gather a bounded baseline; do not guess a bottleneck. |
+| Host/container scope and workload reproduction | yes | Topology and operator | Limit conclusions to visible scope. |
+| Permission for package install or perf sampling | conditional | Change/security owner | Use installed read-only tools; mark stacks unassessed. |
 
 - The symptom (latency, throughput drop, OOM, high load) and when it occurs.
 - Whether you can install packages (`sysstat`, `perf`) on the host.
@@ -74,6 +83,23 @@ Work top-down: read load average, then split CPU vs I/O-wait vs memory with one
 `vmstat 1` sample, then drill into the saturated resource with the specific
 tool. **Measure first; tune second** (then hand off to `linux-sysctl-tuning`).
 
+## Capability Contract
+
+Default to read-only diagnosis and search of available metrics. Process/host sampling must be bounded. Package installation, lowering `perf_event_paranoid`, workload generation, tuning, restarts, and configuration changes require explicit permission; this skill does not tune.
+
+## Degraded Mode
+
+When `perf`, sysstat history, kernel symbols, or target access is unavailable, use the narrowest available USE evidence and label missing dimensions `not assessed`. Never convert one instantaneous sample into a pass or root-cause claim.
+
+## Decision Rules
+
+| Signal | Action | Failure or risk avoided |
+|---|---|---|
+| High run queue and low CPU idle | Attribute CPU saturation only after per-CPU/process evidence. | Misreading load as CPU. |
+| High I/O wait/await/queue | Inspect device and process I/O plus errors before storage tuning. | Blaming CPU or a single `%util` value. |
+| Swap activity/OOM/low available memory | Quantify working set and offender before memory changes. | Treating cache use as pressure. |
+| No reproduced signal | Correlate historical metrics/change timeline; report inconclusive. | Invented root cause. |
+
 ## Workflow
 
 1. **Triage:** `uptime` (load vs core count), then `vmstat 1` for a few lines.
@@ -86,14 +112,22 @@ tool. **Measure first; tune second** (then hand off to `linux-sysctl-tuning`).
 5. **Conclude:** name the bottleneck and the evidence; hand off to a tuning
    skill rather than tuning blind here.
 
-## Quality standards
+6. Stop sampling if overhead, output growth, or scope exceeds the bound; recover by ending the profiler, preserving partial evidence, and fall back to lower-overhead timed metrics.
+
+## Quality Standards
 
 - Sample over a window (`vmstat 1`, several lines) — never trust one instant.
 - Ignore the first `iostat`/`mpstat` line: it is averages since boot, not now.
 - Pair every claim with the field that proves it (e.g. "disk-bound: `%util` 98,
   `await` 40 ms").
 
-## Anti-patterns
+## Anti-Patterns
+
+- Tuning before measurement. Fix: finish bounded USE triage and name the supported bottleneck.
+- Reading the first since-boot sample as current. Fix: discard it and record a timed window.
+- Equating load with CPU. Fix: separate runnable tasks from I/O-wait and process evidence.
+- Running unbounded system-wide perf. Fix: cap frequency, duration, scope, and output size.
+- Inventing root cause when the symptom is absent. Fix: correlate history and report inconclusive.
 
 - Tuning sysctl/storage before measuring the actual bottleneck.
 - Reading the since-boot first sample as the current state.
@@ -101,8 +135,28 @@ tool. **Measure first; tune second** (then hand off to `linux-sysctl-tuning`).
   uninterruptible (D-state, usually I/O) tasks.
 - Running `perf record` system-wide for minutes on a busy box without bounding
   it (`-F` frequency, a fixed duration) — the perf.data file balloons.
+- Declaring root cause from correlation alone. Correction: reproduce or triangulate with resource and process evidence.
+- Omitting the sampling window and workload. Correction: record duration, interval, scope, and request rate/concurrency.
 
 ## Outputs
+
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Profiling evidence pack | Incident owner | Records scope/window/workload and raw CPU, memory, disk, error, and process evidence. |
+| Bottleneck conclusion | Service owner | Names supported subsystem, confidence, alternatives, and unassessed checks; every claim cites a metric. |
+| Handoff | Tuning owner | Recommends a specific next experiment or skill without applying changes. |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Profiling evidence pack | Contains bounded samples, scope/workload, history, errors, available stacks, and an explicit confidence statement. |
+
+Capture timestamped bounded samples, tool versions, workload context, historical comparison, perf command/overhead, top stacks where available, errors, and an explicit inconclusive result when evidence does not isolate a bottleneck.
+
+## Worked Example
+
+For a latency spike, record request load, sample `vmstat`, ignore the first `iostat` line, correlate high device `await` with per-process I/O and kernel errors, then hand storage evidence to the owning team. High load alone is insufficient.
 
 - The classified bottleneck (CPU / I/O-wait / memory) and the metrics proving it.
 - For CPU cases, the top symbols/stacks from `perf report`.
@@ -249,6 +303,8 @@ sudo install-skills-bin linux-perf-profiling
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
 | sk-perf-snapshot | scripts/sk-perf-snapshot.sh | yes | Read-only quick-profile snapshot: captures a short window of load/uptime, `free -h`, `vmstat`, `iostat -x` (await/%util), `mpstat -P ALL`, `pidstat`, top processes by %CPU and %MEM, and (unless `--no-perf`) a 1s `perf stat`, then prints a one-line verdict (CPU-bound vs I/O-wait vs memory pressure). Degrades gracefully if sysstat/perf are absent. Never mutates. Both families. |
+
+<!-- dual-compat-end -->
 
 ## References
 

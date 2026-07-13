@@ -1,8 +1,12 @@
 ---
 name: linux-network-admin
-description: Manage Linux server networking across two families — Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Diagnostic tooling (`ip`, `ss`, `dig`, `resolvectl`, `traceroute`) is identical on both; persistent config differs — Netplan on Debian/Ubuntu vs NetworkManager/`nmcli` on RHEL — as does time sync (`systemd-timesyncd` vs `chrony`). Covers interfaces, routes, DNS resolution, NTP, and reachability. Use for any non-firewall, non-mail networking task on a managed server.
+description: Use when diagnosing or configuring Linux interfaces, addresses, routes, client DNS, reachability, VLANs, or time synchronisation with Netplan or NetworkManager. Use linux-dns-server for hosted DNS zones and linux-firewall-ssl for packet filtering.
 license: MIT
 metadata:
+  portable: true
+  compatible_with:
+  - claude-code
+  - codex
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -35,6 +39,7 @@ family via `common.sh`. See
 [`references/networkmanager-reference.md`](references/networkmanager-reference.md)
 and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
 ## Use when
 
 - Managing interfaces, routes, netplan, DNS resolution, NTP, or reachability from the server side.
@@ -48,9 +53,11 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Required inputs
 
-- The interface, address, route, VLAN, host, or port involved.
-- Whether the task is read-only diagnosis or a persistent config change.
-- Any downtime constraints before applying netplan or route changes.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Symptom, source host/interface, destination/address/port, and expected path | Operator and service design | required | Return a discovery checklist; do not guess topology. |
+| Current addresses, links, routes, resolver, listeners, and persistent config | Target host | required for diagnosis/change | Mark the respective layer `not assessed`. |
+| Console/recovery access and downtime authority | Change owner | required for persistent remote change | Stop before applying Netplan or NetworkManager changes. |
 
 ## Workflow
 
@@ -58,6 +65,8 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 2. Choose the matching workflow below for connectivity, port reachability, VLAN, or time-sync work.
 3. Apply the smallest safe change and validate immediately.
 4. Confirm the network path behaves as expected after the change.
+5. Stop if the owning interface/connection, console or timed rollback, expected path, or change authority is unresolved.
+6. Recover by reverting the persistent connection/config through the console or timed fallback, then restore and verify the prior route and reachability.
 
 ## Quality standards
 
@@ -67,21 +76,53 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Anti-patterns
 
-- Applying netplan without verifying the exact target interface and route.
-- Debugging with only `ping` when port-level or DNS-level evidence is needed.
-- Mixing firewall and non-firewall networking changes in one step.
+- Applying persistent network config without identifying the live connection/interface. Fix: map link, address, route, and configuration owner first.
+- Using only `ping`. Fix: test DNS, route, neighbour, TCP/UDP port, listener, and application path as relevant.
+- Applying a remote address/route change without rollback. Fix: use console or timed rollback and preserve the prior config.
+- Editing generated resolver files directly. Fix: change NetworkManager, systemd-resolved, or the owning configuration source.
+- Mixing firewall and interface changes. Fix: isolate layers and route firewall work to `linux-firewall-ssl`.
 
 ## Outputs
 
-- The network diagnosis or change plan.
-- The exact commands used to validate state.
-- Post-change verification for reachability, resolution, or sync state.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Layered diagnosis or approved config change | Network/system operator | Identifies failing layer with observed link, route, DNS, port, and time evidence. |
+| Recovery-safe change record | On-call operator | Contains before/after config, validation, rollback trigger, and console path. |
+| End-to-end verification | Service owner | Expected name, address, route, port, and application response work from the intended source. |
 
 ## References
 
 - [`references/netplan-reference.md`](references/netplan-reference.md)
 - [`references/networkmanager-reference.md`](references/networkmanager-reference.md)
 - [`references/diagnostics-tree.md`](references/diagnostics-tree.md)
+
+## Evidence Produced
+
+| Artefact | Acceptance condition |
+|---|---|
+| Network-change evidence | Includes before/after link, address, route, resolver state, targeted probes, config validation, rollback readiness, and end-to-end checks. |
+
+## Capability contract
+
+Diagnosis defaults to read-only. Read/execute access is required for host inspection. Persistent address, route, VLAN, DNS, or time changes require explicit authority and a recovery path; firewall and remote-provider changes require separate scope.
+
+## Degraded mode
+
+Without host access, provide a layer-by-layer probe plan and qualify all conclusions. Without console or timed rollback, do not apply remote persistent changes that could sever access.
+
+## Decision rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Link/address missing | Fix interface ownership/config first | Misdiagnosing higher layers. |
+| Route and IP work but name fails | Inspect resolver path | Unnecessary route/firewall edits. |
+| Host reaches destination but service port fails | Inspect listener/path, then firewall skill | Treating application refusal as routing failure. |
+
+## Worked example
+
+For a remote AlmaLinux host that lost a static route after reboot, capture `ip` and `nmcli` state, identify the owning connection, prepare a timed rollback, add the persistent route, reactivate safely, then prove the route, destination port, and application response before cancelling rollback.
+
+<!-- dual-compat-end -->
 
 **This skill is self-contained.** Diagnostic commands below (`ip`, `ss`,
 `dig`, `ping`, `mtr`, `resolvectl`) are standard on **both families**.

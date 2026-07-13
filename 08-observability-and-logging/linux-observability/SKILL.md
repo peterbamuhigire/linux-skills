@@ -1,8 +1,10 @@
 ---
 name: linux-observability
-description: Add metrics, logs, and health endpoints to Linux servers on both the Debian/Ubuntu and RHEL families (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) — Prometheus node_exporter, centralized logging via rsyslog/fluent-bit/journald, standard /health endpoints. Prometheus and node_exporter are portable binaries; only the install source and the firewall command for the scrape port differ. Use for any task involving metrics collection or log shipping off the host.
+description: Use when adding or diagnosing Prometheus/node_exporter metrics, central log shipping, or lightweight health endpoints; use linux-system-monitoring for an ad hoc host snapshot and linux-log-management for local log analysis.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -49,18 +51,50 @@ In `sk-*` scripts use the `common.sh` primitives (`pkg_install`, `ensure_epel`,
 - The task is reading local logs only; use `linux-log-management`.
 - The task is general performance triage without telemetry design work; use `linux-system-monitoring`.
 
-## Required inputs
+<!-- dual-compat-start -->
 
-- The telemetry layer involved: metrics, logs, or health endpoint.
-- The target collector, Prometheus server, or log destination.
-- The service or vhost that needs instrumentation.
+## Required Inputs
+
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Telemetry objective and service | Service owner/SLO | yes | Stop before installing an unfocused collector |
+| Collector or log destination contract | Platform owner | yes | Produce design only; do not expose a port or ship logs |
+| Network, authentication, labels, retention | Platform/security policy | for integration | Mark end-to-end delivery unassessed |
+| Change authority and rollback window | Operations owner | for mutation | Limit to read/search inspection and proposed config |
+
+## Capability Contract
+
+Read/search access supports current-state assessment. Installing exporters/agents, editing units/config, opening ports, transmitting logs, or reloading services requires explicit authority. Use least-privilege credentials and never expose sensitive health data.
+
+## Degraded Mode
+
+Fallback when receiver access is unavailable: validate only the reachable segment and label end-to-end scrape/delivery unassessed. Apply the same limit when network, credentials, root, or binaries are missing; a local listener is not proof of monitoring.
+
+## Decision Rules
+
+| Choice | Action | Failure avoided |
+|---|---|---|
+| Prometheus can pull securely | Use scrape/exporter model | Unnecessary push state |
+| Logs leave the host | Define filtering, TLS, backpressure, and retention | Data leak or disk exhaustion |
+| Health dependency is slow/optional | Keep liveness cheap; separate readiness | Restart storms |
+| Scrape port is required | Restrict source to collector | Public telemetry exposure |
 
 ## Workflow
 
-1. Choose the telemetry layer required by the task.
-2. Follow the matching setup or troubleshooting workflow below.
-3. Validate the exported metric, forwarded log, or `/health` response from the consumer side.
-4. Record any credentials, ports, or retention assumptions needed for operations.
+1. Define the operational question, consumer, labels, retention, and access boundary.
+2. Inspect existing collectors, ports, units, and pipelines before adding components.
+3. Choose metrics, logs, or health semantics using the decision table; stop on undefined sensitive fields.
+4. Back up config, validate syntax, and apply the smallest authorised change.
+5. Verify from the consumer side, including auth, timestamps, labels, and failure state.
+6. On failure, recover prior config/service state and report which segment remains unassessed.
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Consumer-side telemetry proof | Shows target, timestamp, expected metric/log/health value, and labels |
+| Configuration evidence | Contains redacted diff, syntax check, service status, and rollback |
+| Coverage statement | Names monitored components, failure states, retention, and unassessed segments |
 
 ## Quality standards
 
@@ -70,15 +104,26 @@ In `sk-*` scripts use the `common.sh` primitives (`pkg_install`, `ensure_epel`,
 
 ## Anti-patterns
 
-- Declaring a system observable before checking the collector can actually scrape or receive it.
-- Shipping logs without understanding destination, transport, or retention.
-- Turning `/health` into a heavy application diagnostic endpoint.
+- Declaring success from a local listener. Fix: verify scrape or receipt at the consumer.
+- Shipping logs without destination/retention. Fix: define transport, filtering, backpressure, and expiry.
+- Making `/health` a heavy diagnostic. Fix: keep liveness cheap and separate readiness/dependency detail.
+- Opening exporter ports globally. Fix: restrict sources to approved collectors.
+- Putting secrets or high-cardinality values in labels. Fix: use bounded non-sensitive dimensions.
+- Ignoring pipeline failure behaviour. Fix: test receiver outage, buffering, and recovery.
 
 ## Outputs
 
-- The metrics, logs, or health integration added or diagnosed.
-- The validation method used from the consumer side.
-- Any remaining operational prerequisites or exposure notes.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Telemetry integration | Operations | Consumer receives the intended signal with correct labels/timestamps |
+| Operational runbook note | On-call | Names failure signal, retention, access, and recovery steps |
+| Exposure record | Security owner | Documents listener, allowed sources, auth/TLS, and residual risk |
+
+## Worked Example
+
+For node_exporter on Rocky Linux, restrict TCP 9100 to the Prometheus source, validate the unit, then prove the target is `UP` and `node_uname_info` carries the expected instance label. A successful local `curl` alone leaves consumer delivery unassessed.
+
+<!-- dual-compat-end -->
 
 ## References
 

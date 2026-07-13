@@ -1,8 +1,10 @@
 ---
 name: linux-benchmark-scanning
-description: Automated security-benchmark and compliance scanning on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Run OpenSCAP (oscap xccdf eval) against SCAP Security Guide profiles — CIS Benchmarks, DISA STIG, PCI-DSS, HIPAA — produce machine-readable results.xml plus an HTML report, and generate a remediation script or Ansible playbook from the scan. Run Lynis (lynis audit system) for a fast hardening score and prioritized suggestions. Pick the right SSG datastream and profile per distro. For audit-rule definition use linux-auditd-rules; for file-hash drift use linux-file-integrity.
+description: Use when running read-only OpenSCAP or Lynis scans, selecting distro-matched profiles, interpreting failures, or drafting remediation on Debian/Ubuntu or RHEL-family hosts. Use linux-auditd-rules for attribution and linux-file-integrity for AIDE drift.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -39,34 +41,53 @@ the other two compliance layers — `linux-auditd-rules` (attribution) and
 `linux-file-integrity` (drift). See
 [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
-## Use when
+<!-- dual-compat-start -->
+## Use When
 
 - Running a CIS / STIG / PCI-DSS scan with OpenSCAP and producing a report.
 - Generating a remediation script or Ansible playbook from a scan.
 - Running a quick Lynis hardening sweep to get a score and suggestions.
 - Choosing the correct SSG datastream and profile for a host.
 
-## Do not use when
+## Do Not Use When
 
 - The task is defining or analysing audit rules; use `linux-auditd-rules`.
 - The task is file-content drift detection; use `linux-file-integrity`.
 - The task is applying hardening by hand (sysctl, SSH, SELinux); use `linux-server-hardening`.
 
-## Required inputs
+## Required Inputs
 
-- The distro and major version (to pick the SSG datastream).
-- The target benchmark/profile (CIS Level 1/2, STIG, PCI-DSS).
-- Whether you want a scan only, or scan plus generated remediation.
-- Whether remediation will be applied (and on a test host first).
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Exact distro/version, role, scope, and benchmark/profile requirement | Inventory and control owner | yes | Stop profile selection; do not scan against a guessed datastream. |
+| Scanner/content versions, profile ID, tailoring, and exceptions | Read-only package/content inspection | yes | Report coverage unavailable or run Lynis as a qualified secondary check. |
+| Remediation authority, test host, rollback, and service constraints | Change record | remediation only | Generate a draft only; do not apply. |
+
+## Capability Contract
+
+Default to read-only: read/search installed content and run scans that do not remediate. Package installation, generated-script execution, Ansible application, service changes, and any `--remediate` action require explicit authority and a test host. A report is not certification.
+
+## Degraded Mode
+
+If matching SCAP content/profile is unavailable, do not substitute a different distro/version. Return a coverage gap and optionally a read-only Lynis result. Unassessed rules remain unassessed, never passed; generated remediation remains an unexecuted draft.
+
+## Decision Rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| OpenSCAP or Lynis | Use OpenSCAP for named policy evidence; Lynis for advisory hardening breadth. | Treating an advisory score as compliance. |
+| Datastream/profile | Match exact distro major version and list profile IDs before evaluation. | Invalid or misleading results. |
+| Tailoring/exception | Record business justification and expiry without rewriting raw results. | Hidden control waiver. |
+| Remediation | Review generated changes, test with rollback, then rescan before production proposal. | Breaking services or claiming unverified compliance. |
 
 ## Workflow
 
-1. Install the scanner and the matching SSG content for the distro/version.
-2. List available profiles (`oscap info <ds.xml>`); pick the benchmark.
-3. Run the evaluation, producing `results.xml` and an HTML `report.html`.
-4. Review failures; generate a remediation script/playbook if needed.
-5. Apply remediation on a test host, re-scan, and confirm the score improved.
-6. Run `lynis audit system` for a fast second opinion and quick wins.
+1. Read/search the exact host identity, installed scanner/content, datastream, profiles, tailoring, and prior exceptions; stop on a distro/profile mismatch.
+2. Record scope and run OpenSCAP in read-only evaluation mode, preserving XML plus human report and command metadata.
+3. Classify pass, fail, error, not applicable, and not checked separately; block any compliance claim with unresolved errors or coverage gaps.
+4. Optionally run read-only Lynis as a secondary advisory source and keep its findings distinct.
+5. Generate remediation only when requested; review each proposed change against services, ownership, and rollback.
+6. With separate authority, test remediation outside production and rescan the identical profile. Recover by reverting the test change and preserving pre/post evidence when a service or control regresses.
 
 ## Quality standards
 
@@ -75,19 +96,33 @@ the other two compliance layers — `linux-auditd-rules` (attribution) and
 - Re-scan after remediation; a score only counts if it's reproduced.
 - Capture `results.xml` for the audit trail, not just the HTML report.
 
-## Anti-patterns
+## Anti-Patterns
 
-- Auto-applying `--remediate` on a production host without a test run.
-- Using a RHEL8 datastream against a RHEL9 host (rules silently mismatch).
-- Chasing the Lynis hardening index as a target instead of fixing the underlying findings.
-- Treating a passing scan as "secure" — benchmarks are a floor, not a ceiling.
+- Applying `--remediate` to production. Fix: generate, review, test, rollback-test, and rescan before proposing production change.
+- Scanning with a mismatched datastream. Fix: verify distro major version, content package, and profile ID first.
+- Chasing the Lynis index. Fix: prioritise named findings and risk, not the aggregate score.
+- Calling a passing profile "secure". Fix: state benchmark scope, exceptions, errors, and out-of-scope threats.
+- Counting errors/not-checked as passes. Fix: preserve result status and block unsupported compliance claims.
+- Claiming certification from a local scan. Fix: describe assessment evidence only and defer certification to authorised assessors.
 
 ## Outputs
 
-- The profile scanned and the pass/fail summary (and the HTML/XML report paths).
-- The prioritized list of failures and any generated remediation.
-- The Lynis hardening index and top suggestions.
-- A re-scan result confirming remediation took effect.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Scan evidence set | Control owner | Exact content/profile/tailoring, command, XML, human report, timestamp, and host identity are preserved. |
+| Qualified findings summary | System owner | Separates pass/fail/error/not-checked/exceptions, prioritises failures, and states coverage limits. |
+| Remediation draft/rescan | Change owner | Every change is reviewed/tested with rollback and identical-profile rescan, or remains clearly unexecuted. |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Compliance scan pack | Contains scanner/content versions, datastream/profile, raw XML, report, status counts, exceptions, errors, Lynis separation, and pre/post evidence where authorised. |
+
+## Worked Example
+
+On RHEL 9, confirm `ssg-rhel9-ds.xml`, list the exact profile, run a read-only evaluation, preserve XML and HTML, and report errors separately. Generate remediation only as a draft unless a test-host change is explicitly authorised.
+<!-- dual-compat-end -->
 
 ## References
 

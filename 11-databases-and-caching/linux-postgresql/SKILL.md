@@ -1,8 +1,10 @@
 ---
 name: linux-postgresql
-description: Operate PostgreSQL across both major Linux families — install (postgresql-server + postgresql-setup --initdb on RHEL App Stream; postgresql + auto-init on Debian/Ubuntu), tune postgresql.conf (shared_buffers, work_mem, effective_cache_size, max_connections), configure client authentication in pg_hba.conf, back up with pg_dump / pg_dumpall / pg_restore, and set up WAL archiving + point-in-time recovery (archive_mode, archive_command, base backups via pg_basebackup). Includes a backup sk-* script.
+description: Use when installing, authenticating, tuning, backing up, restoring, or diagnosing PostgreSQL on Debian/Ubuntu or RHEL-family hosts. Covers pg_hba.conf, logical backups, WAL, and PITR; use linux-mysql-mariadb for MySQL/MariaDB.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -42,51 +44,97 @@ the service name `postgresql` is identical on both. See
 > documentation; deepen with PostgreSQL 16 Administration Cookbook (Packt).
 > Install/init/pg_hba is grounded in RHEL 9 Recipe 38.]
 
-## Use when
+<!-- dual-compat-start -->
+## Use When
 
 - Installing and initializing a PostgreSQL cluster on either family.
 - Tuning memory (`shared_buffers`, `work_mem`, `effective_cache_size`) and `max_connections`.
 - Configuring client authentication in `pg_hba.conf`.
 - Taking logical backups (`pg_dump`/`pg_dumpall`) or setting up WAL archiving + PITR.
 
-## Do not use when
+## Do Not Use When
 
 - The engine is MySQL/MariaDB; use `linux-mysql-mariadb`.
 - The store is Redis/Memcached; use `linux-inmemory-stores`.
 - The task is only offsite archive rotation; use `linux-rsync-sync`.
 
-## Required inputs
+## Required Inputs
 
-- PostgreSQL version and the family (init differs).
-- Host RAM (drives `shared_buffers` / `effective_cache_size`).
-- Auth model needed in `pg_hba.conf` (peer, scram-sha-256, host ranges).
-- Backup target and whether WAL archiving / PITR is required.
+| Artefact | Required? | Source | If absent |
+|---|---|---|---|
+| Version, distro, cluster path/name, topology, and objective | yes | Inventory and database owner | Stop before initialization, upgrade, or mutation. |
+| Client identities, CIDRs, and auth policy | auth work | Topology and security policy | Retain local peer access; do not add host rules. |
+| Workload metrics and memory/concurrency budget | tuning | Metrics and capacity plan | Diagnose read-only; do not invent values. |
+| RPO/RTO, archive destination, retention, and restore target | backup/PITR | Recovery policy | Mark recovery unproven and do not enable incomplete archiving. |
+
+## Capability Contract
+
+Inspection defaults to read-only host and database access. Initialization, role/data changes, config edits, reloads/restarts, archive writes, restores, and WAL replay require explicit authority. Credentials use the approved secret path and stay out of evidence.
+
+## Degraded Mode
+
+Without cluster access, return version- and family-qualified commands only. Without workload evidence, do not recommend numeric tuning. Without an isolated restore or archived WAL access, separate backup creation from unassessed recovery.
+
+## Decision Rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Authentication | Prefer peer locally and SCRAM for defined remote clients; reject broad `trust` rules. | Unauthenticated access. |
+| Logical backup | Use custom format for selective/parallel restore; export globals when roles/tablespaces matter. | Missing cluster-level objects. |
+| PITR | Pair a physical base backup with continuously verified WAL archiving. | Unusable recovery chain. |
+| Connection pressure | Use a pooler before raising `max_connections` beyond measured need. | Per-backend memory exhaustion. |
 
 ## Workflow
 
-1. Install; on RHEL run `postgresql-setup --initdb`; enable and start the unit.
-2. Set authentication in `pg_hba.conf`; reload (`SELECT pg_reload_conf();`).
-3. Tune memory in `postgresql.conf` (or a `conf.d` drop-in); restart for `shared_buffers`.
-4. Back up with `pg_dump`/`pg_dumpall`; for PITR enable WAL archiving + `pg_basebackup`.
-5. Verify: restore into a scratch database before trusting the backup.
+1. Confirm inputs, exact cluster/version, authority, window, and rollback; stop if the target cluster is ambiguous.
+2. Inspect cluster status, config locations, `pg_hba.conf` order, runtime settings, workload, and archive state read-only.
+3. Decide authentication, tuning, backup format, and PITR actions with the decision table.
+4. With authority, install/initialize only the intended cluster and harden remote access before exposure.
+5. Apply the narrow config/auth change, validate it, reload when supported, and restart only when required.
+6. Create logical/globals backups or a base backup plus verified WAL archive.
+7. Restore to isolation, reconcile roles/schema/data, and test target-time recovery. On failure, stop, preserve the archive chain, restore prior config, and do not declare readiness.
 
-## Quality standards
+## Quality Standards
 
 - Prefer `scram-sha-256` over `md5`/`trust` in `pg_hba.conf`.
 - `shared_buffers` ~25% of RAM; `effective_cache_size` ~50–75% (a hint, not an allocation).
 - Use `pg_dump -Fc` (custom format) so `pg_restore` can do selective/parallel restores.
+- Record exact versions, cluster path, config source, checksum, restore target, and result.
 
-## Anti-patterns
+## Anti-Patterns
 
-- `trust` auth on a `host` line reachable from the network.
-- Setting `work_mem` huge globally — it is *per sort/hash node per connection* and multiplies.
-- WAL archiving with an `archive_command` that can silently fail (always test its exit status).
+- Using network `trust`. Fix: scope client CIDRs and require SCRAM authentication.
+- Setting large global `work_mem`. Fix: model concurrent operators and tune narrowly.
+- Raising `max_connections` instead of pooling. Fix: measure concurrency and use a pooler where appropriate.
+- Allowing silent WAL archive failure. Fix: monitor, retrieve, and target-time test the archive chain.
+- Backing up data without required globals. Fix: include roles/tablespaces and prove an isolated restore.
+
+- Using `trust` for network clients. Correction: define narrow CIDRs and SCRAM.
+- Setting large global `work_mem`. Correction: model concurrent sort/hash operations and tune narrowly.
+- Raising `max_connections` to solve pooling failures. Correction: measure concurrency and use a pooler.
+- Allowing an archive command to overwrite or silently fail. Correction: make it idempotent, monitored, and retrieval-tested.
+- Omitting required roles from a database backup. Correction: pair `pg_dump -Fc` with the needed globals export.
+- Trusting backup completion without recovery. Correction: restore to isolation and reconcile expected objects/data.
 
 ## Outputs
 
-- The config values changed and which file (and whether a reload or restart was needed).
-- The backup command/format and restore-verification result.
-- WAL archiving / PITR posture if applicable.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Cluster change record | DBA/operator | Names cluster/version, ordered auth/config change, validation, reload/restart, and rollback. |
+| Backup/archive manifest | Recovery operator | Checksums logical/globals or base-backup/WAL artefacts and records retention/location. |
+| Restore/PITR report | Service owner | Isolated restore reconciles expected roles/schema/data; recovery point is demonstrated or marked unproven. |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| PostgreSQL recovery evidence | Contains redacted auth/settings, cluster version, manifests/checksums, WAL health, restore logs, and reconciliation. |
+
+Capture redacted effective settings and auth evidence, cluster/version output, manifests/checksums, WAL health, restore logs, reconciliation queries, and final service health.
+
+## Worked Example
+
+For a one-hour RPO, confirm the archive command, take a base backup, preserve required WAL, restore to an isolated cluster, and recover to a timestamp inside the test window. `pg_basebackup` success alone is not PITR evidence.
 
 ## Install & initialize
 
@@ -209,6 +257,8 @@ sudo -u postgres psql -c "SELECT count(*) FROM pg_stat_activity;"   # connection
 sudo -u postgres psql -c "SELECT datname, numbackends FROM pg_stat_database;"
 sudo -u postgres psql -c "SHOW max_connections;"
 ```
+
+<!-- dual-compat-end -->
 
 ## References
 

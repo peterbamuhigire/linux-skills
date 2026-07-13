@@ -1,8 +1,10 @@
 ---
 name: linux-kernel-modules
-description: Manage Linux kernel modules (drivers) across both major families — Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Inspect loaded modules (lsmod, modinfo), load and unload them (modprobe, modprobe -r / rmmod), load modules on boot via /etc/modules-load.d/*.conf, set module options/parameters via /etc/modprobe.d/*.conf (options <mod> ...), and blacklist drivers (blacklist <mod>, and the stronger install <mod> /bin/true). Rebuild the initramfs after blacklisting a boot-time module: update-initramfs -u on Debian/Ubuntu vs dracut -f on the RHEL family. The module tooling is identical across families; only the initramfs rebuild command differs.
+description: Use when inspecting, loading, unloading, parameterising, persisting, or blacklisting Linux kernel modules on Debian/Ubuntu or RHEL-family hosts. Covers dependencies and initramfs; use linux-sysctl-tuning for measured runtime kernel parameters.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -37,21 +39,28 @@ that the initramfs already loads. Full detail, including the per-family
 initramfs mechanics, is in
 [`references/module-management.md`](references/module-management.md).
 
-## Use when
+<!-- dual-compat-start -->
+## Use When
 
 - Inspecting which drivers/modules are loaded and with what parameters.
 - Loading or unloading a kernel module by hand or persisting it across reboots.
 - Setting a module option/parameter (e.g. a NIC or sound driver tweak).
 - Blacklisting a problematic or conflicting driver.
 
-## Do not use when
+## Do Not Use When
 
 - The task is sysctl / runtime kernel parameter tuning; use `linux-sysctl-tuning`.
 - The task is profiling CPU/IO/perf hot paths; use `linux-perf-profiling`.
 - GRUB or initramfs is already broken and the box won't boot; use
   `linux-disaster-recovery`.
 
-## Required inputs
+## Required Inputs
+
+| Artefact | Required? | Source | If absent |
+|---|---|---|---|
+| Exact module, kernel release, device, desired action, and persistence | yes | Host inventory and operator | Stop before unload/blacklist/options. |
+| Dependency/use state and boot/root/network role | mutation | `modinfo`, `lsmod`, device and boot inspection | Inspect only until proven safe. |
+| Console access, known-good initramfs, window, and rollback | boot-time change | Change/recovery plan | Do not mutate boot-time modules. |
 
 - The module name(s) involved and what you intend to do (inspect, load,
   unload, set an option, blacklist).
@@ -59,6 +68,23 @@ initramfs mechanics, is in
 - Whether the module is needed at **boot time** (storage/root-fs, network on a
   headless/remote host) — this decides whether an initramfs rebuild is required
   and raises the safety stakes.
+
+## Capability Contract
+
+Module inspection is read-only. Load/unload, persistent config, blacklist, initramfs rebuild, and reboot require explicit authority. A remote boot-time storage or network change additionally requires working console/out-of-band recovery.
+
+## Degraded Mode
+
+Without host/kernel access, provide inspection commands only. Without dependency, boot-role, or console evidence, refuse unload/blacklist and mark reboot safety unassessed.
+
+## Decision Rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Runtime or persistent | Test a safe runtime load/option first; persist only after verification. | Unbootable persistent change. |
+| `modprobe -r` or `rmmod` | Prefer `modprobe -r` so dependencies are handled. | Dangling dependent modules. |
+| `blacklist` or `install /bin/true` | Use the stronger override only when aliases/dependencies can still autoload and policy requires blocking. | Ineffective blacklist or over-blocking. |
+| Initramfs rebuild | Rebuild for modules/options needed before root filesystem mount and retain a known-good image. | Change not applied or boot failure. |
 
 ## Workflow
 
@@ -72,7 +98,9 @@ initramfs mechanics, is in
    `/sys/module/<mod>/parameters/`, and (for boot-time changes) confirm a
    clean reboot — ideally with console/out-of-band access available.
 
-## Quality standards
+5. Stop if the module owns root storage/networking or console recovery is unavailable; recover through the known-good initramfs/kernel entry, remove the drop-in, and re-verify the device.
+
+## Quality Standards
 
 - Always `modinfo` and `lsmod` before unloading or blacklisting.
 - Persist intent in `/etc/modprobe.d/` or `/etc/modules-load.d/` rather than
@@ -80,13 +108,22 @@ initramfs mechanics, is in
 - Treat any boot-time module change as a change that requires an initramfs
   rebuild and a tested reboot.
 
-## Anti-patterns
+## Anti-Patterns
+
+- Blacklisting a guessed driver. Fix: map the actual device-bound module first.
+- Unloading without dependency/use checks. Fix: inspect `modinfo`, holders, devices, and prefer `modprobe -r`.
+- Changing boot modules without console. Fix: require out-of-band access and a known-good image.
+- Skipping initramfs rebuild. Fix: rebuild the family-specific image when early boot is affected.
+- Calling runtime success boot-safe. Fix: perform a controlled reboot and verify root/network devices.
 
 - Blacklisting a storage or network driver on a remote/headless box with no
   console fallback — a classic way to make a machine unbootable or unreachable.
 - Editing `/etc/modprobe.d/` for a boot-time module and forgetting to rebuild
   the initramfs (the change silently does nothing).
 - Using `rmmod` (no dependency handling) where `modprobe -r` is safer.
+- Persisting an option unsupported by the running module. Correction: verify with `modinfo` and `/sys/module/.../parameters`.
+- Rebooting without a known-good initramfs. Correction: retain the prior image and boot entry and verify console recovery.
+- Blacklisting by guessed module name. Correction: map the actual bound driver from the target device first.
 
 ## Safety note
 
@@ -101,11 +138,31 @@ recover from a failure.
 
 ## Outputs
 
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Module change record | Kernel/operator team | Names kernel, module/path, dependencies, action, persistent file, initramfs, and rollback. |
+| Runtime evidence | Service owner | Bound device and parameter state match intent without new kernel errors. |
+| Boot verification | On-call operator | Controlled reboot succeeds, device/network/root storage work, or change is marked untested. |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Module change evidence | Contains kernel/module identity, dependencies, device mapping, initramfs result, log check, and reboot outcome. |
+
+Capture `uname`, `modinfo`, `lsmod`, device-driver mapping, dependency/use state, persistent config, initramfs command/result, kernel log checks, and reboot outcome.
+
+## Worked Example
+
+Before blacklisting a conflicting NIC driver, map the interface to its bound module, confirm an alternate driver and console access, test the change at runtime when safe, rebuild the correct initramfs, and verify networking after a controlled reboot.
+
 - What was inspected, loaded, unloaded, or blacklisted, and where it was
   persisted.
 - Whether an initramfs rebuild was required and which command was run.
 - The verification performed (re-`lsmod`, `/sys/module/.../parameters/`,
   reboot test) and any remaining boot/connectivity risk.
+
+<!-- dual-compat-end -->
 
 ## References
 

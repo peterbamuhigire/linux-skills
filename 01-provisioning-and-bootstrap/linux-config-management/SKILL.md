@@ -1,8 +1,12 @@
 ---
 name: linux-config-management
-description: Keep Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) in lockstep with declared state using Ansible and git-tracked config. Ansible is cross-platform — write family-neutral playbooks (use ansible.builtin.package or branch on os_family/pkg_mgr). Mandatory access control differs: AppArmor on Debian/Ubuntu vs SELinux on RHEL. Use for drift detection, dry-running playbooks, snapshotting /etc, and shifting from pet-server management to reproducible automation.
+description: "Use when managing repeatable server state with Ansible, etckeeper, check mode, or drift remediation across Debian/Ubuntu and RHEL families. Use linux-server-provisioning for one-time bootstrap and linux-cloud-init for first boot."
 license: MIT
 metadata:
+  portable: true
+  compatible_with:
+  - claude-code
+  - codex
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -36,6 +40,7 @@ In `sk-*` scripts use the `common.sh` primitives instead of hardcoding apt/dnf.
 See [`linux-bash-scripting`](../../10-automation-and-scripting/linux-bash-scripting/SKILL.md) and
 [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
 ## Use when
 
 - Converting manual server state into repeatable Ansible or git-tracked configuration.
@@ -49,9 +54,11 @@ See [`linux-bash-scripting`](../../10-automation-and-scripting/linux-bash-script
 
 ## Required inputs
 
-- The target host or config scope.
-- Any playbooks, inventories, or `/etc` tracking repo involved.
-- Whether the goal is adoption, drift detection, remediation, or idempotency review.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Inventory and target scope | Operator or automation repository | required | Stop before running a playbook; report the missing host boundary. |
+| Playbook, role, or tracked `/etc` baseline | Version-controlled source of truth | required | Produce an adoption plan, not a drift verdict. |
+| Change authority, maintenance constraints, and secret source | Change owner | required for mutation | Stay read-only and limit work to check mode and diffs. |
 
 ## Workflow
 
@@ -59,6 +66,8 @@ See [`linux-bash-scripting`](../../10-automation-and-scripting/linux-bash-script
 2. Inspect the current live state and compare it to the declared baseline.
 3. Run the matching workflow below for adoption, drift checks, or remediation.
 4. Verify idempotency and capture what changed versus what remains unmanaged.
+5. Stop if inventory scope, authority, secrets handling, check-mode risk, or rollback is unresolved.
+6. Recover a partial run by restoring the recorded prior state, limiting the next run to the failed cohort, and rechecking idempotency.
 
 ## Quality standards
 
@@ -68,21 +77,53 @@ See [`linux-bash-scripting`](../../10-automation-and-scripting/linux-bash-script
 
 ## Anti-patterns
 
-- Using Ansible as a wrapper for ad-hoc shell without a declared target state.
-- Applying changes without a dry-run or diff when one is available.
-- Tracking config in git without excluding secrets or generated noise.
+- Using Ansible as a wrapper for ad-hoc shell. Fix: use idempotent modules and declare the end state.
+- Applying changes without check mode and diff. Fix: preview supported tasks and explain unavoidable check-mode gaps.
+- Tracking `/etc` without exclusions. Fix: exclude secrets, machine identity, caches, and generated state.
+- Hard-coding `apt`, `apache2`, or the `sudo` group. Fix: use facts, portable modules, and family mappings.
+- Calling one clean run idempotent. Fix: run again and require zero unintended changes.
 
 ## Outputs
 
-- A drift finding, remediation plan, or updated automation baseline.
-- The commands or playbooks used to validate state.
-- A verification result showing whether the system is now in lockstep.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Declared-state change or drift report | Infrastructure maintainer | Every difference maps to a managed resource, accepted exception, or remediation. |
+| Execution evidence | Reviewer | Includes syntax check, check-mode/diff result, applied task recap, and second-run idempotency result. |
+| Recovery note | On-call operator | Names the rollback source and manual recovery for a failed partial run. |
 
 ## References
 
 - [`references/ansible-patterns.md`](references/ansible-patterns.md)
 - [`references/drift-detection.md`](references/drift-detection.md)
 - [`references/idempotency-guide.md`](references/idempotency-guide.md)
+
+## Evidence Produced
+
+| Artefact | Acceptance condition |
+|---|---|
+| Configuration-management evidence | Includes inventory scope, syntax result, check-mode diff, task recap, second-run change count, and accepted drift exceptions. |
+
+## Capability contract
+
+Read/search access to inventory and automation is required. Execute check mode before mutation when supported. Editing playbooks or changing hosts requires explicit authority; secret values must remain redacted and production fan-out must respect the approved batch size.
+
+## Degraded mode
+
+Without host execution, review the automation statically and mark drift and idempotency `not assessed`. Without write authority, return a patch plan and safe validation sequence.
+
+## Decision rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Repeated fleet state | Manage with Ansible roles/playbooks | Snowflake hosts. |
+| Emergency one-host repair | Apply the narrow fix, then back-port declared state | Permanent unmanaged drift. |
+| Unknown live-versus-declared difference | Run check mode and diff first | Overwriting legitimate local state. |
+
+## Worked example
+
+When Apache is manually tuned on one AlmaLinux host, capture the intended directive in the role, run syntax and check mode against one canary, apply it, confirm `httpd` health, and run the playbook again expecting no change before widening the batch.
+
+<!-- dual-compat-end -->
 
 **This skill is self-contained.** Every command below is a standard tool
 (`ansible`, `ansible-playbook`, `git`, `etckeeper`, `dpkg`, `diff`). The

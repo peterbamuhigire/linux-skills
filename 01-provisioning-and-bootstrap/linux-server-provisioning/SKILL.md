@@ -1,8 +1,12 @@
 ---
 name: linux-server-provisioning
-description: Set up a fresh server from scratch for production web hosting across two families — Debian/Ubuntu and RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). The provisioning sequence is the same; tools differ by package manager (apt/dnf), firewall (ufw/firewalld), MAC (AppArmor/SELinux), admin group (sudo/wheel), auto-updates (unattended-upgrades/dnf-automatic), and install automation (autoinstall/Kickstart). Interactive step-by-step. Covers hostname, timezone, admin user, SSH hardening, firewall, full stack installation (Nginx, Apache port 8080, PHP-FPM, MySQL 8, PostgreSQL, Redis, Node.js, fail2ban, certbot, rclone, msmtp), Nginx snippet setup, and post-install security verification.
+description: Use when interactively provisioning a fresh Debian/Ubuntu or RHEL-family server after first boot, including identity, admin access, updates, firewall, services, and verification. Use linux-cloud-init for unattended first boot and linux-config-management for repeatable fleet state.
 license: MIT
 metadata:
+  portable: true
+  compatible_with:
+  - claude-code
+  - codex
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -39,6 +43,7 @@ server. In `sk-*` scripts use the `common.sh` primitives (`pkg_install`,
 `ensure_epel`, `firewall_allow`, `svc_name`) instead of hardcoding. Plan:
 [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
 ## Use when
 
 - Building a fresh Ubuntu/Debian server for production use.
@@ -52,9 +57,11 @@ server. In `sk-*` scripts use the `common.sh` primitives (`pkg_install`,
 
 ## Required inputs
 
-- Hostname, timezone, and target stack choices.
-- The admin access model and any required packages or services.
-- Any environment-specific requirements for backups, SSL, or deployment tooling.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Host role, distribution/release, hostname, timezone, and network identity | Build request and host facts | required | Stop the build and return the missing decisions. |
+| Admin access model and break-glass path | System owner | required | Do not alter SSH or disable root/password access. |
+| Required services, exposure, update, backup, and monitoring policy | Service owner | required | Produce only a minimal OS baseline and flag unowned controls. |
 
 ## Workflow
 
@@ -62,6 +69,8 @@ server. In `sk-*` scripts use the `common.sh` primitives (`pkg_install`,
 2. Work through the numbered provisioning sections in order.
 3. Validate access, package installs, services, and baseline security after each major stage.
 4. Finish with post-install verification before handing the host to deployment or operations work.
+5. Stop if recovery access, role ownership, destructive-storage scope, or an exposure decision is unresolved.
+6. Recover a failed stage from the recorded config/package backup or console path, revalidate access, and repeat verification before continuing.
 
 ## Quality standards
 
@@ -71,15 +80,19 @@ server. In `sk-*` scripts use the `common.sh` primitives (`pkg_install`,
 
 ## Anti-patterns
 
-- Skipping foundational steps such as SSH hardening, firewalling, or update policy.
-- Mixing ad-hoc application deployment into the base build before the platform is stable.
-- Ending the workflow before post-install verification passes.
+- Disabling the current login before testing the new administrator. Fix: keep one session open and prove a second key-based login.
+- Opening broad firewall ranges for convenience. Fix: expose only approved services and verify from the intended source network.
+- Installing the whole example stack regardless of role. Fix: select only owner-approved services.
+- Changing SELinux to permissive to bypass a denial. Fix: diagnose labels/booleans and retain enforcing mode.
+- Handing off before verification. Fix: complete access, update, firewall, service, logging, backup, and reboot checks.
 
 ## Outputs
 
-- A provisioned server baseline.
-- The chosen host identity and stack decisions.
-- A verification checklist proving the build is operational and secure enough for next steps.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Provisioned host baseline | Deployment/operations team | Identity, admin access, updates, firewall, required services, time, and mandatory access control match the approved build. |
+| Build decision record | System owner | Records distro-specific choices, exposed ports, installed roles, exceptions, and recovery access. |
+| Post-install evidence | Handoff reviewer | Checklist passes after a reboot and includes real service/path checks. |
 
 ## References
 
@@ -89,6 +102,34 @@ server. In `sk-*` scripts use the `common.sh` primitives (`pkg_install`,
 - [`../../01-provisioning-and-bootstrap/linux-cloud-init/references/kickstart-reference.md`](../../01-provisioning-and-bootstrap/linux-cloud-init/references/kickstart-reference.md) — Kickstart automated install (RHEL family)
 - [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md) — SELinux on a fresh RHEL server
 - [`../../09-troubleshooting-and-recovery/linux-disaster-recovery/SKILL.md`](../../09-troubleshooting-and-recovery/linux-disaster-recovery/SKILL.md) — GRUB *regeneration after corruption* and initramfs/filesystem repair from a rescue environment (use when GRUB itself is broken, not just the kernel)
+
+## Evidence Produced
+
+| Artefact | Acceptance condition |
+|---|---|
+| Provisioning evidence | Includes host facts, package/update result, tested administrator login, firewall and MAC state, services/ports, post-reboot checks, and exceptions. |
+
+## Capability contract
+
+Read and execute access to the new host is required. User, SSH, firewall, package, boot, and service changes require explicit build authority. Destructive disk actions, DNS changes, public exposure, or production cutover require separate confirmation.
+
+## Degraded mode
+
+If console or second-session access is unavailable, do not harden SSH or remove the current access path. If reboot or external reachability cannot be tested, hand off a qualified partial build with those gates marked `not assessed`.
+
+## Decision rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Repeatable image first boot | Route to `linux-cloud-init` | Manual, non-repeatable image setup. |
+| Interactive host baseline | Follow this ordered build | Skipped prerequisites and lockout. |
+| Fleet-wide ongoing state | Hand off to `linux-config-management` | Configuration drift after provisioning. |
+
+## Worked example
+
+For a new Rocky Linux web host, create and test a `wheel` administrator from a second session, apply updates, retain SELinux enforcing, expose only SSH/HTTP/HTTPS through firewalld, install only the approved web role, reboot, and record live reachability plus service health before deployment.
+
+<!-- dual-compat-end -->
 
 **This skill is self-contained.** The 11-section manual procedure below uses
 only standard tools — Debian/Ubuntu by default, with RHEL-family equivalents

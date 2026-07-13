@@ -1,8 +1,12 @@
 ---
 name: linux-package-management
-description: Manage packages on Debian/Ubuntu (apt, snap, unattended-upgrades) and the RHEL family — Fedora, RHEL, Rocky, Alma (dnf, flatpak, dnf-automatic) — with safe update/upgrade patterns, held packages, third-party repos, and automatic security updates. Use for any package installation, upgrade, or pinning operation on either family.
+description: Use when installing, upgrading, pinning, removing, or diagnosing packages and repositories with apt, dnf, snap, Flatpak, or automatic updates. Use linux-server-provisioning for a complete new-server sequence and linux-config-management for fleet-wide desired state.
 license: MIT
 metadata:
+  portable: true
+  compatible_with:
+  - claude-code
+  - codex
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -47,6 +51,7 @@ packages on RHEL/Rocky/Alma — but **not** on Fedora, which ships them in the
 main repos. Fedora 41+ uses **dnf5**; RHEL 9 and rebuilds use dnf4 (command
 surface is the same for everything here).
 
+<!-- dual-compat-start -->
 ## Use when
 
 - Installing, upgrading, holding, pinning, or auditing packages.
@@ -61,9 +66,11 @@ surface is the same for everything here).
 
 ## Required inputs
 
-- The package names or repo sources involved.
-- Whether the task is install, upgrade, hold, cleanup, or unattended-upgrades review.
-- Any maintenance-window constraints for disruptive upgrades.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Distribution family/release and package manager state | `/etc/os-release` and package database | required | Limit the result to read-only discovery commands. |
+| Package names, repository definition, or update symptom | Operator or host | required | Ask for the exact package/repository; do not run a broad upgrade. |
+| Maintenance, reboot, and service-impact constraints | Change owner | required for upgrade/removal | Stop before mutation and return an impact checklist. |
 
 ## Workflow
 
@@ -71,6 +78,8 @@ surface is the same for everything here).
 2. Apply the smallest package operation that satisfies the goal.
 3. Follow the matching workflow below for maintenance, held packages, unattended-upgrades, or third-party repos.
 4. Verify package state and service impact after the change.
+5. Stop if transaction simulation shows unintended removals, repository trust is unverified, or the maintenance boundary is missing.
+6. Recover by using the recorded package transaction and configuration backup to downgrade, reinstall, or restore the previous repository state, then recheck services.
 
 ## Quality standards
 
@@ -80,21 +89,54 @@ surface is the same for everything here).
 
 ## Anti-patterns
 
-- Running broad upgrades without checking held packages or service impact.
-- Adding third-party repos casually.
-- Treating unattended-upgrades as configured without checking whether it actually ran.
+- Running a broad upgrade without checking holds or service impact. Fix: inspect candidates, holds, transaction scope, and reboot needs first.
+- Adding an unverified third-party repository. Fix: verify publisher, signing key fingerprint, supported release, and exact source entry.
+- Treating automatic updates as active without evidence. Fix: inspect timer/service state and recent package-manager logs.
+- Mixing `apt` and `dnf` instructions. Fix: detect the family and use only its package database and repository format.
+- Removing a package without reviewing dependants and configuration retention. Fix: simulate the transaction and document purge/rollback consequences.
 
 ## Outputs
 
-- The package action or package-state diagnosis.
-- The commands used to confirm candidate and installed versions.
-- Any follow-up verification or reboot/service note required.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Package transaction or diagnosis | System operator | Installed/candidate versions and repository source match the stated intent. |
+| Impact and recovery note | Change reviewer | Names affected services, reboot requirement, rollback/downgrade feasibility, and retained config. |
+| Verification record | Operations handoff | Package database is consistent and affected services pass health checks. |
 
 ## References
 
 - [`references/apt-reference.md`](references/apt-reference.md)
 - [`references/snap-reference.md`](references/snap-reference.md)
 - [`references/unattended-upgrades-reference.md`](references/unattended-upgrades-reference.md)
+- [`references/dnf-reference.md`](references/dnf-reference.md)
+
+## Evidence Produced
+
+| Artefact | Acceptance condition |
+|---|---|
+| Package-operation evidence | Includes simulation/transaction output, installed and candidate versions, repository provenance, relevant update logs, and service checks. |
+
+## Capability contract
+
+Read access to OS and package state is required. Package mutation, repository trust changes, reboot, or service restart requires explicit authority. Never disable signature checks or accept an unknown key to make a transaction pass.
+
+## Degraded mode
+
+Without host execution, return family-correct inspection and transaction commands with versions unresolved and runtime checks marked `not assessed`. Without a maintenance window, stop before disruptive upgrades.
+
+## Decision rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Distribution package available | Prefer signed distribution repository | Unmaintained or conflicting sources. |
+| Vendor repository required | Pin scope and verify key/release support | Repository takeover or unintended upgrades. |
+| Security update affects critical service/kernel | Schedule controlled update and health/reboot checks | Silent outage or unbooted security fix. |
+
+## Worked example
+
+For a held Nginx update on Ubuntu, inspect `apt-cache policy`, holds, changelog, and simulated transaction; schedule the approved update, validate Nginx configuration, apply it, confirm the installed version and HTTP health, and state whether a reboot remains required.
+
+<!-- dual-compat-end -->
 
 **This skill is self-contained.** Every command below is a standard tool on
 its family — Debian/Ubuntu (`apt`, `apt-get`, `apt-mark`, `apt-cache`, `snap`,
@@ -157,177 +199,12 @@ Canonical *Ubuntu Server Guide*.
 
 ## Quick reference — manual commands
 
-### apt
+Load only the package-family reference needed for the task:
 
-```bash
-# Update the package index
-sudo apt update
-
-# What's upgradable? (safe — no changes)
-apt list --upgradable 2>/dev/null
-
-# Security-only list (approximation)
-apt list --upgradable 2>/dev/null | grep -i security
-
-# Held-back packages (phasing, conflicts)
-apt-mark showhold
-
-# Show info on a specific package
-apt show nginx
-apt-cache policy nginx           # which repo would apt install from?
-apt-cache depends nginx          # what does it need?
-apt-cache rdepends nginx         # what depends on it?
-
-# Who owns this file?
-dpkg -S /etc/nginx/nginx.conf
-
-# What files does a package own?
-dpkg -L nginx
-
-# Install / upgrade / remove
-sudo apt install <pkg>
-sudo apt upgrade                  # only upgrades, no removes
-sudo apt full-upgrade             # upgrades AND removes (formerly dist-upgrade)
-sudo apt remove <pkg>             # keeps config
-sudo apt purge <pkg>              # removes config too
-sudo apt autoremove               # removes unneeded dependencies
-sudo apt clean                    # clears /var/cache/apt/archives
-
-# Pin a package version
-sudo apt-mark hold nginx
-sudo apt-mark unhold nginx
-
-# Reinstall cleanly
-sudo apt install --reinstall nginx
-```
-
-Full apt reference (sources.list and sources.list.d formats,
-`/etc/apt/keyrings/` key management, preferences-pinning, deb822 `.sources`
-format, PPA verification, dependency-resolution recovery) — see
-[`references/apt-reference.md`](references/apt-reference.md).
-
-### snap
-
-```bash
-# List all snaps
-snap list
-
-# Show all revisions (including disabled)
-snap list --all
-
-# Install
-sudo snap install <name>
-sudo snap install <name> --channel=latest/stable
-sudo snap install <name> --classic
-
-# Refresh (update)
-sudo snap refresh                 # all
-sudo snap refresh <name>          # one
-
-# Hold a snap from refreshing (time-bounded)
-sudo snap refresh --hold=24h <name>
-
-# Rollback to the previous revision
-sudo snap revert <name>
-
-# Remove
-sudo snap remove <name>
-
-# Show next refresh time
-snap refresh --time
-```
-
-Full snap reference (channels, tracks, interfaces, snap services,
-refresh.timer / refresh.hold) — see
-[`references/snap-reference.md`](references/snap-reference.md).
-
-### unattended-upgrades
-
-```bash
-# Config
-sudo nano /etc/apt/apt.conf.d/50unattended-upgrades
-sudo nano /etc/apt/apt.conf.d/20auto-upgrades
-
-# Dry run — see what it WOULD install, change nothing
-sudo unattended-upgrade --dry-run -v
-
-# Force a real run now
-sudo unattended-upgrade -v
-
-# Logs
-sudo tail -f /var/log/unattended-upgrades/unattended-upgrades.log
-sudo tail -50 /var/log/unattended-upgrades/unattended-upgrades-dpkg.log
-
-# Systemd timers that trigger it
-systemctl list-timers apt-daily apt-daily-upgrade
-systemctl status apt-daily.timer apt-daily-upgrade.timer
-
-# Pending reboot after kernel update
-ls /var/run/reboot-required 2>/dev/null && echo "Reboot required" || echo "No reboot needed"
-```
-
-Full unattended-upgrades reference (Allowed-Origins syntax, mail
-notifications, automatic-reboot config, package blacklist, complete
-production example) — see
-[`references/unattended-upgrades-reference.md`](references/unattended-upgrades-reference.md).
-
-### RHEL family — dnf quick reference
-
-```bash
-# Update the metadata cache (most ops do this automatically)
-sudo dnf makecache
-
-# What's upgradable? (safe — no changes)
-dnf check-update                  # exit 100 if updates exist, 0 if none
-
-# Security-only updates (RHEL/Rocky/Alma; needs dnf-plugins; Fedora rolls fast)
-sudo dnf upgrade --security
-
-# Show info / which versions are available
-dnf info nginx
-dnf --showduplicates list nginx   # all available versions
-dnf repolist                      # enabled repos
-dnf provides /usr/sbin/nginx      # which package owns a path/file
-
-# What files does an installed package own?
-rpm -ql nginx
-rpm -qf /etc/nginx/nginx.conf      # file -> owning package
-
-# Install / upgrade / remove
-sudo dnf install <pkg>
-sudo dnf upgrade                   # upgrade everything
-sudo dnf remove <pkg>
-sudo dnf autoremove                # remove unneeded dependencies
-sudo dnf clean all                 # clear caches
-
-# Pin / exclude a version
-sudo dnf install python3-dnf-plugin-versionlock   # once
-sudo dnf versionlock add nginx
-sudo dnf versionlock delete nginx
-
-# Reinstall cleanly
-sudo dnf reinstall nginx
-
-# Pending reboot after kernel/core lib update
-dnf needs-restarting -r ; echo "exit $? (1 = reboot recommended)"
-
-# Enable EPEL (RHEL/CentOS/Rocky/Alma — NOT needed on Fedora)
-sudo dnf install -y epel-release
-```
-
-**dnf-automatic** (the RHEL equivalent of unattended-upgrades):
-
-```bash
-sudo dnf install -y dnf-automatic
-sudoedit /etc/dnf/automatic.conf      # set apply_updates = yes; upgrade_type = security
-sudo systemctl enable --now dnf-automatic.timer
-systemctl list-timers dnf-automatic.timer
-journalctl -u dnf-automatic -n 50     # did it run?
-```
-
-**Third-party repos** live in `/etc/yum.repos.d/*.repo` (analogous to
-`sources.list.d`). Add with `dnf config-manager --add-repo <url>` or
-`dnf install` of a release RPM; import keys with `rpm --import`.
+- [`references/apt-reference.md`](references/apt-reference.md) for apt, dpkg, Debian repositories, pinning, and dependency recovery.
+- [`references/snap-reference.md`](references/snap-reference.md) for channels, holds, interfaces, services, and rollback.
+- [`references/unattended-upgrades-reference.md`](references/unattended-upgrades-reference.md) for Debian-family automatic security updates and evidence.
+- [`references/dnf-reference.md`](references/dnf-reference.md) for dnf/rpm, repositories, EPEL, version locks, reboot checks, and `dnf-automatic`.
 
 ---
 

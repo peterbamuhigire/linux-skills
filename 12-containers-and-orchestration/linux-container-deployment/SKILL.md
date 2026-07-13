@@ -1,8 +1,10 @@
 ---
 name: linux-container-deployment
-description: Run and operate containers across Debian/Ubuntu and the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Container lifecycle (run, stop, logs, exec, restart, restart policies), multi-container stacks with docker-compose / docker compose AND podman compose, and running containers as systemd services via podman generate systemd and Quadlet (.container units). Use this skill to deploy and keep containers running; use linux-container-engine to install/configure the engine and linux-image-hygiene to reclaim disk.
+description: Use when running, updating, debugging, or supervising containers and Compose/Quadlet stacks on Debian/Ubuntu or RHEL-family hosts. Covers lifecycle, health, volumes, and systemd; use linux-container-engine for setup and linux-image-hygiene for pruning.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -38,25 +40,49 @@ relabels bind mounts: append `:z`/`:Z` to `-v host:container`. See
 [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md)
 and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
-## Use when
+<!-- dual-compat-start -->
+## Use When
 
 - Running, stopping, inspecting, or debugging a container's lifecycle.
 - Bringing up a multi-container stack with compose (Docker or Podman).
 - Making containers start on boot and restart on failure as systemd services.
 - Choosing restart policies for background services vs batch jobs.
 
-## Do not use when
+## Do Not Use When
 
 - Installing or configuring the engine / daemon; use `linux-container-engine`.
 - Reclaiming disk from images/volumes/networks; use `linux-image-hygiene`.
 - Managing KVM/libvirt VMs; use `linux-virtualization`.
 - Deploying the application code itself inside the container; use `linux-site-deployment`.
 
-## Required inputs
+## Required Inputs
+
+| Artefact | Required? | Source | If absent |
+|---|---|---|---|
+| Image digest, command/Compose/Quadlet definition, ports, volumes, and secrets | yes | Release artefact and service owner | Stop; do not infer a runnable deployment. |
+| Engine/mode, distro, SELinux state, and service identity | yes | Host inventory | Inspect only until confirmed. |
+| Health check, rollback image, and maintenance window | production update | Release plan | Do not replace the running workload. |
 
 - The container or compose project and its image (pinned by digest in production).
 - Whether it must survive reboot (systemd service / Quadlet) or is a one-off.
 - The engine in use (Docker daemon vs rootless Podman) and any SELinux volume needs.
+
+## Capability Contract
+
+Reading definitions, images, logs, and state is read-only. Pulling images, creating/replacing containers, changing volumes/networks, enabling units, or executing inside containers requires explicit deployment authority. Secret values must never be embedded in definitions or evidence.
+
+## Degraded Mode
+
+Without engine access, validate the supplied definition statically and return unexecuted commands. Without health or rollback criteria, do not update production; label runtime, reboot, and SELinux checks `not assessed`.
+
+## Decision Rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| One-off or service | Use an ephemeral run for bounded jobs; use Compose/systemd/Quadlet for persistent services. | Workload disappearing after logout/reboot. |
+| Image reference | Pin production images by digest and record provenance. | Mutable-tag surprise. |
+| Podman supervision | Prefer Quadlet on supported RHEL systems; use generated units only for legacy constraints. | Stale generated units. |
+| Volume label | Use `:Z` for exclusive or `:z` for shared SELinux bind mounts after verifying ownership. | Denied access or unsafe relabel. |
 
 ## Workflow
 
@@ -65,23 +91,54 @@ and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 3. For persistence, wire it to systemd (compose unit, `generate systemd`, or Quadlet).
 4. Verify the container is running, healthy, and restarts on failure / reboot.
 
-## Quality standards
+5. Stop when definition validation or the health gate fails; recover by restoring the prior digest/definition and prove health plus restart behaviour again.
+
+## Quality Standards
 
 - Always set an explicit `--restart` policy; the default `no` is rarely right for a service.
 - Validate compose files with `docker compose config` before `up`.
 - Prefer Quadlet for Podman services on RHEL 9+; prefer compose-via-systemd-unit for Docker.
 
-## Anti-patterns
+## Anti-Patterns
+
+- Using mutable production tags. Fix: pin and record an image digest.
+- Embedding secrets in definitions. Fix: reference the approved secret/file mechanism.
+- Updating without a health gate. Fix: define readiness and rollback before replacement.
+- Ignoring bind-mount labels or ownership. Fix: verify host permissions and apply the narrow SELinux label.
+- Starting a service from a login shell. Fix: supervise it with Compose/systemd/Quadlet and test reboot.
 
 - Starting a long-running container with a bare `docker run` from a login shell (dies on reboot).
 - Leaving `restart: no` on a background service so a crash means silent downtime.
 - Using `nginx:latest` in a compose file instead of a pinned digest.
+- Injecting secrets as literal environment values. Correction: use the approved secret/file mechanism and redact inspection output.
+- Updating without a health gate. Correction: define readiness and rollback before replacement.
+- Using bind mounts without checking ownership/SELinux labels. Correction: validate host path permissions and apply the narrow label.
 
 ## Outputs
+
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Deployment definition | Release operator | Validates, pins the image, declares health/restart, volumes, ports, identity, and secret references. |
+| Runtime verification | Service owner | Container/stack is healthy, expected ports and mounts work, logs are clean, and restart/reboot behaviour passes. |
+| Rollback record | On-call operator | Names prior digest/definition and tested rollback command. |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Deployment evidence | Contains definition validation, image digest, health, ports/mounts, unit state, restart test, and redacted logs. |
+
+Capture definition validation, image digest, inspected runtime state, health output, ports/mounts, unit status, restart/reboot test, and redacted logs.
+
+## Worked Example
+
+Deploy a pinned web image through Quadlet on RHEL, use `:Z` for its exclusive bind mount, define a health check and restart policy, then verify service health after a controlled restart. Roll back to the recorded digest if the health gate fails.
 
 - The container/stack brought up and its verified running/health state.
 - The persistence mechanism wired (systemd unit, generate systemd, or Quadlet).
 - The restart policy chosen and why.
+
+<!-- dual-compat-end -->
 
 ## References
 

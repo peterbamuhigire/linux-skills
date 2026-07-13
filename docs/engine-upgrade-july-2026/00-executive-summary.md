@@ -1,5 +1,7 @@
 # Executive Summary
 
+Status note (2026-07-13): this file is the pre-upgrade capability audit and its score is historical. Structural conformance debt has since been cleared; use `11-conformance-record.md` for current measured gates. Live Fedora/RHEL execution and broader `sk-*` coverage remain capability expansion.
+
 Engine: `linux-skills`
 Root: `C:\wamp64\www\linux-skills`
 Rank: 9 of 9

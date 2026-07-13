@@ -1,8 +1,10 @@
 ---
 name: linux-mysql-mariadb
-description: Operate MySQL and MariaDB across both major Linux families — install (mysql-server on RHEL App Stream, mariadb-server on both, default-distro/mysql-server on Debian/Ubuntu), secure with mysql_secure_installation, and locate config (drop-ins in /etc/mysql/mysql.conf.d/ on Debian vs /etc/my.cnf.d/ on RHEL). InnoDB tuning (innodb_buffer_pool_size, innodb_log_file_size, max_connections). Logical backup with mysqldump --single-transaction. Binary logging and point-in-time recovery (binlog, --master-data / --source-data). Health checks and automated encrypted offsite backup via a sk-* script.
+description: Use when installing, securing, tuning, backing up, restoring, or diagnosing MySQL or MariaDB on Debian/Ubuntu or RHEL-family hosts. Covers InnoDB, logical dumps, binlogs, and PITR; use linux-postgresql for PostgreSQL.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -42,50 +44,97 @@ Recipe 39). Use the `svc_name`/`pkg_install` helpers from `common.sh` in
 > MySQL 8 / MariaDB Server docs; deepen with High Performance MySQL 4e
 > (O'Reilly). Install/secure is grounded in RHEL 9 Recipes 37 & 39.]
 
-## Use when
+<!-- dual-compat-start -->
+## Use When
 
 - Installing and securing a fresh MySQL or MariaDB server.
 - Tuning InnoDB memory and connection limits for a workload.
 - Taking consistent logical backups or enabling point-in-time recovery.
 - Diagnosing connection limits, slow queries, or replication/binlog state.
 
-## Do not use when
+## Do Not Use When
 
 - The task is the surrounding LAMP web tier (PHP-FPM, vhosts); use `linux-webstack`.
 - The task is Redis/Memcached caching; use `linux-inmemory-stores`.
 - The task is generic offsite archive rotation only; use `linux-rsync-sync` or `linux-archive-integrity`.
 
-## Required inputs
+## Required Inputs
 
-- Which engine (MySQL or MariaDB) and version.
-- Host RAM and the intended `innodb_buffer_pool_size` budget.
-- Backup destination and whether PITR (binary logging) is required.
+| Artefact | Required? | Source | If absent |
+|---|---|---|---|
+| Engine/version, distro, topology, and service objective | yes | Inventory and database owner | Stop before installation, upgrade, or config changes. |
+| Workload measurements and host memory budget | tuning only | Metrics and capacity plan | Limit work to read-only diagnostics; do not invent tuning values. |
+| RPO/RTO, destination, retention, and encryption policy | backup/PITR | Recovery policy | Do not claim recoverability; provide a qualified design only. |
+| Maintenance window and rollback | mutation | Approved change record | Do not restart or modify production. |
+
+## Capability Contract
+
+Diagnostics default to read-only database and host access. Package changes, SQL writes, config edits, restarts, backup rotation, restores, and binlog replay require explicit authority. Credentials must come from the approved secret provider and never appear in commands or evidence.
+
+## Degraded Mode
+
+Without database access, return version-specific commands and label values unverified. Without workload evidence, do not prescribe numeric tuning. Without an isolated restore target, mark recovery `not proven`.
+
+## Decision Rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| MySQL versus MariaDB | Preserve the installed engine unless migration evidence authorises a change; never install conflicting RHEL packages together. | Accidental fork migration or package conflict. |
+| Logical backup | Use `--single-transaction` for InnoDB and include required routines, events, triggers, and grants. | Inconsistent or incomplete restore. |
+| PITR | Enable, retain, and monitor binlogs when RPO is shorter than the dump interval. | Recovery gap between dumps. |
+| Tuning | Change one justified drop-in at a time and load-test it. | Memory exhaustion and untraceable regressions. |
 
 ## Workflow
 
-1. Install the server package for the family; start and enable the unit.
-2. Run `mysql_secure_installation` before exposing the instance.
-3. Add tuning as a drop-in in the family's `*.cnf.d/` dir — never edit the shipped `my.cnf`.
-4. Set up logical backups (`mysqldump --single-transaction`) and, if PITR is needed, enable binary logging.
-5. Verify: restore a dump into a scratch schema before trusting the backup.
+1. Confirm inputs, compatibility, authority, maintenance window, and rollback; stop on an unidentified engine or missing recovery objective.
+2. Inspect package, unit, config includes, variables, data size, workload, and backup/binlog state read-only.
+3. Decide hardening, tuning, dump, and PITR actions with the decision table.
+4. With authority, install the family package and harden accounts before network exposure.
+5. Apply minimal tuning through the family drop-in directory; validate before restart.
+6. Create the logical backup and capture binlog coordinates when PITR is required.
+7. Restore into an isolated instance, reconcile objects and row counts, and test binlog replay. On failure, stop, retain evidence, revert the drop-in or prior service state, and keep the last known-good backup.
 
-## Quality standards
+## Quality Standards
 
 - Tune via a numbered drop-in file; keep the packaged config pristine.
 - Always `--single-transaction` for InnoDB dumps (consistent, non-locking).
 - A backup you have not test-restored is not a backup.
+- Evidence identifies engine/version, config source, checksum, restore target, and recovery result while redacting credentials.
 
-## Anti-patterns
+## Anti-Patterns
 
-- Leaving anonymous users, the test DB, or remote root login after install.
-- Sizing `innodb_buffer_pool_size` to 100% of RAM (starves the OS).
-- Relying on `mysqldump` alone when the RPO requires PITR — you also need binlogs.
+- Changing the database fork implicitly. Fix: preserve the installed engine unless migration is explicitly approved.
+- Tuning from host RAM alone. Fix: combine workload and per-connection evidence with OS headroom.
+- Editing vendor configuration. Fix: use one owned ordered drop-in and record rollback.
+- Treating dump completion as recovery proof. Fix: restore to isolation and reconcile objects/data.
+- Passing database passwords on the command line. Fix: use socket auth or a protected option file.
+
+- Leaving anonymous users, the test database, or remote root login. Correction: remove them before exposure and verify grants.
+- Sizing `innodb_buffer_pool_size` to all RAM. Correction: use workload evidence and leave OS/connection headroom.
+- Using dumps alone for a shorter RPO. Correction: retain tested binlogs and coordinates.
+- Editing vendor `my.cnf`. Correction: use an owned, ordered drop-in with a clean rollback.
+- Treating a successful dump as recovery proof. Correction: restore to scratch and reconcile schema and data.
+- Passing passwords on the command line. Correction: use socket auth or a protected option file from the secret workflow.
 
 ## Outputs
 
-- The exact config drop-in written and the variable values chosen.
-- The backup command, schedule, and restore-verification result.
-- Binary-log / PITR posture if applicable.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Database change record | DBA/operator | Names engine/version, drop-in, before/after values, validation, restart, and rollback. |
+| Backup set and manifest | Recovery operator | Dump is checksummed, protected as required, retained at the approved destination, and includes required objects. |
+| Restore/PITR report | Service owner | Scratch restore succeeds and the declared recovery point is demonstrated or marked unproven. |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Database recovery evidence | Contains redacted config/version, backup checksum, binlog coordinates, restore logs, reconciliation, and health result. |
+
+Capture redacted variables/config, server version, backup checksum and manifest, binlog coordinates/retention, restore logs, reconciliation counts, and final health checks.
+
+## Worked Example
+
+For a MariaDB service with a 15-minute RPO, take a consistent dump, record its binlog position, restore it to scratch, and replay to a chosen timestamp. Do not claim PITR until replay and reconciliation pass.
 
 ## Install & secure
 
@@ -204,6 +253,8 @@ mysql -e "SHOW GLOBAL STATUS LIKE 'Threads_connected';"
 mysql -e "SHOW ENGINE INNODB STATUS\G" | head -40  # locks, buffer pool, I/O
 mysql -e "SHOW PROCESSLIST;"                        # live queries
 ```
+
+<!-- dual-compat-end -->
 
 ## References
 

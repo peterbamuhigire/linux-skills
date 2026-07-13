@@ -1,8 +1,10 @@
 ---
 name: linux-archive-integrity
-description: Create and VERIFY tar archives (tar.gz / tar.xz) that preserve full metadata on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). tar is identical on both families; the gotcha is SELinux contexts and ACL/xattr packages on RHEL. Covers metadata-preserving archives (--acls --xattrs --numeric-owner), gzip vs xz compression trade-offs, listed-incremental level-0/level-1 backups (--listed-incremental), integrity verification (tar -tvf listing, tar --compare against the live tree, sha256 sidecar files), and optional GPG signing/encryption of the archive. Always verifies an archive after creating it.
+description: Use when creating, signing, encrypting, listing, comparing, or restoring metadata-preserving tar archives on Debian/Ubuntu or RHEL-family hosts. Covers ACLs, xattrs, incrementals, and verification; use linux-rsync-sync for file-tree mirrors.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -37,7 +39,8 @@ apt/dnf. See
 [`../../10-automation-and-scripting/linux-bash-scripting/SKILL.md`](../../10-automation-and-scripting/linux-bash-scripting/SKILL.md)
 and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
-## Use when
+<!-- dual-compat-start -->
+## Use When
 
 - Creating a sealed, portable archive of a directory tree with permissions,
   ownership, ACLs, and xattrs intact.
@@ -45,7 +48,7 @@ and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 - Running level-0 / level-1 incremental tar backups with a snapshot file.
 - Producing a sha256 sidecar or GPG-signed archive for tamper-evidence.
 
-## Do not use when
+## Do Not Use When
 
 - You want an efficient mirror or hard-linked snapshot tree; use
   [`../linux-rsync-sync/SKILL.md`](../linux-rsync-sync/SKILL.md).
@@ -54,12 +57,35 @@ and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 - You are restoring an existing encrypted backup in an incident; use
   [`../../09-troubleshooting-and-recovery/linux-disaster-recovery/SKILL.md`](../../09-troubleshooting-and-recovery/linux-disaster-recovery/SKILL.md).
 
-## Required inputs
+## Required Inputs
+
+| Artefact | Required? | Source | If absent |
+|---|---|---|---|
+| Source tree, destination, restore platform, and retention | yes | Data owner and recovery plan | Stop before archive creation. |
+| Required ACL/xattr/SELinux/ownership fidelity | yes | Restore requirements | Use full metadata flags and flag portability uncertainty. |
+| Compression, signing, encryption, and key source | conditional | Storage/security policy | Default to gzip and checksum only; do not invent key handling. |
 
 - The directory tree to archive and the archive destination path.
 - The compression choice (gzip for universal/fast, xz for best ratio).
 - Whether metadata fidelity (ACLs, xattrs, SELinux, numeric owner) is required.
 - Whether a sha256 sidecar and/or GPG signature is required.
+
+## Capability Contract
+
+Listing sources and archives is read-only. Archive creation, overwrite, encryption, extraction, and deletion require explicit filesystem authority; restoring ownership, ACLs, or SELinux contexts requires separately authorised elevation. Never expose key material.
+
+## Degraded Mode
+
+Without source access, return a command plan only. If ACL/xattr tools or keys are unavailable, do not claim metadata or authenticity verification; identify exactly which attributes remain unassessed.
+
+## Decision Rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| gzip or xz | Use gzip for frequent/recovery-sensitive copies and xz for CPU-tolerant cold storage. | Excessive restore delay or waste. |
+| Metadata flags | Preserve numeric owners, ACLs, xattrs, and SELinux contexts when cross-host fidelity matters. | Incorrect access after restore. |
+| Incremental chain | Protect and retain the snapshot file with every dependent archive. | Unrestorable incremental series. |
+| Signature/encryption | Sign for origin integrity; encrypt for confidentiality; manage keys separately. | Confusing checksum, authenticity, and secrecy. |
 
 ## Workflow
 
@@ -69,25 +95,55 @@ and [`../../docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 3. Write a `.sha256` sidecar; optionally sign/encrypt with GPG.
 4. Record the archive path, size, and verification result.
 
-## Quality standards
+5. Stop retention or deletion of the source when listing, checksum, signature, or isolated restore fails; recover by rebuilding the archive from the unchanged source and rerun every failed check.
+
+## Quality Standards
 
 - An unverified archive is not a backup. Always list or compare after create.
 - Use `--numeric-owner` for any archive that may restore to a different host.
 - Prefer gzip for live/rotated backups (universal, fast); xz for cold archives.
 - Keep the sha256 sidecar next to the archive and offsite alongside it.
 
-## Anti-patterns
+## Anti-Patterns
+
+- Trusting archive creation alone. Fix: list, checksum, and restore-test it.
+- Dropping metadata silently. Fix: declare and verify ownership, ACL, xattr, and SELinux requirements.
+- Extracting over production first. Fix: restore into isolation and compare content/metadata.
+- Losing incremental snapshot metadata. Fix: version and retain it with every dependent archive.
+- Confusing checksum with authenticity. Fix: use a verified signature when origin proof is required.
 
 - Creating an archive and never test-listing it.
 - Dropping ACLs/xattrs/SELinux silently on metadata-sensitive trees.
 - Treating `tar` exit 0 as proof of integrity without a `--compare` or checksum.
 - Storing the GPG/sha256 verifier in the same blob it is meant to verify.
+- Extracting over production as the first restore test. Correction: restore into isolation and compare metadata/content.
+- Losing a listed-incremental snapshot file. Correction: version and retain it with the archive chain.
 
 ## Outputs
+
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Archive and manifest | Recovery operator | Paths, flags, size, checksum, retention, and required metadata are recorded. |
+| Verification report | Data owner | Archive lists cleanly, checksum passes, and isolated content/metadata comparison meets scope. |
+| Crypto evidence | Security owner | Signature verifies or encryption/decryption test passes without exposing keys. |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Archive evidence | Contains create/list/compare results, checksum, size, metadata restoration checks, and signature status. |
+
+Capture create/list/compare exit status, checksum, archive size, sampled ownership/ACL/xattr/SELinux restoration, signature verification, and every unassessed attribute.
+
+## Worked Example
+
+Archive `/var/www` for cross-host restore with numeric owners, ACLs, xattrs, and SELinux attributes, create a SHA-256 sidecar, then extract into a temporary tree and compare both content and metadata before retention begins.
 
 - The exact `tar` create command and the verification command(s) run.
 - Archive path, compressed size, and sha256 digest.
 - Any GPG signature/encryption produced and where its key lives.
+
+<!-- dual-compat-end -->
 
 ## References
 

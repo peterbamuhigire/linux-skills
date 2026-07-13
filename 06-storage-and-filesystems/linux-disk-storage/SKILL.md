@@ -1,8 +1,10 @@
 ---
 name: linux-disk-storage
-description: Manage disk space and storage on Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Core tools (df, du, lsblk) are identical on both; package-cache cleanup (apt vs dnf) and the default root filesystem (ext4 vs xfs) differ. Check usage, find space hogs, safe cleanup (package cache, journal, old logs, old backups, node_modules), inode exhaustion, and emergency disk-full recovery. Covers local storage (partitioning, LVM, fstab) and network mounts (NFS, and CIFS/SMB Samba client mounts via mount -t cifs, cifs-utils, credentials files, fstab and autofs). Includes swapfile creation for servers running without swap.
+description: Use when diagnosing disk or inode pressure, performing measured cleanup, managing local storage or swap, or mounting NFS and CIFS shares; use linux-filesystem-snapshots for point-in-time snapshots.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -38,6 +40,8 @@ In `sk-*` scripts use the `common.sh` package primitives (`pkg_update`, etc.)
 rather than hardcoding apt/dnf. See [`linux-bash-scripting`](../../10-automation-and-scripting/linux-bash-scripting/SKILL.md)
 and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
+
 ## Use when
 
 - Investigating disk pressure, inode exhaustion, or storage-related outages.
@@ -54,36 +58,76 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
   lives in **`13-backup-and-archiving/linux-filesystem-snapshots`**. This skill
   keeps LVM volume management, fstab, NFS, and CIFS/SMB.
 
-## Required inputs
+## Required Inputs
 
-- The filesystem or path under pressure.
-- Whether the task is emergency cleanup, root-cause analysis, or swap provisioning.
-- Any retention rules for logs, backups, or build artifacts before deletion.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Target host and filesystem/path | Operator, alert, or `findmnt` output | yes | Inspect read-only; do not assume the affected mount |
+| Intended outcome | Incident owner: diagnose, cleanup, resize, swap, NFS, or CIFS | yes | Return diagnosis and options only |
+| Retention and deletion authority | Service owner or retention policy | for deletion | Do not delete logs, backups, caches, or application data |
+| Credentials and ownership mapping | Approved secret provider and application owner | for CIFS | Do not create a CIFS mount |
+
+## Capability Contract
+
+Read/search diagnosis needs shell access to `df`, `du`, `findmnt`, and `lsblk`. Cleanup, partition, swap, mount, and `/etc/fstab` changes require explicit root-level change authority. Never reveal share credentials or infer deletion approval from disk pressure.
+
+## Degraded Mode
+
+If root, package tools, network reachability, credentials, or a maintenance window is unavailable, report the observable usage and the exact unassessed operation. Provide safe commands for an operator; do not mark capacity, mount persistence, or boot safety as passed.
+
+## Decision Rules
+
+| Condition | Action | Failure avoided |
+|---|---|---|
+| Inodes exhausted but blocks remain | Locate high-file-count directories | Deleting large files that cannot fix inode pressure |
+| Filesystem is XFS | Grow or migrate; never plan an in-place shrink | Unsupported shrink and data loss |
+| Candidate data has unknown retention | Stop at inventory and request authority | Destruction of required logs or backups |
+| Remote share may be unavailable at boot | Use `_netdev,nofail` and test `mount -a` | Boot delay or emergency mode |
 
 ## Workflow
 
-1. Measure filesystem and inode usage before changing anything.
-2. Identify the largest consumers and follow the safest cleanup steps first.
-3. Escalate to emergency recovery or swap creation only when the evidence supports it.
-4. Re-check free space and service health after the change.
-
-## Quality standards
-
-- Prefer reversible cleanup before destructive deletion.
-- Quantify the largest consumers instead of guessing.
-- Verify reclaimed space and confirm the root cause so the problem does not recur immediately.
-
-## Anti-patterns
-
-- Deleting broad directory trees without measuring them first.
-- Treating `apt clean` or journal cleanup as a substitute for root-cause analysis.
-- Creating swap without checking disk capacity and intended permanence.
+1. Detect distro, mount source, filesystem type, block use, and inode use; stop if the target is ambiguous.
+2. Rank consumers without crossing unrelated mounts, and distinguish deleted-open files from ordinary files.
+3. Select cleanup, growth, swap, or network-mount handling from the decision table; obtain authority before mutation.
+4. Preview destructive candidates and preserve retention-protected data; stop when expected recovery is not measurable.
+5. Apply one bounded change, then verify `df`, `df -i`, `findmnt`, service health, and boot-safe configuration.
+6. If a command fails, preserve current state, record its output, and provide the narrow recovery or rollback step.
 
 ## Outputs
 
-- The storage diagnosis and the paths consuming space.
-- The cleanup or swap actions taken.
-- A verification snapshot of post-change disk and inode usage.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Storage diagnosis | Incident owner | Names mount, filesystem, block/inode measurements, and ranked cause |
+| Change record | System owner | Lists authorised commands, deleted paths or config diffs, and rollback |
+| Verification snapshot | Operations | Shows post-change capacity plus mount/service checks |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Storage evidence pack | Includes before/after `df`, inode and consumer evidence, filesystem type, authorised commands, applicable `mount -a`, and redacted residual risk |
+
+## Quality Standards
+
+- Measurements identify the affected mount rather than only the directory path.
+- Every deletion is bounded by path, age or retention rule, and explicit authority.
+- Network mounts survive an unavailable peer without blocking boot.
+- Verification proves reclaimed capacity or a correctly mounted target.
+
+## Anti-Patterns
+
+- Deleting broad directory trees before measuring. Fix: rank consumers on the affected mount first.
+- Vacuuming journals without checking retention. Fix: obtain the approved time or size boundary.
+- Treating package-cache cleanup as root-cause analysis. Fix: identify the growth source and recurrence control.
+- Creating swap on a nearly full filesystem. Fix: verify capacity and persistence requirements first.
+- Putting an SMB password in `/etc/fstab`. Fix: use a root-owned `0600` credentials file.
+- Shrinking XFS in place. Fix: grow it or plan a backed-up migration.
+
+## Worked Example
+
+An alert shows `/var` at 96% while `/` is healthy. The operator supplies a 14-day journal policy. Measure `/var` separately, find 18 GiB in journald, vacuum only to the approved boundary, and record before/after `df` plus `journalctl --disk-usage`; do not delete application backups discovered on another mount.
+
+<!-- dual-compat-end -->
 
 ## References
 

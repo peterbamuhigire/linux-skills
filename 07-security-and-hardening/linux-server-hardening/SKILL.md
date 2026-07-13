@@ -1,8 +1,10 @@
 ---
 name: linux-server-hardening
-description: Interactive security hardening for both Debian/Ubuntu and RHEL-family servers (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Runs the audit script first, then walks through each FAIL and WARN item — asks before applying any change. SSH and sysctl hardening are largely identical across families, but the mandatory access control system differs (AppArmor on Debian/Ubuntu vs SELinux on RHEL), the firewall differs (ufw vs firewalld), auto-updates differ (unattended-upgrades vs dnf-automatic), and the sudo admin group differs (sudo vs wheel). Covers SSH, firewall, fail2ban, sysctl, MAC, Nginx, PHP-FPM, MySQL, Redis, file permissions, backup credential security.
+description: Use when an authorised operator wants to remediate verified Linux security findings interactively across SSH, firewall, MAC, services, permissions, and updates; use linux-security-analysis first.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -33,6 +35,8 @@ denial and set the right context/boolean/port. See
 [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md). In `sk-*` scripts
 use the `common.sh` primitives (`pkg_install`, `firewall_allow`, `svc_name`).
 
+<!-- dual-compat-start -->
+
 ## Use when
 
 - Applying security fixes after an audit or known hardening gap.
@@ -44,18 +48,46 @@ use the `common.sh` primitives (`pkg_install`, `firewall_allow`, `svc_name`).
 - You only need a read-only findings report; use `linux-security-analysis`.
 - The task is a narrow, non-security operational change better handled by a specialist skill.
 
-## Required inputs
+## Required Inputs
 
-- The audit findings or specific hardening goal.
-- The target server role and any uptime constraints.
-- Explicit confirmation for each change that can affect connectivity or service behavior.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Verified finding and evidence | linux-security-analysis or specialist assessment | yes | Inspect and propose; do not mutate |
+| Host role, distro, dependencies, uptime | Inventory and service owner | yes | Stop before changing service behaviour |
+| Per-change authority and rollback window | Change owner | for mutation | Return a sequenced hardening plan |
+| Recovery access | Console or independent privileged session | for access controls | Do not change SSH, firewall, PAM, or MAC policy |
+
+## Capability Contract
+
+Read/search confirmation precedes every change. Root-level edits, installs, service reloads, firewall changes, and enforcement changes require explicit authority. Preserve an independent recovery path and never broaden scope from one approved finding to an entire baseline.
+
+## Degraded Mode
+
+Without audit evidence, root, recovery access, a maintenance window, or validation tooling, produce the narrowest qualified plan and exact commands for an operator. Leave the finding open; do not claim hardening is complete.
+
+## Decision Rules
+
+| Condition | Action | Failure avoided |
+|---|---|---|
+| Change can break remote access | Test syntax and preserve a second session/console | Lockout |
+| SELinux/AppArmor denial is unexplained | Diagnose labels/profile before policy exception | Disabling mandatory access control |
+| Several high-risk changes are requested | Apply and validate one control at a time | Untraceable outage |
+| Verification contradicts expected result | Roll back and stop the cohort | Compounding a failed change |
 
 ## Workflow
 
-1. Start from an audit result or a clearly defined hardening gap.
-2. Work through the priority order below, confirming each change before applying it.
-3. Validate service and access behavior after every material change.
-4. Re-run the audit or targeted checks to confirm the finding is closed.
+1. Reproduce the finding, identify distro/role dependencies, and confirm scope.
+2. Define success, rollback, recovery access, and a syntax/config test; stop if any is missing.
+3. Back up the affected config and preview the smallest change.
+4. Apply one authorised control and validate access, syntax, service health, and application behaviour.
+5. Roll back immediately on failed validation; preserve output and stop related changes.
+6. Re-run the original audit check and record closure or residual risk.
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Hardening evidence pack | Includes finding, approval, backup/diff, syntax checks, commands, service/access validation, rollback if used, and repeated audit check |
 
 ## Quality standards
 
@@ -65,15 +97,26 @@ use the `common.sh` primitives (`pkg_install`, `firewall_allow`, `svc_name`).
 
 ## Anti-patterns
 
-- Hardening blind without a prior audit or explicit target.
-- Making multiple high-risk security changes without intermediate validation.
-- Considering a control fixed before re-checking the live state.
+- Hardening blind. Fix: reproduce a verified finding or define a precise target.
+- Bundling high-risk changes. Fix: validate and checkpoint each control.
+- Calling a control fixed before re-checking. Fix: repeat the original audit test.
+- Disabling SELinux or AppArmor to clear a denial. Fix: fix labels, context, or narrow policy.
+- Editing SSH without recovery access. Fix: preserve a second session or console and run `sshd -t`.
+- Assuming rollback exists. Fix: create and test the config backup and restore command.
 
 ## Outputs
 
-- The hardening changes applied or deferred.
-- The validation steps proving each change is safe.
-- The residual findings that still need follow-up.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Hardening change record | Change owner | Links finding, approval, exact diff, and rollback |
+| Validation evidence | Service owner | Proves access, syntax, service, and original check |
+| Residual-risk register | Risk owner | Names deferred or failed controls and next action |
+
+## Worked Example
+
+For password SSH still enabled on Ubuntu, first verify key login in a second session, back up `sshd_config`, change only `PasswordAuthentication`, run `sshd -t`, reload SSH, and prove a new key session works before closing the old one. Restore the backup if validation fails.
+
+<!-- dual-compat-end -->
 
 ## References
 

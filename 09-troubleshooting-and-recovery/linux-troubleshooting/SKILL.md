@@ -1,8 +1,10 @@
 ---
 name: linux-troubleshooting
-description: Systematic incident diagnosis for production servers across both families (Debian/Ubuntu and the RHEL family — Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Ask for the symptom then follow the matching diagnosis branch — high CPU/load, OOM kill, disk full, service crashed, 502/504 errors, slow site, MySQL issues, SSL expired, backup failed, site down after git update. Service names and log paths differ between families; on the RHEL family SELinux is a frequent hidden cause of "permission denied" / 403 / connection-refused failures that filesystem permissions don't explain.
+description: Use when triaging a production Linux incident across CPU, memory, disk, services, web, database, TLS, backups, or deployments; route resource findings to linux-system-monitoring and recovery to linux-disaster-recovery.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -44,24 +46,58 @@ scripts resolve unit names via `svc_name` from `common.sh`.
 - A server incident needs symptom-driven diagnosis.
 - You know the symptom but not yet the owning subsystem.
 - You need a structured triage flow before making changes.
+- An unexplained outage needs the failure domain narrowed before remediation.
+- Server access is unavailable and the operator needs a read-only diagnostic plan rather than an invented result.
 
 ## Do not use when
 
 - The problem is already clearly scoped to one specialist skill.
 - The task is proactive monitoring or audit rather than incident response.
 
-## Required inputs
+<!-- dual-compat-start -->
 
-- The observed symptom.
-- The affected host, service, or user-visible impact.
-- Any recent change or deployment that may have triggered the issue.
+## Required Inputs
+
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Symptom, impact, host/service, and onset | Incident report/monitoring | yes | Gather a broad read-only snapshot; do not guess a branch |
+| Recent changes and known-good baseline | Deployment/change records | for cause analysis | State change correlation is unassessed |
+| Read/search access to state and logs | System owner | yes | Return safe collection commands only |
+| Remediation authority and rollback | Incident/change owner | for mutation | Diagnose and hand off; do not apply fixes |
+
+## Capability Contract
+
+Default triage uses read/search access only. Restarts, deletes, rollbacks, package/config changes, database writes, firewall actions, and recovery operations require explicit authority after evidence identifies the failure mode.
+
+## Degraded Mode
+
+Without logs, history, privileges, network probes, or reproduction, return the most specific supported failure-domain hypothesis and list unassessed branches. Do not close an incident because the symptom temporarily disappears.
+
+## Decision Rules
+
+| Evidence | Action | Failure avoided |
+|---|---|---|
+| Host-wide resource pressure | Route to monitoring/storage before service restart | Masking the root cause |
+| One service failed with valid dependencies | Inspect its config/log/unit | Random system-wide changes |
+| RHEL permission failure with correct Unix mode | Check SELinux context/AVCs | Disabling security or chmod escalation |
+| Recent deployment aligns with onset | Compare/revert only with authority | Correlation treated as proof |
 
 ## Workflow
 
-1. Ask for the symptom and pick the matching branch from the diagnosis tree.
-2. Run the quick triage commands before narrowing to a branch.
-3. Follow the branch until the likely owning subsystem is clear.
-4. Hand off to the responsible specialist skill or apply the validated fix.
+1. Establish impact, onset, host role, recent changes, and authority; start an evidence timeline.
+2. Capture read-only system, socket, service, disk, memory, and relevant log state before intervention.
+3. Select one symptom branch and test competing hypotheses with the cheapest discriminating checks.
+4. Stop when evidence is insufficient or the branch requires specialist/destructive action.
+5. Apply only the authorised minimal fix with explicit success and rollback checks.
+6. On failure, recover the previous state, verify the user-visible symptom, and preserve residual evidence.
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Incident timeline | Records onset, impact, changes, commands, timestamps, and interventions |
+| Failure-domain diagnosis | Cites discriminating evidence, alternatives ruled out, and confidence |
+| Fix verification | Repeats the user-visible check plus service/resource checks and rollback result |
 
 ## Quality standards
 
@@ -71,15 +107,26 @@ scripts resolve unit names via `svc_name` from `common.sh`.
 
 ## Anti-patterns
 
-- Restarting services or deleting files before a basic triage snapshot.
-- Mixing multiple symptom branches without a reason.
-- Closing the incident on a guess without reproducing or verifying the fix.
+- Restarting or deleting before triage. Fix: preserve a broad read-only snapshot first.
+- Mixing symptom branches without reason. Fix: choose discriminating checks and record why the branch changed.
+- Closing on a guess. Fix: repeat the user-visible and subsystem verification checks.
+- Treating a recent deployment as proof. Fix: compare timestamps and test alternatives.
+- Disabling SELinux to test permissions. Fix: inspect AVCs, labels, and expected policy.
+- Applying several fixes at once. Fix: make one bounded change and checkpoint its effect.
 
 ## Outputs
 
-- The likely failure domain and supporting evidence.
-- The next commands or specialist skill required.
-- A verification step showing whether the symptom is gone.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Triage summary | Incident commander | States impact, failure domain, confidence, evidence, and gaps |
+| Specialist handoff | Owning team | Provides reproducer, timeline, relevant state, and attempted actions |
+| Resolution record | Service owner | Shows authorised fix, rollback, user-visible verification, and residual risk |
+
+## Worked Example
+
+For a 502 after deployment, first capture proxy and upstream status, listeners, disk/memory, and matching logs. If Nginx is healthy but PHP-FPM is absent due to invalid config, validate that config and route the bounded service fix; do not restart the whole host.
+
+<!-- dual-compat-end -->
 
 ## References
 

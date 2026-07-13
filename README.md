@@ -3,8 +3,9 @@
 **Author:** Peter Bamuhigire · [techguypeter.com](https://techguypeter.com) · +256 784 464 178
 
 A **two-family Linux server management engine** — a curated knowledge base of
-**40 specialist skills** (plus the `linux-sysadmin` routing hub and the
-`linux-bash-scripting` meta-skill) organized into **15 categories**, 5
+**43 active skills**: 40 numbered specialist skills (including the
+`linux-bash-scripting` operational meta-skill), the `linux-sysadmin` routing
+hub, and two authoring/review meta-skills. The catalogue is organised into **15 categories**, 5
 RHEL-family deep-dive references, an engine
 specification, and a growing suite of interactive, idempotent `sk-*` scripts
 that wrap the skills as command-line tools.
@@ -138,8 +139,8 @@ notes/                   Setup guides and troubleshooting
 
 ## The skills
 
-40 specialist skills across 15 categories, plus the `linux-sysadmin` hub and
-the `linux-bash-scripting` meta-skill. Every specialist skill below leads with a **`## Distro support`** matrix
+Forty numbered specialist skills across 15 categories, plus the `linux-sysadmin`
+hub and two skills under `meta/`. Every numbered specialist skill below leads with a **`## Distro support`** matrix
 (Debian/Ubuntu ↔ RHEL family). The `linux-sysadmin` hub is the only exempt
 skill (it routes, it doesn't operate).
 
@@ -270,6 +271,10 @@ Install scripts with `sudo install-skills-bin <skill-name>` (or
 ## Testing
 
 ```bash
+# July 2026 zero-debt skill contract and routing fixtures
+python -X utf8 scripts/validate_skills.py --baseline quality-baseline.json
+python -X utf8 scripts/routing_smoke_test.py
+
 # Library unit tests (run in an Ubuntu/Fedora LXD container via the harness)
 sudo ./scripts/tests/run-test.sh --suite foundation
 
@@ -302,7 +307,9 @@ two-family promise from regressing.
 
 ## Current status
 
-- 40 specialist skills across 15 categories, all carrying a Distro support matrix.
+- 43 active skills: 40 numbered specialists, the routing hub, and two authoring/review meta-skills.
+- July 2026 skill-writing conformance is enforced by a zero-debt baseline, 25 routing fixtures, a local template, and CI on pushes and pull requests.
+- All numbered specialists carry a Distro support matrix.
 - 5 RHEL-family deep-dive references (firewalld, SELinux, httpd,
   NetworkManager, Kickstart).
 - `common.sh` family abstraction + unit tests + the distro-matrix invariant

@@ -1,8 +1,10 @@
 ---
 name: linux-log-management
-description: Read and manage logs on Linux servers across both the Debian/Ubuntu and RHEL families (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). journalctl/journald is identical on both; only the legacy /var/log/* file paths differ. journalctl by service/time/priority. Nginx and Apache log analysis (4xx/5xx spikes, attack patterns, top IPs). fail2ban ban log. MySQL slow queries. PHP errors. Backup cron log. logrotate management. Reference-style with ready-to-run commands.
+description: Use when inspecting time-bounded journald or service logs, correlating web/database/security events, or managing logrotate retention; use linux-observability for forwarding and linux-troubleshooting for multi-subsystem incidents.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -46,18 +48,49 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 - The task is general incident routing without a clear symptom; use `linux-troubleshooting`.
 - The task is metrics collection or centralized observability setup; use `linux-observability`.
 
-## Required inputs
+<!-- dual-compat-start -->
 
-- The service, path, or time window to inspect.
-- The symptom or event type you are trying to explain.
-- Any relevant retention or rotation concern.
+## Required Inputs
+
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Service/path and time window | Incident owner or alert | yes | Stop broad collection and request a bounded target |
+| Symptom or event signature | Operator or monitoring evidence | yes | Return an inventory only; do not infer cause |
+| Retention and privacy rules | Service owner or policy | for rotation/export | Do not delete, rotate early, or share sensitive records |
+
+## Capability Contract
+
+Read/search access to journals and log files is sufficient for analysis. Rotation changes, vacuuming, deletion, permission changes, and service reloads require explicit authority; shared evidence must redact secrets and personal data.
+
+## Degraded Mode
+
+Fallback when required access is unavailable: report the exact time/source coverage and mark missing periods unassessed. Never equate absent or rotated logs with absence of an event.
+
+## Decision Rules
+
+| Condition | Action | Failure avoided |
+|---|---|---|
+| Event spans multiple services | Correlate timestamps and request IDs | Single-log attribution error |
+| Log growth threatens disk | Preserve incident window, then apply authorised retention | Destroyed evidence |
+| Sensitive fields appear | Redact values while retaining timestamp/context | Credential or personal-data exposure |
+| Timestamp sources differ | Record timezone/clock offset | False sequence of events |
 
 ## Workflow
 
-1. Narrow the target service, path, and timeframe.
-2. Use the matching manual commands below to inspect logs and identify patterns.
-3. Follow suspicious findings into the owning service or skill.
-4. Verify whether the issue is ongoing, resolved, or requires rotation changes.
+1. Confirm service, host, timezone, time window, retention, and read/search boundary.
+2. Preserve a bounded evidence slice before changing rotation or services.
+3. Correlate events across the minimum relevant sources and separate facts from inference.
+4. Route the cause to the owning service; stop when evidence cannot distinguish candidates.
+5. Apply only authorised rotation/retention changes and validate syntax.
+6. On failure, recover the prior logrotate configuration and retain collected evidence.
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Time-bounded log extract | Names source, host, timezone, command, and redactions |
+| Correlation record | Links the conclusion to timestamps/request IDs and states uncertainty |
+| Rotation verification | Includes `logrotate` debug/forced-test result and post-change disk state |
 
 ## Quality standards
 
@@ -67,15 +100,26 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Anti-patterns
 
-- Grepping random logs without first identifying the service and timeframe.
-- Treating log volume as proof of cause without corroboration.
-- Changing rotation settings before understanding the growth source.
+- Grepping random logs. Fix: identify service, host, timezone, and timeframe first.
+- Treating volume as proof of cause. Fix: correlate content with service behaviour.
+- Changing rotation before understanding growth. Fix: measure source and preserve the incident window.
+- Publishing raw secrets or tokens. Fix: redact values and retain only useful context.
+- Treating rotated logs as proof nothing happened. Fix: mark the missing period unassessed.
+- Mixing local and UTC timestamps silently. Fix: normalise or label timezone offsets.
 
 ## Outputs
 
-- The relevant log evidence and suspected cause.
-- Any service or rotation action required next.
-- A verification statement showing whether the issue is still reproducing.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Log finding | Incident owner | States evidence, time coverage, cause/confidence, and gaps |
+| Rotation change record | Operations | Shows authorised diff, validation, rollback, and result |
+| Specialist handoff | Owning team | Includes the minimum reproducing records without secrets |
+
+## Worked Example
+
+For an Nginx 502 spike from 14:00–14:10 EAT, extract only that access/error interval, correlate upstream errors with PHP-FPM journal entries, and preserve request IDs. If older logs rotated, mark earlier onset unassessed rather than declaring 14:00 the start.
+
+<!-- dual-compat-end -->
 
 ## References
 

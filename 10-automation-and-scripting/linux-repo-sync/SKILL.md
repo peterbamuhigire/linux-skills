@@ -1,8 +1,10 @@
 ---
 name: linux-repo-sync
-description: Safely update git repositories on a server without ever destroying uncommitted local work. Defines the binding doctrine for any automated or menu-driven repo-update script — pull --rebase --autostash, porcelain dirty-checks, conflict recovery, never git reset --hard or git clean -fd. Load before writing, reviewing, or running any script that pulls repos on a managed server.
+description: Use when writing, reviewing, or running unattended or menu-driven Git repository updates that must preserve tracked and untracked local work; use linux-bash-scripting first for sk-* script structure.
 license: MIT
 metadata:
+  portable: true
+  compatible_with: [claude-code, codex]
   author: Peter Bamuhigire
   author_url: techguypeter.com
   author_contact: "+256784464178"
@@ -25,6 +27,8 @@ difference is installing git itself.
 In `sk-*` scripts use `pkg_install git` from `common.sh` if you must ensure git
 is present. See [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
+<!-- dual-compat-start -->
+
 ## Use when
 
 - Writing, reviewing, or running any script that pulls git repos on a server
@@ -42,12 +46,31 @@ is present. See [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
   behaviour; for the script contract load `linux-bash-scripting` first, then
   apply this doctrine to the git steps.
 
-## Required inputs
+## Required Inputs
 
-- The repo path(s) to update.
-- Whether the run is interactive (an operator is watching) or
-  unattended (cron / agent).
-- Any per-repo post-pull build command.
+| Artefact | Source | Required? | If absent |
+|---|---|---|---|
+| Repository path(s) and intended branch | Operator or approved registry | yes | Skip the target; never search and update arbitrary repos |
+| Interactive or unattended mode | Scheduler/operator | yes | Default to report-only planning |
+| Remote/authentication and post-pull command | Repository owner | for update/build | Do not infer credentials or run a build |
+| Deployment/change authority | Service owner | for integration | Fetch/status only; do not integrate commits |
+
+## Capability Contract
+
+Read/search status and fetch inspection may be read-only. Pull/rebase changes the working tree and needs explicit authority. Never delete, reset, auto-resolve, force-push, expose credentials, or run an unapproved post-pull command.
+
+## Degraded Mode
+
+If network, credentials, Git, upstream tracking, or a clean conflict state is unavailable, preserve the tree and report branch, status, and the failed step. Do not call a fetched or conflicted repository updated.
+
+## Decision Rules
+
+| State | Action | Failure avoided |
+|---|---|---|
+| Dirty tracked work | Warn and use `--rebase --autostash` | Lost local edits |
+| Untracked files present | Preserve them and report collision risk | Deleted uploads/config |
+| Rebase or stash conflict | Stop with recovery commands | Destructive auto-resolution |
+| Detached HEAD or missing upstream | Stop and request intended branch | Updating the wrong history |
 
 ## Workflow
 
@@ -69,20 +92,35 @@ is present. See [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 
 ## Anti-patterns
 
-- `git reset --hard HEAD` in an automated or menu repo-update script.
-- `git clean -fd` (or `-fdx`) in an automated or menu repo-update script.
-- "Resetting local changes" as a routine pre-pull step.
-- Auto-resolving or auto-aborting a rebase/stash conflict on the operator's
-  behalf.
-- Removing untracked files (uploads, `.env`, generated config) to "avoid
-  conflicts".
+- `git reset --hard HEAD` in automation. Fix: preserve local work with rebase/autostash and stop on conflict.
+- `git clean -fd` or `-fdx`. Fix: leave untracked files untouched and report collisions.
+- Resetting local changes as a routine pre-pull step. Fix: inventory and preserve the dirty state.
+- Auto-resolving or auto-aborting a rebase/stash conflict. Fix: leave state intact for the owner.
+- Removing uploads, `.env`, or generated config to avoid conflicts. Fix: stop and report the conflicting path.
 
 ## Outputs
 
-- An updated repo with all local work preserved.
-- A clear report of branch, new commit, and whether local changes were
-  stashed/re-applied.
-- On conflict: an explicit, copy-pasteable recovery path — never a wiped tree.
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Per-repo update result | Operator | Records branch, before/after commit, dirty state, and outcome |
+| Conflict handoff | Repository owner | Gives exact status plus safe continue/abort/stash recovery |
+| Post-pull result | Service owner | Runs only after successful integration and records exit status |
+
+## Evidence Produced
+
+| Artefact | Acceptance |
+|---|---|
+| Repository update evidence | Includes porcelain status, branch/upstream, before/after IDs, pull/autostash state, build exit, skipped repos, and redacted credentials |
+
+## Capability Recovery
+
+On conflict, leave Git's state intact and show `git status`, `git rebase --continue`, `git rebase --abort`, and `git stash list`. Never choose the recovery path for the owner.
+
+## Worked Example
+
+A production checkout has a modified tracked config and an untracked upload. Report both, run the authorised `git pull --rebase --autostash`, leave the upload untouched, and record commit IDs. If the autostash conflicts, stop before the build and hand the exact recovery state to the owner.
+
+<!-- dual-compat-end -->
 
 ## References
 
