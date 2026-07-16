@@ -1,0 +1,21 @@
+name: source-ingestion-guardrail
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  source-ingestion:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Reject raw or reconstructive book content
+        run: python -X utf8 scripts/source_ingestion_guardrail.py
