@@ -37,12 +37,16 @@ Alma, Oracle). When acting on a task:
 
 ## Baseline Skills
 
+Kaizen is mandatory for the engine and every operational product. Load `meta/kaizen-improvement-system/SKILL.md` for audits and improvement planning; cap published audits at 65/100 and target 95/100 with dual-distro, safety, rollback, recovery, and reviewer evidence.
+
 Start from these skills unless the task is already narrowly scoped:
 
 - `linux-sysadmin`: routing hub for Linux server tasks
 - `linux-bash-scripting`: mandatory meta-skill before writing or reviewing `sk-*` scripts
 - `skill-writing`: meta-skill for creating or upgrading portable skills
 - `skill-safety-audit`: review gate for new or imported skill content
+
+For current or uncertain distro, security, compliance, vendor, platform, legal, or safety claims, route to `C:\wamp64\www\digital-research-skills` and load its source-evaluation and source-verification skills before standardising a command or policy. This Linux engine is an operational consumer of that research engine, not a substitute for current-source verification.
 
 ## Routing
 

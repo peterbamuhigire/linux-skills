@@ -126,6 +126,8 @@ On RHEL 9, confirm `ssg-rhel9-ds.xml`, list the exact profile, run a read-only e
 
 ## References
 
+- [`../../docs/continuous-improvement/linux-product-audit-checklist.md`](../../docs/continuous-improvement/linux-product-audit-checklist.md)
+
 - [`references/openscap-reference.md`](references/openscap-reference.md) — install SSG, list profiles, evaluate against CIS/STIG/PCI-DSS, generate HTML reports and remediation (bash + Ansible), and pick datastreams per distro.
 - [`references/lynis-reference.md`](references/lynis-reference.md) — install, `lynis audit system`, reading the hardening index, prioritizing suggestions, and CI/cron usage.
 - [`../linux-auditd-rules/references/auditd-reference.md`](../linux-auditd-rules/references/auditd-reference.md) — applying SSG/CIS audit rulesets via auditd (the rule layer behind a benchmark).

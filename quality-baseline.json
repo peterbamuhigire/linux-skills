@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "benchmark": "linux-skills July 2026 zero-debt contract",
-  "expected_active_skill_count": 43,
+  "expected_active_skill_count": 44,
   "expected_template_count": 1,
   "failure_counts": {},
   "routing": {

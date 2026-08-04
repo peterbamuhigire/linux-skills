@@ -123,6 +123,8 @@ For an Nginx 502 spike from 14:00–14:10 EAT, extract only that access/error in
 
 ## References
 
+- [`../../docs/continuous-improvement/incident-learning-standard.md`](../../docs/continuous-improvement/incident-learning-standard.md)
+
 - [`references/journalctl-reference.md`](references/journalctl-reference.md)
 - [`references/log-analysis-patterns.md`](references/log-analysis-patterns.md)
 - [`references/log-locations.md`](references/log-locations.md)

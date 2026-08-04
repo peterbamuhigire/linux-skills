@@ -124,6 +124,9 @@ A production checkout has a modified tracked config and an untracked upload. Rep
 
 ## References
 
+- [`../../docs/continuous-improvement/safe-reversible-operations-standard.md`](../../docs/continuous-improvement/safe-reversible-operations-standard.md)
+- [`../../docs/continuous-improvement/value-stream-5s-qc-story.md`](../../docs/continuous-improvement/value-stream-5s-qc-story.md)
+
 - [`references/safe-update-pattern.md`](references/safe-update-pattern.md)
 
 ---

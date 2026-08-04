@@ -84,6 +84,8 @@ Without logs, history, privileges, network probes, or reproduction, return the m
 
 ## Workflow
 
+After the immediate user-visible check, create an incident learning record when the symptom required intervention, repeated, or exposed a runbook gap. Preserve the timeline and before state, name the discriminating evidence, record unknowns, test one bounded countermeasure, and verify rollback/recovery before closure. Standardise the learning in the skill, diagnosis tree, script fixture, or monitoring rule only after the same failed path is exercised.
+
 1. Establish impact, onset, host role, recent changes, and authority; start an evidence timeline.
 2. Capture read-only system, socket, service, disk, memory, and relevant log state before intervention.
 3. Select one symptom branch and test competing hypotheses with the cheapest discriminating checks.
@@ -131,6 +133,8 @@ For a 502 after deployment, first capture proxy and upstream status, listeners, 
 ## References
 
 - [`references/diagnosis-tree.md`](references/diagnosis-tree.md)
+- [`../../docs/continuous-improvement/incident-learning-standard.md`](../../docs/continuous-improvement/incident-learning-standard.md)
+- [`../../docs/continuous-improvement/safe-reversible-operations-standard.md`](../../docs/continuous-improvement/safe-reversible-operations-standard.md)
 - [`references/packet-capture-and-tracing.md`](references/packet-capture-and-tracing.md) — `tcpdump` packet capture (BPF filters, pcap, ring buffers) and `strace`/`ltrace`/`lsof` process & file diagnostics
 - [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md) — SELinux as a hidden cause (RHEL family)
 

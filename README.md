@@ -3,7 +3,7 @@
 **Author:** Peter Bamuhigire · [techguypeter.com](https://techguypeter.com) · +256 784 464 178
 
 A **two-family Linux server management engine** — a curated knowledge base of
-**43 active skills**: 40 numbered specialist skills (including the
+**44 active skills**: 40 numbered specialist skills (including the
 `linux-bash-scripting` operational meta-skill), the `linux-sysadmin` routing
 hub, and two authoring/review meta-skills. The catalogue is organised into **15 categories**, 5
 RHEL-family deep-dive references, an engine
@@ -307,7 +307,7 @@ two-family promise from regressing.
 
 ## Current status
 
-- 43 active skills: 40 numbered specialists, the routing hub, and two authoring/review meta-skills.
+- 44 active skills: 40 numbered specialists, the routing hub, two authoring/review meta-skills, and the Kaizen improvement meta-skill.
 - July 2026 skill-writing conformance is enforced by a zero-debt baseline, 25 routing fixtures, a local template, and CI on pushes and pull requests.
 - All numbered specialists carry a Distro support matrix.
 - 5 RHEL-family deep-dive references (firewalld, SELinux, httpd,
@@ -321,6 +321,23 @@ two-family promise from regressing.
   [`docs/multi-distro/plan.md`](docs/multi-distro/plan.md).
 
 ---
+
+## Book-derived 2026 capability upgrade
+
+Facility Move Playbook, Applying the Kaizen in Africa, LEAN, Platform Enterprise, MSC Software
+Magazine, and Designing for AI strengthen operations with safe reversible changes, idempotence,
+backup/restore evidence, rollback, two-family validation, 5S, muda reduction, QC Story,
+standard work, incident learning, and operational product audits. Debian and RHEL-family support
+must be explicit; current distro, security, compliance, and vendor claims route to
+`digital-research-skills`.
+
+## Kaizen and product-audit contract
+
+Use `Observe -> Baseline -> Select -> Experiment -> Check -> Standardise -> Teach -> Re-measure`.
+Publish audits at `min(raw_score, 65)` and produce 95/100 plans with owner, evidence, measure,
+risk, rollback, and re-audit. Never trade away least privilege, confirmation, backups, recovery,
+or failed-path tests to reduce toil. See `docs/continuous-improvement/`,
+`meta/kaizen-improvement-system/`, and `linux-sysadmin/kaizen-operations-loop.md`.
 
 ## Legacy content
 

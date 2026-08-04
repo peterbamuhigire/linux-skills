@@ -93,6 +93,9 @@ hardcoding — see [`linux-bash-scripting`](../../10-automation-and-scripting/li
 
 ## References
 
+- [`../../docs/continuous-improvement/safe-reversible-operations-standard.md`](../../docs/continuous-improvement/safe-reversible-operations-standard.md)
+- [`../../docs/continuous-improvement/incident-learning-standard.md`](../../docs/continuous-improvement/incident-learning-standard.md)
+
 - [`references/service-reference.md`](references/service-reference.md)
 - [`references/timers-and-cron.md`](references/timers-and-cron.md)
 - [`references/resource-control-and-targets.md`](references/resource-control-and-targets.md)

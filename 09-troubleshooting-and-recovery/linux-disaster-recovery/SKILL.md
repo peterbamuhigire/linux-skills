@@ -83,6 +83,8 @@ Fallback when restore verification is unavailable: report the narrowest recovera
 
 ## Workflow
 
+Before selecting a restore point, use the two-family validation and recovery reference. Qualify the backup and target filesystem, test the smallest isolated restore, preserve the current target, and record application-level validation. If a recovery check is unavailable, report the narrowest recoverable scope and keep the action open; do not treat a successful file extraction as proof that the service or data is recovered.
+
 1. Stabilise the incident, preserve current state, and confirm restore is necessary.
 2. Define RPO/RTO, exact scope, target, authority, and rollback; stop if any required decision is absent.
 3. Inventory candidate backups and verify timestamp, checksum, decryptability, and pre-incident status.
@@ -131,6 +133,8 @@ A table was corrupted at 10:20 EAT. Verify and decrypt the 10:00 database backup
 
 - [`references/backup-strategy.md`](references/backup-strategy.md)
 - [`references/restore-procedures.md`](references/restore-procedures.md)
+- [`../../docs/continuous-improvement/two-family-validation-and-recovery.md`](../../docs/continuous-improvement/two-family-validation-and-recovery.md)
+- [`../../docs/continuous-improvement/incident-learning-standard.md`](../../docs/continuous-improvement/incident-learning-standard.md)
 
 **This skill is self-contained.** Every command below works on a stock
 Debian/Ubuntu or RHEL-family server (substitute per the **Distro support**

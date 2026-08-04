@@ -127,6 +127,9 @@ For node_exporter on Rocky Linux, restrict TCP 9100 to the Prometheus source, va
 
 ## References
 
+- [`../../docs/continuous-improvement/value-stream-5s-qc-story.md`](../../docs/continuous-improvement/value-stream-5s-qc-story.md)
+- [`../../docs/continuous-improvement/incident-learning-standard.md`](../../docs/continuous-improvement/incident-learning-standard.md)
+
 - [`references/prometheus-setup.md`](references/prometheus-setup.md)
 - [`references/telemetry-agents.md`](references/telemetry-agents.md)
 - [`references/log-forwarding.md`](references/log-forwarding.md)

@@ -74,6 +74,8 @@ Without shellcheck, a Bash runtime, root, or both distro families, complete stat
 
 ## Workflow
 
+For every mutating `sk-*` script, apply the safe reversible operations standard: detect the family, capture a before state, support a dry-run or no-op path, make the operation idempotent, use atomic writes where files change, preserve ownership/labels, and expose a bounded rollback or recovery path. A script is not release-ready until its success path, already-correct path, invalid-input path, and rollback/recovery evidence are tested for both distro families or explicitly marked unassessed.
+
 1. Read the owning skill, engine spec, inventory, template, and `common.sh` contract.
 2. Define inputs, effects, decisions, exit codes, rollback, and family support; stop on an unresolved destructive default.
 3. Scaffold or review the six-section structure and standard flags.
@@ -117,6 +119,9 @@ For `sk-cifs-mount`, make share, mount point, and credentials source explicit fl
 <!-- dual-compat-end -->
 
 ## References
+
+- [`../../docs/continuous-improvement/safe-reversible-operations-standard.md`](../../docs/continuous-improvement/safe-reversible-operations-standard.md)
+- [`../../docs/continuous-improvement/two-family-validation-and-recovery.md`](../../docs/continuous-improvement/two-family-validation-and-recovery.md)
 
 - [`references/script-template.sh`](references/script-template.sh)
 - [`references/common-sh-contract.md`](references/common-sh-contract.md)
