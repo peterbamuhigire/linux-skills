@@ -1,5 +1,9 @@
 # linux-skills
 
+See [`docs/control-plane-adoption.md`](docs/control-plane-adoption.md) for
+infrastructure agents, thin commands, safety hooks, rollback evidence, and
+incident handoffs.
+
 **Author:** Peter Bamuhigire | [techguypeter.com](https://techguypeter.com) | +256 784 464 178
 
 A two-family Linux server-management engine for safe, family-aware operations.

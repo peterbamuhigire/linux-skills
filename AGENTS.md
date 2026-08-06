@@ -1,5 +1,9 @@
 # linux-skills Agent Guide
 
+The shared control plane is adapted to operational safety in
+[`docs/control-plane-adoption.md`](docs/control-plane-adoption.md); the central
+registry is `C:\wamp64\www\skills-web-dev\docs\engine-control-plane.json`.
+
 ## Purpose
 
 This repository is a Linux server management skills system centered on portable `SKILL.md` files.
