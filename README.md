@@ -54,7 +54,7 @@ unit; AGENTS.md and CLAUDE.md provide repository and host-specific overlays.
    meta/kaizen-improvement-system/SKILL.md.
 7. For current or uncertain distro, security, compliance, vendor, platform,
    legal, or safety claims, route through the separate
-   digital-research-engine at `C:\wamp64\www\digital-research-engine` and use its source-evaluation and
+   the [Digital Research Engine](https://github.com/peterbamuhigire/digital-research-skills) and use its source-evaluation and
    source-verification workflows before standardising the claim.
 
 The canonical cross-engine paths are maintained in the project-level agent
