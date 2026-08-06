@@ -54,7 +54,7 @@ unit; AGENTS.md and CLAUDE.md provide repository and host-specific overlays.
    meta/kaizen-improvement-system/SKILL.md.
 7. For current or uncertain distro, security, compliance, vendor, platform,
    legal, or safety claims, route through the separate
-   digital-research-skills engine and use its source-evaluation and
+   digital-research-engine at `C:\wamp64\www\digital-research-engine` and use its source-evaluation and
    source-verification workflows before standardising the claim.
 
 The canonical cross-engine paths are maintained in the project-level agent
@@ -424,7 +424,7 @@ its manual procedure when the accelerator is absent or unsuitable.
 This engine is an operational consumer of the shared engine portfolio. Route to
 the appropriate canonical engine when the work crosses domains:
 
-- digital-research-skills for current or uncertain external facts, source
+- digital-research-engine for current or uncertain external facts, source
   verification, OSINT, and evidence packs.
 - skills-web-dev for software, APIs, databases, cloud, DevOps, and application
   implementation that sits above host operations.

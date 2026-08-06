@@ -50,7 +50,7 @@ Start from these skills unless the task is already narrowly scoped:
 - `skill-writing`: meta-skill for creating or upgrading portable skills
 - `skill-safety-audit`: review gate for new or imported skill content
 
-For current or uncertain distro, security, compliance, vendor, platform, legal, or safety claims, route to `C:\wamp64\www\digital-research-skills` and load its source-evaluation and source-verification skills before standardising a command or policy. This Linux engine is an operational consumer of that research engine, not a substitute for current-source verification.
+For current or uncertain distro, security, compliance, vendor, platform, legal, or safety claims, route to `C:\wamp64\www\digital-research-engine` and load its source-evaluation and source-verification skills before standardising a command or policy. This Linux engine is an operational consumer of that research engine, not a substitute for current-source verification.
 
 ## Routing
 

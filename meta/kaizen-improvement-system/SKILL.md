@@ -27,7 +27,7 @@ Acknowledgement: Shared by Peter Bamuhigire, techguypeter.com.
 ## Do Not Use When
 
 - Only a single skill safety audit is needed; use the narrowest applicable audit skill.
-- A current distro, security, compliance, or vendor claim lacks source verification; route the claim to digital-research-skills first.
+- A current distro, security, compliance, or vendor claim lacks source verification; route the claim to digital-research-engine first.
 
 ## Required Inputs
 
@@ -68,7 +68,7 @@ Acknowledgement: Shared by Peter Bamuhigire, techguypeter.com.
 
 - May read/search engine files, product artefacts, tests, logs, references, and supplied evidence; may propose or author scoped documentation and skill updates when explicitly authorised.
 - Must preserve least privilege, backups, explicit confirmation, rollback, and two-family support. Execution requires explicit authorization and a safe fixture; audit mode is read-only.
-- May route current or uncertain claims to `digital-research-skills` and must record source status, date, and limitations.
+- May route current or uncertain claims to `digital-research-engine` and must record source status, date, and limitations.
 
 ## Degraded Mode
 
@@ -109,7 +109,7 @@ For a backup script that passes on Debian but has no RHEL fixture, baseline it a
 - [Two-family validation and recovery](../../docs/continuous-improvement/two-family-validation-and-recovery.md)
 - [Incident learning standard](../../docs/continuous-improvement/incident-learning-standard.md)
 - [Linux product audit checklist](../../docs/continuous-improvement/linux-product-audit-checklist.md)
-- [Portfolio Kaizen standard](C:/wamp64/www/digital-research-skills/docs/continuous-improvement/portfolio-kaizen-standard-2026-08.md)
+- [Portfolio Kaizen standard](C:/wamp64/www/digital-research-engine/docs/continuous-improvement/portfolio-kaizen-standard-2026-08.md)
 - [Linux Kaizen operations loop](../../linux-sysadmin/kaizen-operations-loop.md)
 - `meta/skill-safety-audit/`
 - `15-compliance-and-auditing/`

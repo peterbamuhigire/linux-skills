@@ -42,7 +42,7 @@ metadata:
 5. If the first route fails, recover by returning to the observed symptom and select the nearest diagnostic skill rather than guessing a repair.
 6. Verify the result with service checks, config validation, or follow-up inspection before closing.
 
-7. For an engine or product audit, load `meta/kaizen-improvement-system/SKILL.md`, publish the raw dimensions with a hard-capped maximum of 65/100, and create a 95/100 improvement plan. For current distro, security, compliance, vendor, or platform claims, route through the `digital-research-skills` engine before standardising.
+7. For an engine or product audit, load `meta/kaizen-improvement-system/SKILL.md`, publish the raw dimensions with a hard-capped maximum of 65/100, and create a 95/100 improvement plan. For current distro, security, compliance, vendor, or platform claims, route through the `digital-research-engine` engine before standardising.
 
 ## Quality Standards
 
