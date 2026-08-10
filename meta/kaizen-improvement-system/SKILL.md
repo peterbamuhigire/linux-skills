@@ -88,6 +88,18 @@ If evidence is incomplete, the target is unassessed, or distro execution is unav
 
 Preserve two-family support, idempotence, least privilege, explicit confirmation, backups, rollback, verification, evidence traceability, and review dates. Never turn a historical book or vendor example into a current command without verification.
 
+## Mandatory 65-to-95 gate
+
+The first pass is an initial analysis: calculate raw findings, publish only
+`min(raw_score, 65)`, and keep missing fixtures, authorisation, backup, rollback,
+and distro evidence outside the score as explicit blockers. Only after that baseline
+is recorded may the operator target 95/100 with one safe change, a root cause,
+owner, command or fixture, guardrail, stop/rollback condition, recovery evidence,
+standardisation decision, and re-audit date.
+Run the gate at engine level (routers, runbooks, scripts, fixtures, validators, and
+handoffs) and product level (server change, script, service, backup, or recovery
+procedure). Product safety evidence is never inherited from an engine audit.
+
 ## Anti-Patterns
 
 - Measuring only successful execution. Fix: test failed paths and rollback.
@@ -109,7 +121,7 @@ For a backup script that passes on Debian but has no RHEL fixture, baseline it a
 - [Two-family validation and recovery](../../docs/continuous-improvement/two-family-validation-and-recovery.md)
 - [Incident learning standard](../../docs/continuous-improvement/incident-learning-standard.md)
 - [Linux product audit checklist](../../docs/continuous-improvement/linux-product-audit-checklist.md)
-- [Portfolio Kaizen standard](C:/wamp64/www/digital-research-engine/docs/continuous-improvement/portfolio-kaizen-standard-2026-08.md)
+- Portfolio Kaizen standard: resolve `digital-research-skills` through the global engine-routing table, then read `docs/continuous-improvement/portfolio-kaizen-standard-2026-08.md`.
 - [Linux Kaizen operations loop](../../linux-sysadmin/kaizen-operations-loop.md)
 - `meta/skill-safety-audit/`
 - `15-compliance-and-auditing/`
