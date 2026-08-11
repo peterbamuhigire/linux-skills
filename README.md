@@ -212,6 +212,8 @@ credential files must remain mode 600.
 
 ## Kaizen and continuous improvement
 
+For a ready-to-run product or project operation, use [`prompts/full-kaizen-operation.md`](prompts/full-kaizen-operation.md).
+
 Kaizen is mandatory for this engine and every operational product it produces:
 scripts, skills, runbooks, infrastructure changes, monitoring, backup plans,
 recovery procedures, migration plans, and audit reports.
