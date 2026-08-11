@@ -39,9 +39,12 @@ Alma, Oracle).
 
 ## Skills
 
-This repo IS the Claude Code skills directory. On a server it is cloned to
-`~/.claude/skills` so all skills load automatically. Run `scripts/setup-claude-code.sh`
-on a new server to set everything up.
+This repo IS the Claude Code skills directory. On a server it may be placed in
+the configured Claude skill root so the skills load automatically. The optional
+`scripts/setup-claude-code.sh` adapter is not required: review its `--dry-run`
+plan first and supply exact targets, action choices, authority flags, and a new
+recovery-file path before a real run. It never pulls an existing checkout or
+executes a downloaded shell script.
 
 Available skills (use `linux-sysadmin` as the entry point):
 - `linux-sysadmin` — hub, routes to all 40 specialist skills below (grouped into 15 categories)

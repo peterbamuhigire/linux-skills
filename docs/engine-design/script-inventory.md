@@ -232,7 +232,7 @@ The foundation artifacts that Phase 1 of `build-order.md` required are
 | `sk-audit.sh` migration | ✅ DONE | `scripts/sk-audit.sh` | ~430 |
 | `sk-update-all-repos.sh` migration | ✅ DONE | `scripts/sk-update-all-repos.sh` | ~280 |
 | `sk-mysql-backup.sh` migration | ✅ DONE | `scripts/sk-mysql-backup.sh` | ~280 |
-| `setup-claude-code.sh` rewrite | ✅ DONE | installs common.sh + calls install-skills-bin core | ~200 |
+| `setup-claude-code.sh` rewrite | ✅ DONE | optional Claude adapter with explicit targets/authority, dry-run, verified SSH, and recovery gates | ~650 |
 
 **Still to do in the next session** (the remaining Phase 1 requirement):
 

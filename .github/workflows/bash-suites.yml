@@ -1,0 +1,34 @@
+name: Bash suites
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bash-suites:
+    # Keep the operating-system route minor-pinned and disposable.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate fixture-only safety evidence
+        shell: bash
+        run: python3 -X utf8 scripts/validate_safe_operation_fixture.py tests/fixtures/safe-operation-evidence.json
+
+      - name: Check distro matrices
+        shell: bash
+        run: bash scripts/tests/check-distro-matrix.sh
+
+      - name: Run common.sh suite
+        shell: bash
+        run: bash scripts/tests/common-sh.test.sh
+
+      - name: Run installer suite in the disposable CI job
+        shell: bash
+        run: bash scripts/tests/install-skills-bin.test.sh

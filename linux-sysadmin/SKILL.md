@@ -274,13 +274,23 @@ Linux Server Management
 - When a skill's knowledge changes, affected scripts are updated
   automatically in the same session — scripts and skills stay in lockstep.
 
-## Install on a new server
+## Install and discover on a new server
+
+Resolve the checkout from the active runner or operator context. The canonical
+entry point is `AGENTS.md` followed by this hub; the checkout does not need to
+live in `~/.claude/skills` or any other fixed directory.
+
+For generic or Codex use, install only the optional command accelerators from
+the resolved checkout when the operator has authorised the system change:
 
 ```bash
-# As the admin user, clone linux-skills and run the setup script:
-git clone git@github.com:<org>/linux-skills.git ~/.claude/skills
-bash ~/.claude/skills/scripts/setup-claude-code.sh
-
-# Then install the core sk-* scripts into /usr/local/bin:
-sudo install-skills-bin core
+# SKILLS_ROOT is the checkout selected by the runner or operator.
+sudo "$SKILLS_ROOT/scripts/install-skills-bin" core
 ```
+
+For Claude Code, `scripts/setup-claude-code.sh` is an optional, model-specific
+bootstrap. It may clone to the runner's configured Claude skill root and install
+system tooling; it is not required to load this hub or any specialist skill.
+Before a real run, require its `--dry-run` plan, exact target flags, separate
+network/user/privileged-write authority flags, and a new `--recovery-file`.
+The adapter does not pull an existing checkout or run a downloaded shell script.

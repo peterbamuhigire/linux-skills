@@ -36,8 +36,9 @@ This engine covers the Linux operational lifecycle:
 - Product audits for servers, scripts, runbooks, automation, backup systems,
   recovery procedures, and other operational deliverables.
 
-The engine works with Claude Code and Codex. SKILL.md is the portable execution
-unit; AGENTS.md and CLAUDE.md provide repository and host-specific overlays.
+The engine works with Claude Code, Codex, and other agent runners. `SKILL.md` is
+the portable execution unit; `AGENTS.md` is the canonical repository policy and
+`CLAUDE.md` is an optional Claude-specific overlay.
 
 ## Start here
 
@@ -54,7 +55,7 @@ unit; AGENTS.md and CLAUDE.md provide repository and host-specific overlays.
    meta/kaizen-improvement-system/SKILL.md.
 7. For current or uncertain distro, security, compliance, vendor, platform,
    legal, or safety claims, route through the separate
-   the [Digital Research Engine](https://github.com/peterbamuhigire/digital-research-skills) and use its source-evaluation and
+   [Digital Research Engine](https://github.com/peterbamuhigire/digital-research-skills) and use its source-evaluation and
    source-verification workflows before standardising the claim.
 
 The canonical cross-engine paths are maintained in the project-level agent
@@ -325,6 +326,9 @@ python -X utf8 scripts/routing_smoke_test.py
 
 # Source-ingestion guardrail
 python -X utf8 scripts/source_ingestion_guardrail.py
+
+# Fixture-only dry-run and rollback evidence; executes no host operation
+python -X utf8 scripts/validate_safe_operation_fixture.py tests/fixtures/safe-operation-evidence.json
 ~~~
 
 On a Linux or WSL host, also run:
@@ -345,13 +349,13 @@ handoff must be useful to an operator.
 
 ### Current validation limitation
 
-The current development host is Windows PowerShell. Bash and WSL are not
-available in this environment, so Bash-only distro-matrix and Linux runtime
-integration tests cannot be executed here. Static validation and routing checks
-can still run, but they do not replace live Debian-family and RHEL-family
-execution. A real Fedora/RHEL host or suitable Linux/WSL test environment is
-still required for live validation of SELinux, firewalld, httpd,
-NetworkManager, and the migrated scripts.
+The current development host is Windows PowerShell. A usable `/bin/bash`
+environment and Linux runtime are not available here, so Bash-only
+distro-matrix and Linux integration tests are `NOT ASSESSED`. Static
+validation, routing checks, and the fixture-only safety validator can run, but
+they do not replace live Debian-family and RHEL-family execution. See
+[`docs/continuous-improvement/platform-test-matrix-2026-08.md`](docs/continuous-improvement/platform-test-matrix-2026-08.md)
+for the explicit status matrix and the pinned `ubuntu-24.04` CI route.
 
 ## Repository layout
 
@@ -385,14 +389,24 @@ linux-skills/
 
 ## Installation and use
 
-The repository can be cloned into the host's skill location or used in place.
-For a fresh managed server:
+The repository can be used in place or placed in the skill root configured by
+the active runner. Start with `AGENTS.md`, then load
+`linux-sysadmin/SKILL.md`; no `~/.claude` path is required.
+
+For a fresh managed server, set `SKILLS_ROOT` to the resolved checkout and run
+the repository-local installer:
 
 ~~~bash
-git clone <repository-url> ~/.claude/skills
-bash ~/.claude/skills/scripts/setup-claude-code.sh
-sudo install-skills-bin core
+SKILLS_ROOT=/path/to/linux-skills
+sudo "$SKILLS_ROOT/scripts/install-skills-bin" core
 ~~~
+
+`scripts/setup-claude-code.sh` remains an optional Claude Code bootstrap. It
+installs and configures Claude-specific tooling, so it is not a prerequisite for
+Codex or generic-agent use. It requires an exact `--skills-root`, explicit action
+and authority flags, and a new `--recovery-file` for a real run. Review the full
+plan first with `--dry-run`; the adapter does not pull an existing checkout or
+run a downloaded shell script.
 
 The installed command location is /usr/local/bin/sk-*, the shared library is
 /usr/local/lib/linux-skills/common.sh, and operational logs belong under

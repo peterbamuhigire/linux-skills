@@ -6,9 +6,9 @@ registry is `C:\wamp64\www\skills-web-dev\docs\engine-control-plane.json`.
 
 ## Purpose
 
-This repository is a Linux server management skills system centered on portable `SKILL.md` files.
-It is optimized for Claude Code, but the same skills are intended to work cleanly with Codex
-without duplicating logic or requiring a different directory layout.
+This repository is a Linux server management skills system centred on portable `SKILL.md` files.
+The canonical operating content is runner-neutral and can be loaded by Claude Code, Codex, or
+another agent runner without duplicating logic or requiring a particular directory layout.
 
 The repository contains:
 
@@ -18,9 +18,21 @@ The repository contains:
 - Repo-wide engine and operational docs under `docs/`
 - Shared executable tooling under `scripts/`
 
-Do not assume the repo must live under a particular folder name. For Claude Code, the repo is often
-cloned to `~/.claude/skills`. For Codex, use the repository in place and treat the existing skill
-directories as the source of truth.
+Do not assume the repo must live under a particular folder name. A runner may use any configured
+skill root or the repository in place. Claude Code commonly uses `~/.claude/skills`, but that is an
+optional adapter path; Codex and generic agents should treat the existing skill directories as the
+source of truth without requiring that path.
+
+## Portable entry points
+
+- Generic or manual use: resolve the repository root from this file or `README.md`, then load
+  `linux-sysadmin/SKILL.md` as the default route.
+- Codex or another agent runner: load `AGENTS.md` and the selected `SKILL.md` directly. No
+  runner-specific setup script or fixed home-directory path is required.
+- Claude Code: `CLAUDE.md` and `scripts/setup-claude-code.sh` are optional Claude-specific
+  overlays/bootstrap. They must not be treated as prerequisites for the canonical skills. The
+  bootstrap requires an explicit `--dry-run` review, exact target flags, separate network/user/
+  privileged-write authority, and a recovery-file path before a real mutation is allowed.
 
 ## Two-Family Support (Debian/Ubuntu + RHEL)
 
@@ -96,6 +108,7 @@ engine scanner, distro-matrix test, safety review, and anti-slop release gate. N
 - Prefer local repository references over invented guidance. If a skill points to `docs/` or `references/`, follow those files.
 - Keep repo-level policy in `AGENTS.md` and Claude-specific policy in `CLAUDE.md`; do not bury repo policy inside unrelated skills.
 - If a skill changes in a way that affects `sk-*` scripts or manifests, update the related script docs and manifests in the same change.
+- Keep platform evidence in [`docs/continuous-improvement/platform-test-matrix-2026-08.md`](docs/continuous-improvement/platform-test-matrix-2026-08.md); a local structural or fixture result must not be reported as live Linux or production evidence.
 
 ## Quality Expectations
 
@@ -124,8 +137,9 @@ visual identity, web/desktop/mobile UI screens, or the visual formatting of a DO
 — routes to the **`design-system-skills`** engine, the single home for ALL design/UI/UX skills
 and the anti-AI-slop doctrine.
 
-**Resolve its location on THIS device from your global engine-routing table** (`~/.claude/CLAUDE.md`,
-or `AGENTS.md` for Codex) — never assume an absolute path; it varies per machine. Then read its
+**Resolve its location on THIS device from the active runner's global
+engine-routing table or `AGENTS.md`** — never assume an absolute path; it
+varies per machine. Then read its
 `README.md` → `doctrine/design-doctrine.md` → glob `skills/**/SKILL.md` fresh and route by
 frontmatter (read SKILL.md directly, not via the Skill tool). Content and structure stay in THIS
 engine; presentation comes from design-system-skills. Hard rule: never use a banned AI-slop font

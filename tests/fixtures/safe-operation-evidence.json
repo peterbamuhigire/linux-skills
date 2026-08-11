@@ -1,0 +1,85 @@
+{
+  "fixture_id": "linux-safe-operation-evidence-v1",
+  "data_classification": "fictional-test-data",
+  "execution_mode": "read-only-simulation",
+  "host_mutation": false,
+  "evidence_status": {
+    "structural": "PASS",
+    "behavioural": "SIMULATED",
+    "render": "NOT ASSESSED",
+    "system": "NOT ASSESSED",
+    "production": "NOT ASSESSED"
+  },
+  "scenarios": [
+    {
+      "id": "TEST-PACKAGE-DRY-RUN",
+      "domain": "package",
+      "target": "fictional-package-target",
+      "dry_run": true,
+      "host_mutation": false,
+      "planned_action": "Render the family-aware package operation plan without invoking a package manager.",
+      "rollback": {
+        "trigger": "A precondition or approval is absent.",
+        "last_safe_state": "Fixture baseline only; no host state was captured.",
+        "action": "Discard the generated plan and retain the fixture baseline.",
+        "verification": "Re-run the validator; no system state is asserted."
+      }
+    },
+    {
+      "id": "TEST-SERVICE-DRY-RUN",
+      "domain": "service",
+      "target": "fictional-service-target",
+      "dry_run": true,
+      "host_mutation": false,
+      "planned_action": "Describe configuration validation and a bounded service transition without contacting a service manager.",
+      "rollback": {
+        "trigger": "Configuration validation or the defined health check would fail.",
+        "last_safe_state": "Fixture baseline only; no service state was captured.",
+        "action": "Stop before the transition and retain the known-good plan.",
+        "verification": "Re-run the validator and require the failure state to remain visible."
+      }
+    },
+    {
+      "id": "TEST-FIREWALL-DRY-RUN",
+      "domain": "firewall",
+      "target": "fictional-firewall-target",
+      "dry_run": true,
+      "host_mutation": false,
+      "planned_action": "Describe a reviewed rule change with an exact target and confirmation boundary without changing firewall state.",
+      "rollback": {
+        "trigger": "The target, authority, or recovery rule is not explicit.",
+        "last_safe_state": "Fixture baseline only; no firewall state was captured.",
+        "action": "Reject the plan and preserve the prior fixture record.",
+        "verification": "Re-run the validator; no network policy is claimed to have changed."
+      }
+    },
+    {
+      "id": "TEST-STORAGE-DRY-RUN",
+      "domain": "storage",
+      "target": "fictional-storage-target",
+      "dry_run": true,
+      "host_mutation": false,
+      "planned_action": "Describe a capacity check, snapshot decision, and reversible storage plan without touching a filesystem.",
+      "rollback": {
+        "trigger": "Capacity, snapshot, or restore evidence is unavailable.",
+        "last_safe_state": "Fixture baseline only; no filesystem state was captured.",
+        "action": "Stop before allocation or deletion and escalate the evidence gap.",
+        "verification": "Re-run the validator; no data-loss boundary is asserted."
+      }
+    },
+    {
+      "id": "TEST-RECOVERY-DRY-RUN",
+      "domain": "recovery",
+      "target": "fictional-recovery-target",
+      "dry_run": true,
+      "host_mutation": false,
+      "planned_action": "Describe restore prerequisites, rollback triggers, and post-restore checks without restoring data.",
+      "rollback": {
+        "trigger": "Backup identity, integrity, or restore verification is missing.",
+        "last_safe_state": "Fixture baseline only; no backup or host state was captured.",
+        "action": "Do not restore; retain the blocked recovery handoff.",
+        "verification": "Re-run the validator and keep system and production evidence unassessed."
+      }
+    }
+  ]
+}

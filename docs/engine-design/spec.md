@@ -14,7 +14,7 @@ Turn `linux-skills` from a knowledge base into a full Linux server management
 engine for Ubuntu/Debian production servers. Concretely:
 
 1. Every skill has accompanying executable scripts that can be invoked either
-   by a human at a terminal or by Claude Code running non-interactively.
+   by a human at a terminal or by an agent runner in non-interactive mode.
 2. Scripts install to `/usr/local/bin/` under a single namespace so they feel
    like a coherent toolkit.
 3. Scripts are **safe by default** — they confirm before destructive
@@ -29,22 +29,25 @@ Every script supports two callers:
 
 - **Human operator at a terminal.** Interactive by default: colorized output,
   menus, prompts, confirmations before anything destructive.
-- **Claude Code running as a tool.** Non-interactive mode via flags. Claude is
-  expected to pre-commit to every decision before invoking the script.
+- **Agent runner running as a tool.** Non-interactive mode via flags. The runner
+  must pre-commit to every decision before invoking the script; command names
+  and model-specific discovery belong in adapters, not this contract.
 
 The same script file serves both; there is no separate "quiet mode" binary.
 
 ## 3. Installation model — Hybrid C
 
-The repo is cloned to `~/.claude/skills/` on each server. Scripts live in
-`scripts/` inside the repo and are **installed** (copied or symlinked) to
-`/usr/local/bin/` so they are on every user's `$PATH`.
+The repo is placed in the skill root configured by the operator or agent
+runner. It may also be used in place. Scripts live in `scripts/` inside the repo
+and are **installed** (copied or symlinked) to `/usr/local/bin/` so they are on
+every user's `$PATH`.
 
 There are two installation flows:
 
 ### 3.1 Core install (bulk, at setup time)
 
-Run once when setting up a fresh server, as part of `setup-claude-code.sh`:
+Run once when setting up a fresh server, either directly from the resolved
+checkout or through the optional `setup-claude-code.sh` adapter:
 
 ```bash
 sudo install-skills-bin core
@@ -56,8 +59,8 @@ regardless of what it runs. Core is defined by the tier-1 rows of
 
 ### 3.2 Per-skill lazy install (on first use)
 
-When Claude Code first uses a skill on a server, the skill's `SKILL.md`
-instructs Claude to ensure its scripts are installed:
+When an agent runner first uses a skill on a server, the skill's `SKILL.md`
+instructs the operator or authorised runner to ensure its scripts are installed:
 
 ```bash
 sudo install-skills-bin linux-webstack
@@ -71,8 +74,8 @@ Each skill's `SKILL.md` contains a preamble like:
 > **First use on a new server?** Run `sudo install-skills-bin linux-webstack`
 > to install this skill's scripts into `/usr/local/bin/`.
 
-Claude Code checks whether the scripts are present (e.g. `command -v sk-nginx-new-site`)
-and runs the installer if they are not.
+The runner checks whether the scripts are present (e.g. `command -v
+sk-nginx-new-site`) and runs the installer if they are not.
 
 ### 3.3 `install-skills-bin` behavior
 
@@ -82,7 +85,7 @@ and runs the installer if they are not.
 - `install-skills-bin --list` — shows what is installed vs. available, with
   the installed version (git SHA) next to each script.
 - `install-skills-bin --update [skill-name]` — runs `git pull --ff-only` in
-  `~/.claude/skills/` first, then re-runs the install for the named skill
+  the resolved checkout first, then re-runs the install for the named skill
   (or every installed skill if no name is given). Diffs the old and new
   binary; if unchanged, prints "up to date" and skips. This is the
   **upgrade path** for servers when `common.sh` or any `sk-*` script is
@@ -148,7 +151,8 @@ ERROR: --yes was passed but --domain is required.
        Run with --help to see required flags for this script.
 ```
 
-This protects Claude Code from getting a different result than it intended.
+This protects a non-interactive runner from getting a different result than it
+intended.
 
 ## 6. `common.sh` library contract
 
@@ -307,7 +311,8 @@ rows are skipped (detected by presence of `---`).
 
 ```
 linux-skills/
-├── CLAUDE.md                     # project instructions, loaded by Claude
+├── AGENTS.md                     # canonical repository instructions
+├── CLAUDE.md                     # optional Claude-specific overlay
 ├── README.md
 ├── docs/
 │   └── engine-design/            # this directory
@@ -349,7 +354,7 @@ Runtime paths on a managed server:
 /usr/local/lib/linux-skills/common.sh  # shared library
 /var/log/linux-skills/                 # script logs (--log)
 /etc/linux-skills/                     # persistent state (rare)
-~/.claude/skills/                      # the repo clone
+<configured-skill-root>/                # the repo checkout, if not used in place
 ```
 
 ## 9. Safety rules
