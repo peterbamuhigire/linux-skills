@@ -1,22 +1,12 @@
 # linux-skills
 
-See [`docs/control-plane-adoption.md`](docs/control-plane-adoption.md) for
-infrastructure agents, thin commands, safety hooks, rollback evidence, and
-incident handoffs.
+Linux Skills is a portable, two-family engine for planning and carrying out safe Linux server-management work across Debian/Ubuntu and RHEL-family systems. Its [repository control plane](docs/control-plane-adoption.md) routes an operational request to the narrowest specialist skill and keeps the human-readable procedure, authority boundary, rollback path, and verification target visible.
+
+Linux administrators, infrastructure engineers, service owners, and support teams use it for provisioning, packages, access and secrets, networking, web and mail services, storage, security, observability, troubleshooting, databases, containers, backups, performance, and compliance. It covers the operational problems that arise when a host or service must be inspected, changed, recovered, and handed over without assuming the distro, authority to change it, or evidence from a production host.
+
+The engine helps operators make small, family-aware changes with explicit preconditions, validation, recovery, and user-visible verification, reducing unsafe guesswork and making handoffs actionable. It owns Linux operations, commands, scripts, and operational evidence; current or uncertain external claims route to the <a href="https://github.com/peterbamuhigire/digital-research-skills" target="_blank" rel="noopener noreferrer">Digital Research Engine</a>, while visual design and formal software or requirements work belong with companion engines.
 
 **Author:** Peter Bamuhigire | [techguypeter.com](https://techguypeter.com) | +256 784 464 178
-
-A two-family Linux server-management engine for safe, family-aware operations.
-It routes an operational request to the smallest useful specialist skill,
-produces an explicit handoff and verification target, and keeps human-readable
-procedures as the source of truth. Optional sk-* scripts accelerate repeatable
-work but never replace the skills or manual verification.
-
-The repository currently contains **44 portable SKILL.md units**: 40 numbered
-specialist skills, the linux-sysadmin routing hub, and the skill-writing,
-skill-safety-audit, and kaizen-improvement-system meta-skills. The catalogue
-spans 15 operational categories, RHEL-family references, engine specifications,
-and optional command-line automation.
 
 ## Capabilities
 
@@ -55,7 +45,7 @@ the portable execution unit; `AGENTS.md` is the canonical repository policy and
    meta/kaizen-improvement-system/SKILL.md.
 7. For current or uncertain distro, security, compliance, vendor, platform,
    legal, or safety claims, route through the separate
-   [Digital Research Engine](https://github.com/peterbamuhigire/digital-research-skills) and use its source-evaluation and
+   <a href="https://github.com/peterbamuhigire/digital-research-skills" target="_blank" rel="noopener noreferrer">Digital Research Engine</a> and use its source-evaluation and
    source-verification workflows before standardising the claim.
 
 The canonical cross-engine paths are maintained in the project-level agent
@@ -304,7 +294,7 @@ uncertain external claims through Digital Research.
 
 This engine owns Linux content, structure, commands, operations, and evidence.
 For work that changes how an artifact looks, routes in addition to the
-design-system-skills engine:
+<a href="https://github.com/peterbamuhigire/design-system-skills" target="_blank" rel="noopener noreferrer">Design System Skills Engine</a>:
 
 - typography, type scale, colour, layout, grid, and visual identity;
 - UI/UX screens for web, desktop, or mobile products;
@@ -440,15 +430,15 @@ its manual procedure when the accelerator is absent or unsuitable.
 This engine is an operational consumer of the shared engine portfolio. Route to
 the appropriate canonical engine when the work crosses domains:
 
-- digital-research-engine for current or uncertain external facts, source
+- <a href="https://github.com/peterbamuhigire/digital-research-skills" target="_blank" rel="noopener noreferrer">Digital Research Engine</a> for current or uncertain external facts, source
   verification, OSINT, and evidence packs.
-- skills-web-dev for software, APIs, databases, cloud, DevOps, and application
+- <a href="https://github.com/peterbamuhigire/chwezi-dev-engine" target="_blank" rel="noopener noreferrer">Chwezi Dev Engine</a> for software, APIs, databases, cloud, DevOps, and application
   implementation that sits above host operations.
-- srs-skills for formal requirements, architecture, testing, deployment, and
+- <a href="https://github.com/peterbamuhigire/srs-skills" target="_blank" rel="noopener noreferrer">SRS Skills</a> for formal requirements, architecture, testing, deployment, and
   governance documentation.
-- design-system-skills for UI/UX, visual design, typography, and visual
+- <a href="https://github.com/peterbamuhigire/design-system-skills" target="_blank" rel="noopener noreferrer">Design System Skills</a> for UI/UX, visual design, typography, and visual
   presentation decisions.
-- chwezi-accounting-doctrine for accounting, financial controls, and finance
+- <a href="https://github.com/peterbamuhigire/chwezi-accounting-doctrine" target="_blank" rel="noopener noreferrer">Chwezi Accounting Doctrine</a> for accounting, financial controls, and finance
   operations integrated with Linux systems.
 
 The canonical cross-engine routing table is maintained in project-level agent
