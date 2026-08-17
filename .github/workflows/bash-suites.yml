@@ -31,4 +31,4 @@ jobs:
 
       - name: Run installer suite in the disposable CI job
         shell: bash
-        run: bash scripts/tests/install-skills-bin.test.sh
+        run: sudo bash scripts/tests/install-skills-bin.test.sh
