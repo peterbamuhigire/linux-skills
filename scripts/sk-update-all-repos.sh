@@ -9,7 +9,7 @@
 #:              step (e.g. `npm run build`). See the linux-repo-sync skill.
 #: Author:      Peter Bamuhigire <techguypeter.com>
 #: Contact:     +256784464178
-#: Version:     0.2.0
+#: Version:     0.2.1
 
 # =============================================================================
 # 1. Library + safety
@@ -27,7 +27,7 @@ source "$SK_LIB" || { echo "FATAL: cannot source common.sh" >&2; exit 5; }
 # =============================================================================
 # 2. Defaults
 # =============================================================================
-SCRIPT_VERSION="0.2.0"
+SCRIPT_VERSION="0.2.1"
 
 # Repo registry lives at /etc/linux-skills/repos.conf
 # Format: "Name|Path|post_command" — one per line, # for comments.
@@ -85,9 +85,9 @@ EXIT CODES:
     3  registry file missing
 
 EXAMPLES:
-    sudo sk-update-all-repos                      # interactive menu
-    sudo sk-update-all-repos --yes --all          # cron: update everything
-    sudo sk-update-all-repos --yes --repo "My Site"
+    update-all-repos                              # interactive menu
+    update-all-repos --yes --all                  # cron: update everything
+    update-all-repos --yes --repo "My Site"
 
 AUTHOR:
     Peter Bamuhigire <techguypeter.com> +256784464178
@@ -352,7 +352,6 @@ done
 # =============================================================================
 # 5. Sanity checks
 # =============================================================================
-require_root
 require_cmd git
 
 if [[ "$YES" == "1" ]]; then
