@@ -35,3 +35,11 @@ target, and intended privilege level.
 
 Native hooks are optional, but the safety contract is mandatory in scripts,
 CI, or explicit skill steps.
+
+## Human approval adapter
+
+Privileged and production operations are detailed in
+[`approval-enforcement.md`](approval-enforcement.md) and catalogued in
+[`approval-adapter.json`](approval-adapter.json). The command adapter must
+call the trusted gate before any L2/L3 mutation and preserve target-specific
+verification.
