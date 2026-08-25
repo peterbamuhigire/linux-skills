@@ -1,45 +1,9 @@
-# Control-plane adoption
+# Skills-engine control-plane adoption
 
-This engine adopts the shared ten-engine contract from
-`C:\wamp64\www\skills-web-dev\docs\engine-control-plane.md`. Linux doctrine
-remains authoritative for administration, hardening, services, networking,
-observability, backup, and recovery across supported distro families.
+This repository exposes the linux-skills engine through the declarative .skills-engine/engine-manifest.yaml contract.
 
-## Local roles and commands
+The engine remains independently usable. Its router and domain SKILL.md files are authoritative. Universal coordination may read the router, discover skills, inspect Git, and review declared validators.
 
-| Role | Responsibility | Permission boundary |
-|---|---|---|
-| Infrastructure planner | Define target state, dependencies, blast radius, and maintenance window. | Read-only until approved. |
-| Hardening reviewer | Check controls, exposure, least privilege, and family-specific behavior. | Does not apply changes. |
-| Incident commander | Coordinate evidence, containment, communication, and recovery. | One owner for operational decisions. |
-| Rollback reviewer | Verify backup, restore path, rollback trigger, and rehearsal evidence. | Blocks irreversible change without recovery. |
+Missing dependency, platform, source, or approval evidence is NOT ASSESSED. Writes, pulls, publication, submissions, ledger/filing changes, deployment, and control changes require explicit approval.
 
-Route thin commands `preflight`, `harden`, `incident`, and `rollback` to
-existing scripts and skill workflows. Commands must state distro family,
-target, and intended privilege level.
-
-## Hook and release contract
-
-- `preflight` checks identity, host scope, distro/version, maintenance window,
-  dependencies, backup state, and a dry-run plan.
-- `context` loads inventory, service state, configuration source, recent
-  incidents, and prior changes without duplicating stale facts.
-- `before_write` requires explicit target confirmation, least privilege,
-  reversibility, backup/restore evidence, and bounded blast radius.
-- `after_write` runs service, security, connectivity, log, and idempotence
-  checks and records commands and outputs.
-- `release` requires dry-run, backup, audit-log, and rollback-test evidence;
-  destructive or production changes fail closed when any is absent.
-- `stop` preserves command output, state deltas, failed checks, and a safe
-  recovery handoff. Never hide a partial mutation behind success.
-
-Native hooks are optional, but the safety contract is mandatory in scripts,
-CI, or explicit skill steps.
-
-## Human approval adapter
-
-Privileged and production operations are detailed in
-[`approval-enforcement.md`](approval-enforcement.md) and catalogued in
-[`approval-adapter.json`](approval-adapter.json). The command adapter must
-call the trusted gate before any L2/L3 mutation and preserve target-specific
-verification.
+MCP-safe operations are read-only discovery, router read, skill read, and documented-check inspection. Forks are inspected from their own checkout; no validator is invented when the repository is not catalogued.

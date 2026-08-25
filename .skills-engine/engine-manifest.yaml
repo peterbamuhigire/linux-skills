@@ -1,0 +1,26 @@
+schema_version: "1.0"
+engine_id: linux-skills
+display_name: Linux Skills
+contract_version: "1.0"
+router:
+  path: AGENTS.md
+skills:
+  discovery_glob: '**/SKILL.md'
+validation:
+  - id: release-gate
+    command: >-
+      python -X utf8 scripts/validate_skills.py --baseline quality-baseline.json
+    working_directory: .
+    platforms:
+      - linux
+agent_integration:
+  supported_modes: [full, sequential, read_only, not_assessed]
+  local_context_files: [AGENTS.md, .skills-engine/AGENTS-INTEGRATION.md]
+  mcp_safe_tools: [discover_engine, read_router, read_skill, validate_documented_checks]
+  approval_required_for: [write_files, pull, update, publish, external_message]
+  forbidden_operations: [git_reset, git_clean, force_push, arbitrary_shell, broad_delete]
+  fork_behavior: inspect_local_router_without_inventing_validators
+source_of_truth:
+  router: AGENTS.md
+  skills: '**/SKILL.md'
+  references: references/**
