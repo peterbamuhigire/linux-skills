@@ -290,6 +290,10 @@ A product audit must distinguish:
 Use docs/continuous-improvement/linux-product-audit-checklist.md and route
 uncertain external claims through Digital Research.
 
+## September 2026 book-driven Kaizen wave
+
+See [`docs/continuous-improvement/book-driven-kaizen-2026-09-01.md`](docs/continuous-improvement/book-driven-kaizen-2026-09-01.md) for the NGO cyber-resilience route and its routing fixture.
+
 ## Design and presentation boundary
 
 This engine owns Linux content, structure, commands, operations, and evidence.

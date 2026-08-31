@@ -118,6 +118,12 @@ For password SSH still enabled on Ubuntu, first verify key login in a second ses
 
 <!-- dual-compat-end -->
 
+## Book-derived additions
+
+For an NGO or civil-society programme that must join host controls to mission,
+identity, staff, incident, and recovery risk, load
+`../linux-ngo-cyber-resilience/SKILL.md`.
+
 ## References
 
 - [`references/hardening-checklist.md`](references/hardening-checklist.md)

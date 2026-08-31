@@ -129,6 +129,12 @@ A table was corrupted at 10:20 EAT. Verify and decrypt the 10:00 database backup
 
 <!-- dual-compat-end -->
 
+## Book-derived additions
+
+For a mission-aware NGO recovery plan, load
+`../../07-security-and-hardening/linux-ngo-cyber-resilience/SKILL.md` and retain
+evidence preservation, staged restoration, integrity checks, and credential rotation.
+
 ## References
 
 - [`references/backup-strategy.md`](references/backup-strategy.md)

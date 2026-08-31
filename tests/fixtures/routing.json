@@ -8,6 +8,7 @@
   {"id":"positive-aide","kind":"positive","prompt":"Configure AIDE file integrity monitoring and verify its baseline","expected":"linux-file-integrity"},
   {"id":"positive-rsync","kind":"positive","prompt":"Build an incremental offsite rsync backup with retention","expected":"linux-rsync-sync"},
   {"id":"positive-perf","kind":"positive","prompt":"Use perf to profile CPU hotspots before tuning","expected":"linux-perf-profiling"},
+  {"id":"positive-ngo-cyber","kind":"positive","prompt":"Design practical Linux cyber resilience for an NGO across identity, hosts, backups, incident response and mission continuity","expected":"linux-ngo-cyber-resilience"},
 
   {"id":"negative-audit-vs-harden","kind":"negative","prompt":"Apply authorised SSH firewall and sysctl hardening fixes","expected":"linux-server-hardening","forbidden":["linux-security-analysis"]},
   {"id":"negative-monitor-vs-observe","kind":"negative","prompt":"Check current CPU memory disk and network health on one host","expected":"linux-system-monitoring","forbidden":["linux-observability"]},
