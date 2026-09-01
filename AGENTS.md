@@ -6,6 +6,21 @@ See `.skills-engine/engine-manifest.yaml` for the declarative contract used by t
 
 The package may read the router, discover skills, inspect Git, and run only declared checks. Missing evidence is NOT ASSESSED; writes, pulls, publication, submissions, ledger/filing changes, deployment, or control changes require explicit approval.
 
+## Mandatory Digital Research currentness gate for Kaizen
+
+Every Kaizen audit, skill edit, reference update, validator change, and
+standardisation decision MUST begin with the Digital Research Engine at
+`C:\wamp64\www\digital-research-skills`. Read its `source-evaluation` and
+`source-verification` skills and the currentness gate reference
+`docs/continuous-improvement/kaizen-currentness-gate.md`.
+
+Before admitting any standard, policy, law, technology, platform capability,
+software version, command, security control, benchmark, or lifecycle claim,
+record source scope, publication/version date, access date, freshness class,
+review date, support status, and uncertainty. Use current authoritative
+primary sources; quarantine stale/ambiguous/unsupported claims and mark them
+`NOT_ASSESSED`. Books are durable concept inputs only.
+
 The shared control plane is adapted to operational safety in
 [`docs/control-plane-adoption.md`](docs/control-plane-adoption.md); the central
 registry is `C:\wamp64\www\skills-web-dev\docs\engine-control-plane.json`.

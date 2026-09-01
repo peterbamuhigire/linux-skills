@@ -392,3 +392,7 @@ sudo install-skills-bin linux-dns-server
 |---|---|---|---|
 | sk-dns-zone-check | scripts/sk-dns-zone-check.sh | no | Validate a BIND zone file with `named-checkzone`, dump SOA/NS/A/MX, diff against previous snapshot. |
 | sk-bind-reload | scripts/sk-bind-reload.sh | no | Run `named-checkconf`, `named-checkzone` for each modified zone, `rndc reload`, verify serial bumped. |
+
+## Currentness reference
+
+Read [current DNS operations and source gate](references/current-dns-operations-and-source-gate.md) before making version-sensitive BIND, DNSSEC, packaging, directive, or command claims. Verify current support with ISC and protocol behaviour with the relevant IETF RFC; the book is conceptual background only.

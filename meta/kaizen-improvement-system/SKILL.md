@@ -113,6 +113,14 @@ procedure). Product safety evidence is never inherited from an engine audit.
 
 For a backup script that passes on Debian but has no RHEL fixture, baseline it as partially assessed, cap the audit at 65/100, and record the missing distro evidence as a gap. Add a safe RHEL-family fixture, test restore and failure recovery, update the script/reference, and re-audit toward 95/100 only after the evidence passes.
 
+## Mandatory Digital Research currentness gate
+
+Every Kaizen cycle must begin with `digital-research-skills` source evaluation
+and source verification. Record scope, dates, freshness class, support status,
+uncertainty, and review date for current distro, package, protocol, security,
+vendor, command, and lifecycle claims; quarantine unsupported claims as
+`NOT_ASSESSED`. Apply the [portfolio Kaizen currentness gate](../../../digital-research-skills/docs/continuous-improvement/kaizen-currentness-gate.md).
+
 ## References
 
 - [Local adoption plan](../../docs/continuous-improvement/kaizen-adoption-2026-08.md)
@@ -125,3 +133,4 @@ For a backup script that passes on Debian but has no RHEL fixture, baseline it a
 - [Linux Kaizen operations loop](../../linux-sysadmin/kaizen-operations-loop.md)
 - `meta/skill-safety-audit/`
 - `15-compliance-and-auditing/`
+- [Current DNS operations and source gate](../../03-networking-and-dns/linux-dns-server/references/current-dns-operations-and-source-gate.md) - durable DNS operations, safe change, and current-version verification.
