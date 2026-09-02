@@ -134,3 +134,4 @@ vendor, command, and lifecycle claims; quarantine unsupported claims as
 - `meta/skill-safety-audit/`
 - `15-compliance-and-auditing/`
 - [Current DNS operations and source gate](../../03-networking-and-dns/linux-dns-server/references/current-dns-operations-and-source-gate.md) - durable DNS operations, safe change, and current-version verification.
+- [Book-driven Kaizen Wave 3](references/book-driven-kaizen-wave-3-2026-09-02.md) - safe shell contracts, UNIX mental models, idempotence, observability, recovery, and current-command gates.
