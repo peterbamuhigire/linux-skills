@@ -133,6 +133,16 @@ engine scanner, distro-matrix test, safety review, and anti-slop release gate. N
 
 ## Quality Expectations
 
+### Machine-error editorial gate (ME1-ME7)
+
+Apply Digital Research's `docs/continuous-improvement/machine-errors-editorial-gate-2026-09-03.md`
+to runbooks, incident explanations, change plans, and operator-facing notes. Check ME1 semantic
+repetition, ME2 decorative symmetry, ME3 over-explanation, ME4 inflated risk or benefit, ME5 generic
+examples, ME6 repeated rhetorical tics, and ME7 paragraphs with no command, condition, evidence,
+decision, or recovery step. Preserve repeated commands, warnings, rollback steps, and safety gates
+when they are functionally required; record the exception. Unavailable host, lab, or source evidence
+is `NOT_ASSESSED`.
+
 - Skills must be composable: one clear responsibility per skill, with explicit handoffs.
 - Outputs must be actionable: findings, commands, decisions, verification steps, or produced artifacts.
 - References must be curated, structured, and directly useful. Avoid raw dumps.
