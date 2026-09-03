@@ -1,6 +1,6 @@
 # linux-skills
 
-Linux Skills is a portable, two-family engine for planning and carrying out safe Linux server-management work across Debian/Ubuntu and RHEL-family systems. Its [repository control plane](docs/control-plane-adoption.md) routes an operational request to the narrowest specialist skill and keeps the human-readable procedure, authority boundary, rollback path, and verification target visible.
+Linux Skills is a portable, two-family operations engine for planning and carrying out safe Linux server-management work across Debian/Ubuntu and RHEL-family systems. It helps operators make one bounded change at a time with explicit targets, preconditions, distro-aware commands, failure recovery, rollback, and verification, so a procedure remains understandable and supportable under pressure.
 
 Linux administrators, infrastructure engineers, service owners, and support teams use it for provisioning, packages, access and secrets, networking, web and mail services, storage, security, observability, troubleshooting, databases, containers, backups, performance, and compliance. It covers the operational problems that arise when a host or service must be inspected, changed, recovered, and handed over without assuming the distro, authority to change it, or evidence from a production host.
 
