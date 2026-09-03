@@ -8,7 +8,7 @@ The engine helps operators make small, family-aware changes with explicit precon
 
 **Author:** Peter Bamuhigire | [techguypeter.com](https://techguypeter.com) | +256 784 464 178
 
-## Capabilities
+## Capability map
 
 This engine covers the Linux operational lifecycle:
 
