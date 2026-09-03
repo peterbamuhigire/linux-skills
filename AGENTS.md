@@ -143,6 +143,17 @@ decision, or recovery step. Preserve repeated commands, warnings, rollback steps
 when they are functionally required; record the exception. Unavailable host, lab, or source evidence
 is `NOT_ASSESSED`.
 
+### Impeccable-derived AS overlay
+
+When a runbook, dashboard, presentation, or web handoff contains visual or human-facing output,
+apply AS1-AS7 from Digital Research. Purple gradients, glassmorphism, neon glow, AI-beige defaults,
+decorative editorial scaffolding, and decorative motion are no-ship choices. For text-only
+operations, use AS1, AS3, AS5, and AS6; mark visual checks `not_applicable`. Preserve repeated
+commands, warnings, rollback steps, and safety gates because they carry operational function.
+Unavailable host, render, browser, or detector evidence remains `NOT_ASSESSED`.
+AS1-AS7 coverage is explicit: AS2, AS4, and AS7 are `not_applicable` for text-only runbooks, while
+visual or rendered operational artefacts require the full overlay.
+
 - Skills must be composable: one clear responsibility per skill, with explicit handoffs.
 - Outputs must be actionable: findings, commands, decisions, verification steps, or produced artifacts.
 - References must be curated, structured, and directly useful. Avoid raw dumps.
