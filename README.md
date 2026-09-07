@@ -457,6 +457,14 @@ negative test now exercise that contract. This is structural synthetic-fixture
 evidence; host execution, distro detection, production change, and restore
 evidence remain NOT_ASSESSED.
 
+## Agent runtime safety — 2026-09-07
+
+[`docs/agent-runtime-safety.md`](docs/agent-runtime-safety.md) adds a
+runner-neutral orchestration contract: untrusted-content handling, disposable
+context, approval checkpoints, least agency, observability, heartbeat kill, and
+rollback verification. It complements the Linux risk classes and does not claim
+live host or production readiness.
+
 Validated with `python -B -X utf8 -m unittest discover -s tests -v`: 14 tests
 passed. Next action is to connect the manifest to operator-collected read-only
 evidence and review distro-specific recovery paths before privileged action.
