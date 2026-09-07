@@ -44,6 +44,11 @@ class SafeOperationFixtureTests(unittest.TestCase):
         self.assertEqual(fixture["evidence_status"]["system"], "NOT ASSESSED")
         self.assertEqual(fixture["evidence_status"]["production"], "NOT ASSESSED")
 
+    def test_evidence_manifest_requires_scope_and_review_status(self):
+        fixture = self.load_fixture()
+        fixture["evidence_manifest"]["source_scope"] = ""
+        self.assertTrue(any("evidence_manifest.source_scope" in error for error in MODULE.validate_data(fixture)))
+
 
 if __name__ == "__main__":
     unittest.main()

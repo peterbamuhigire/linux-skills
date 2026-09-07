@@ -447,3 +447,16 @@ the appropriate canonical engine when the work crosses domains:
 
 The canonical cross-engine routing table is maintained in project-level agent
 instructions rather than copied into this repository.
+
+## Kaizen P0 implementation status — 2026-09-07
+
+The bounded first wave adds an `evidence_manifest` requirement to
+`scripts/validate_safe_operation_fixture.py`, covering fixture identity, source
+scope, observation date, and review status. The representative fixture and its
+negative test now exercise that contract. This is structural synthetic-fixture
+evidence; host execution, distro detection, production change, and restore
+evidence remain NOT_ASSESSED.
+
+Validated with `python -B -X utf8 -m unittest discover -s tests -v`: 14 tests
+passed. Next action is to connect the manifest to operator-collected read-only
+evidence and review distro-specific recovery paths before privileged action.

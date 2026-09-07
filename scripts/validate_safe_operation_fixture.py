@@ -30,6 +30,7 @@ EXPECTED_EVIDENCE = {
     "system": "NOT ASSESSED",
     "production": "NOT ASSESSED",
 }
+REQUIRED_EVIDENCE_MANIFEST_FIELDS = ("fixture_id", "source_scope", "observed_at", "review_status")
 FORBIDDEN_EXECUTION_MARKERS = (
     "sudo ",
     "systemctl ",
@@ -65,6 +66,11 @@ def validate_data(data: Any) -> list[str]:
     for key, expected in EXPECTED_EVIDENCE.items():
         if evidence.get(key) != expected:
             errors.append(f"evidence_status.{key} must be {expected}")
+
+    manifest = _require_mapping(root.get("evidence_manifest"), "evidence_manifest", errors)
+    for key in REQUIRED_EVIDENCE_MANIFEST_FIELDS:
+        if not isinstance(manifest.get(key), str) or not manifest[key].strip():
+            errors.append(f"evidence_manifest.{key} must be non-empty text")
 
     scenarios = root.get("scenarios")
     if not isinstance(scenarios, list) or not scenarios:

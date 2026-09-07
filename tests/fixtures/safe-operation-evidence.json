@@ -10,6 +10,12 @@
     "system": "NOT ASSESSED",
     "production": "NOT ASSESSED"
   },
+  "evidence_manifest": {
+    "fixture_id": "linux-safe-operation-evidence-v1",
+    "source_scope": "local fictional fixture; no host contacted",
+    "observed_at": "2026-09-07",
+    "review_status": "structural fixture validation only"
+  },
   "scenarios": [
     {
       "id": "TEST-PACKAGE-DRY-RUN",
