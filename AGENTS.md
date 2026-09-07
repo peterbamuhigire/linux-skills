@@ -1,5 +1,29 @@
 # linux-skills Agent Guide
 
+## Codex-only model setup and Kaizen review
+
+Apply this section only when the active runner is Codex. Claude and other
+runners must skip it and retain their own models and full engine capabilities.
+
+Before substantive Codex work, resolve this engine's directory and an available
+Python 3.11+ interpreter (use its absolute path if absent from PATH), then run
+`python <engine-root>/.codex/ensure_model_policy.py --runtime codex --check`.
+If it reports configuration drift, Peter authorises the bounded
+`--runtime codex --apply` repair, followed by `--check`. The helper backs up
+changes and preserves unrelated settings. If Python or configuration access is
+unavailable, report the limitation; do not replace the user's config wholesale.
+Read `.codex/model-policy.md` for the full contract. Use Astra (`gpt-6-astra`)
+for the root/orchestrator and reviewer; explicitly pin execution subagents to
+Luna (`gpt-5.6-luna`). Delegate bounded work when useful and keep final review
+with Astra. A running session may need restarting for root settings to apply.
+
+Every Kaizen cycle MUST check latest official model releases and actual
+runtime availability, record dated evidence and a retain/change decision,
+and evaluate better candidates before recommending replacement. Preserve the
+pins until Peter authorises a verified change. Missing model-currentness
+evidence is `NOT_ASSESSED`. This Codex adapter must not change CLAUDE.md,
+Claude configuration, domain doctrine, permission settings or skill access.
+
 ## Universal agent integration
 
 See `.skills-engine/engine-manifest.yaml` for the declarative contract used by the optional universal coordination package. The router and domain SKILL.md files remain authoritative.
@@ -10,7 +34,7 @@ The package may read the router, discover skills, inspect Git, and run only decl
 
 Every Kaizen audit, skill edit, reference update, validator change, and
 standardisation decision MUST begin with the Digital Research Engine at
-`C:\wamp64\www\digital-research-engine`. Read its `source-evaluation` and
+`C:\wamp64\www\digital-research-skills`. Read its `source-evaluation` and
 `source-verification` skills and the currentness gate reference
 `docs/continuous-improvement/kaizen-currentness-gate.md`.
 
@@ -83,7 +107,7 @@ Start from these skills unless the task is already narrowly scoped:
 - `skill-writing`: meta-skill for creating or upgrading portable skills
 - `skill-safety-audit`: review gate for new or imported skill content
 
-For current or uncertain distro, security, compliance, vendor, platform, legal, or safety claims, route to `C:\wamp64\www\digital-research-engine` and load its source-evaluation and source-verification skills before standardising a command or policy. This Linux engine is an operational consumer of that research engine, not a substitute for current-source verification.
+For current or uncertain distro, security, compliance, vendor, platform, legal, or safety claims, route to `C:\wamp64\www\digital-research-skills` and load its source-evaluation and source-verification skills before standardising a command or policy. This Linux engine is an operational consumer of that research engine, not a substitute for current-source verification.
 
 ## Routing
 

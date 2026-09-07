@@ -6,7 +6,7 @@ This repository applies the July 2026 portable skill contract to all active `SKI
 
 ## Active catalogue
 
-Active skills are discovered from the filesystem as files named `SKILL.md`, excluding generated, virtual-environment, and template directories. `templates/skill-template.md` is not active. The current contract covers 43 active skills: 40 numbered specialists, `linux-sysadmin`, and two `meta` skills.
+Active skills are discovered from the filesystem as files named `SKILL.md`, excluding generated, virtual-environment, and template directories. `templates/skill-template.md` is not active. Use the validator's discovered count; do not treat a historical catalogue count as an exclusion rule.
 
 ## Entrypoint contract
 
@@ -38,6 +38,6 @@ Every active skill must meet these gates:
 ```powershell
 python -X utf8 scripts/validate_skills.py --baseline quality-baseline.json
 python -X utf8 scripts/routing_smoke_test.py
-python -X utf8 C:\Users\Peter\.claude\skills\skills\sdlc-meta\skill-engine-audit\scripts\engine_compliance.py --root . --active-root . --details
+python -X utf8 C:\wamp64\www\skills-web-dev\skills\sdlc-meta\skill-engine-audit\scripts\engine_compliance.py --root . --active-root . --details
 bash scripts/tests/check-distro-matrix.sh
 ```

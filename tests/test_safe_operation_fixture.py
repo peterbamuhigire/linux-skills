@@ -27,6 +27,18 @@ class SafeOperationFixtureTests(unittest.TestCase):
         errors = MODULE.validate_data(fixture)
         self.assertTrue(any("host_mutation must be false" in error for error in errors))
 
+    def test_duplicate_scenario_identity_is_rejected(self):
+        fixture = self.load_fixture()
+        fixture["scenarios"][1]["id"] = fixture["scenarios"][0]["id"]
+        self.assertTrue(any("id must be unique" in error for error in MODULE.validate_data(fixture)))
+
+    def test_invalid_identity_types_are_rejected(self):
+        for value in (None, [], {}, True, 1):
+            with self.subTest(value=value):
+                fixture = self.load_fixture()
+                fixture["scenarios"][0]["id"] = value
+                self.assertTrue(MODULE.validate_data(fixture))
+
     def test_system_and_production_evidence_remain_unassessed(self):
         fixture = self.load_fixture()
         self.assertEqual(fixture["evidence_status"]["system"], "NOT ASSESSED")

@@ -72,6 +72,7 @@ def validate_data(data: Any) -> list[str]:
         return errors
 
     seen_domains: set[str] = set()
+    seen_ids: set[str] = set()
     for index, raw_scenario in enumerate(scenarios):
         label = f"scenarios[{index}]"
         scenario = _require_mapping(raw_scenario, label, errors)
@@ -79,8 +80,13 @@ def validate_data(data: Any) -> list[str]:
         if missing:
             errors.append(f"{label} missing: {', '.join(missing)}")
             continue
-        if not str(scenario["id"]).startswith("TEST-"):
+        scenario_id = scenario["id"]
+        if not isinstance(scenario_id, str) or not scenario_id.startswith("TEST-"):
             errors.append(f"{label}.id must be test-labelled")
+        elif scenario_id in seen_ids:
+            errors.append(f"{label}.id must be unique")
+        else:
+            seen_ids.add(scenario_id)
         if not str(scenario["target"]).startswith("fictional-"):
             errors.append(f"{label}.target must be fictional/test-labelled")
         domain = str(scenario["domain"])
@@ -117,7 +123,7 @@ def main() -> int:
     args = parser.parse_args()
     try:
         data = json.loads(args.fixture.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         print(f"[FAIL] cannot read fixture: {exc}")
         return 1
 
