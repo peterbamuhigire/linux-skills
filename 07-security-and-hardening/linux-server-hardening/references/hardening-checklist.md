@@ -52,13 +52,98 @@ sudo cp -a /etc/php/*/fpm/php.ini /tmp/php.ini.$(date +%F).bak
 
 ## SSH hardening
 
-Put drop-in hardening in a separate file so the distro-shipped
-`sshd_config` stays untouched:
+### Lockout-safe password-authentication rollout
+
+Treat disabling password authentication as an access migration, not as a
+single configuration edit. Do not proceed until every required operator
+device has authenticated with a key in a **new** session. Keep the existing
+session open throughout the change and confirm an out-of-band recovery path
+(console, hypervisor, or provider rescue system). A key on one device does not
+protect access from another device.
+
+Create or import a key on each client, then install only its public half in
+the target user's `~/.ssh/authorized_keys`. Never copy a private key into the
+repository, the server, or an unencrypted transfer location. For a Unix-like
+client, the usual transfer is:
 
 ```bash
-sudo install -o root -g root -m 600 /dev/null /etc/ssh/sshd_config.d/99-hardening.conf
-sudo tee /etc/ssh/sshd_config.d/99-hardening.conf >/dev/null <<'EOF'
-# /etc/ssh/sshd_config.d/99-hardening.conf
+ssh-keygen -t ed25519 -f ~/.ssh/<device-key>
+ssh-copy-id -i ~/.ssh/<device-key>.pub <user>@<host>
+```
+
+If `ssh-copy-id` is unavailable, use the client's native SSH-key deployment
+method or append the public key through the still-working password session.
+After deployment, verify the server-side file without printing key material:
+
+```bash
+stat -c '%a %U:%G %n' /home/<user>/.ssh /home/<user>/.ssh/authorized_keys
+ssh-keygen -lf /home/<user>/.ssh/authorized_keys
+```
+
+Prove each device independently. The test must disable password and
+keyboard-interactive authentication so a saved password cannot create a false
+pass:
+
+```bash
+ssh -i ~/.ssh/<device-key> -o IdentitiesOnly=yes \
+    -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no \
+    <user>@<host>
+```
+
+On Windows PowerShell, use the key-copy feature provided by the client or
+pass the remote command as one quoted argument. Verify the resulting file
+mode and key fingerprint on the server before changing `sshd`.
+
+On Debian systems, inspect `/etc/ssh/sshd_config.d/` before choosing the
+drop-in name. OpenSSH processes `Include` globs in lexical order and, unless
+documented otherwise, uses the first value obtained for each keyword. A
+cloud-init file such as `50-cloud-init.conf` can therefore make a later
+`99-hardening.conf` ineffective. Use an earlier, clearly named file for the
+values that must override it, or edit the configuration owner deliberately.
+
+For the first change, use the smallest possible drop-in:
+
+```bash
+sudoedit /etc/ssh/sshd_config.d/00-linux-skills-ssh.conf
+```
+
+Add:
+
+```text
+# Managed by linux-server-hardening.
+# Keep this file earlier than cloud-init drop-ins that enable passwords.
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+```
+
+Validate and reload without interrupting existing sessions:
+
+```bash
+sudo sshd -t
+sudo systemctl reload ssh
+sudo sshd -T | grep -Ei 'passwordauthentication|kbdinteractiveauthentication|pubkeyauthentication'
+```
+
+Then establish a **new** key-only session from every required device. Do not
+close the original session until all tests pass. Only after this gate should
+you add the rest of the SSH baseline below, one bounded change at a time, by
+editing this same file. Do not define the same keyword in multiple drop-ins.
+
+### Full SSH baseline
+
+Keep the file early enough to override any later policy that enables a
+setting, and verify the effective result with `sshd -T` rather than trusting
+the file alone:
+
+```bash
+sudoedit /etc/ssh/sshd_config.d/00-linux-skills-ssh.conf
+```
+
+Use the following baseline, merging it into the minimal drop-in above rather
+than defining the same keyword in multiple files:
+
+```text
+# /etc/ssh/sshd_config.d/00-linux-skills-ssh.conf
 # Managed by linux-server-hardening — edit this file, not sshd_config.
 
 # Identity
@@ -85,13 +170,13 @@ AllowStreamLocalForwarding no
 GatewayPorts no
 PermitTunnel no
 
-# Who is allowed in (one of these two lines, not both)
+# Who is allowed in (optional; add only after testing group membership in a
+# new key session for every operator)
 # AllowUsers deploy admin
-AllowGroups ssh-users
+# AllowGroups ssh-users
 
 # Pre-login banner
 Banner /etc/ssh/sshd-banner
-EOF
 ```
 
 Create the banner:
@@ -119,17 +204,20 @@ Test, then reload — keep your existing session open:
 sudo sshd -t && sudo systemctl reload ssh
 ```
 
-In a **new** terminal, verify:
+In a **new** terminal from every required device, verify:
 
 ```bash
-ssh -v $USER@<host>      # should succeed with key
-sudo sshd -T | grep -E 'permitrootlogin|passwordauth|allowgroups'
+ssh -v -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no \
+    $USER@<host>          # should succeed with key
+sudo sshd -T | grep -Ei 'permitrootlogin|passwordauthentication|allowgroups'
 ```
 
 **Rollback:**
 
 ```bash
-sudo rm /etc/ssh/sshd_config.d/99-hardening.conf
+sudo mv /etc/ssh/sshd_config.d/00-linux-skills-ssh.conf \
+        /etc/ssh/sshd_config.d/00-linux-skills-ssh.conf.disabled
+sudo sshd -t
 sudo systemctl reload ssh
 ```
 
