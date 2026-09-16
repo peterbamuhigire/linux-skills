@@ -32,7 +32,9 @@ the portable execution unit; `AGENTS.md` is the canonical repository policy and
 
 ## Start here
 
-## Prompt-generation capability — September 2026
+## Prompt-generation capability — 2026-09-17
+
+This release adds evidence-first candidate testing, failure-slice review, and explicit `NOT_ASSESSED` handling for volatile prompt claims.
 
 Linux operations can now be handed to an AI as bounded prompts containing host
 and distro context, exact targets, preconditions, dry-run/rollback behaviour,
