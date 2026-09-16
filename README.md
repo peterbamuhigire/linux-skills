@@ -32,6 +32,13 @@ the portable execution unit; `AGENTS.md` is the canonical repository policy and
 
 ## Start here
 
+## Prompt-generation capability — September 2026
+
+Linux operations can now be handed to an AI as bounded prompts containing host
+and distro context, exact targets, preconditions, dry-run/rollback behaviour,
+verification, and stop conditions through the local [domain prompt
+contract](docs/ai-prompting/domain-prompt-compilation-contract.md).
+
 1. Read AGENTS.md for repository rules and routing boundaries.
 2. Start with linux-sysadmin/SKILL.md when the request spans components or the
    correct specialist is not known.

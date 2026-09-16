@@ -213,6 +213,10 @@ engine; presentation comes from design-system-skills. Hard rule: never use a ban
 type — state the chosen typeface and reason before producing any artifact.
 <!-- /design-system-skills:trigger -->
 
+## DOMAIN PROMPT GENERATION CONTRACT
+
+For a prompt handoff, read the local [domain prompt contract](docs/ai-prompting/domain-prompt-compilation-contract.md). Generate a ready-to-paste operational prompt with exact target, current state, one operation, commands/checks, risk class, approval boundary, maintenance window, rollback, and evidence. Never guess hosts, credentials, versions, or live state. **Ready-to-paste prompt:** include assumptions and NOT ASSESSED gaps. **Failure action:** stop on target or evidence failure, or revise one reversible step.
+
 ## PORTFOLIO CRAFT CONTRACT
 
 Load `C:\wamp64\www\chwezi-engine-agents\docs\operations\portfolio-craft-standard-2026-09-04.md` when available. Execute administration work in bounded changes: frame the target and recovery consequence, select one operation, inspect ownership and current state, preview or stage the smallest change, verify normal and failure behaviour, refine the runbook or script, and record before/after and rollback proof. Do not generate a complete server change as one opaque batch. Apply `Observe -> Baseline -> Select -> Experiment -> Check -> Standardise -> Teach -> Re-measure` to kaizen itself. Missing host, lab, source, live, or recovery evidence is `NOT ASSESSED`, never a pass.
