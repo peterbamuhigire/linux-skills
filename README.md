@@ -4,7 +4,7 @@ Linux Skills is a portable, two-family operations engine for planning and carryi
 
 Linux administrators, infrastructure engineers, service owners, and support teams use it for provisioning, packages, access and secrets, networking, web and mail services, storage, security, observability, troubleshooting, databases, containers, backups, performance, and compliance. It covers the operational problems that arise when a host or service must be inspected, changed, recovered, and handed over without assuming the distro, authority to change it, or evidence from a production host.
 
-The engine helps operators make small, family-aware changes with explicit preconditions, validation, recovery, and user-visible verification, reducing unsafe guesswork and making handoffs actionable. It owns Linux operations, commands, scripts, and operational evidence; current or uncertain external claims route to the <a href="https://github.com/peterbamuhigire/digital-research-skills" target="_blank" rel="noopener noreferrer">Digital Research Engine</a>, while visual design and formal software or requirements work belong with companion engines.
+The engine helps operators make small, family-aware changes with explicit preconditions, validation, recovery, and user-visible verification, reducing unsafe guesswork and making handoffs actionable. It owns Linux operations, commands, scripts, and operational evidence; current or uncertain external claims route to the <a href="https://github.com/peterbamuhigire/digital-research-engine" target="_blank" rel="noopener noreferrer">Digital Research Engine</a>, while visual design and formal software or requirements work belong with companion engines.
 
 **Author:** Peter Bamuhigire | [techguypeter.com](https://techguypeter.com) | +256 784 464 178
 
@@ -54,7 +54,7 @@ contract](docs/ai-prompting/domain-prompt-compilation-contract.md).
    meta/kaizen-improvement-system/SKILL.md.
 7. For current or uncertain distro, security, compliance, vendor, platform,
    legal, or safety claims, route through the separate
-   <a href="https://github.com/peterbamuhigire/digital-research-skills" target="_blank" rel="noopener noreferrer">Digital Research Engine</a> and use its source-evaluation and
+   <a href="https://github.com/peterbamuhigire/digital-research-engine" target="_blank" rel="noopener noreferrer">Digital Research Engine</a> and use its source-evaluation and
    source-verification workflows before standardising the claim.
 
 The canonical cross-engine paths are maintained in the project-level agent
@@ -443,7 +443,7 @@ its manual procedure when the accelerator is absent or unsuitable.
 This engine is an operational consumer of the shared engine portfolio. Route to
 the appropriate canonical engine when the work crosses domains:
 
-- <a href="https://github.com/peterbamuhigire/digital-research-skills" target="_blank" rel="noopener noreferrer">Digital Research Engine</a> for current or uncertain external facts, source
+- <a href="https://github.com/peterbamuhigire/digital-research-engine" target="_blank" rel="noopener noreferrer">Digital Research Engine</a> for current or uncertain external facts, source
   verification, OSINT, and evidence packs.
 - <a href="https://github.com/peterbamuhigire/chwezi-dev-engine" target="_blank" rel="noopener noreferrer">Chwezi Dev Engine</a> for software, APIs, databases, cloud, DevOps, and application
   implementation that sits above host operations.

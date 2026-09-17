@@ -34,7 +34,7 @@ The package may read the router, discover skills, inspect Git, and run only decl
 
 Every Kaizen audit, skill edit, reference update, validator change, and
 standardisation decision MUST begin with the Digital Research Engine at
-`C:\wamp64\www\digital-research-skills`. Read its `source-evaluation` and
+`C:\wamp64\www\digital-research-engine`. Read its `source-evaluation` and
 `source-verification` skills and the currentness gate reference
 `docs/continuous-improvement/kaizen-currentness-gate.md`.
 
@@ -57,7 +57,7 @@ another agent runner without duplicating logic or requiring a particular directo
 
 The repository contains:
 
-- 40 specialist skills grouped into 15 numbered category directories (`01-provisioning-and-bootstrap` through `15-compliance-and-auditing`), e.g. `04-web-and-mail-services/linux-webstack/`, `07-security-and-hardening/linux-security-analysis/`, `12-containers-and-orchestration/linux-container-engine/`, and `15-compliance-and-auditing/linux-auditd-rules/` (the `linux-sysadmin/` hub stays at the repo root)
+- 41 specialist skills grouped into 15 numbered category directories (`01-provisioning-and-bootstrap` through `15-compliance-and-auditing`), e.g. `04-web-and-mail-services/linux-webstack/`, `07-security-and-hardening/linux-security-analysis/`, `12-containers-and-orchestration/linux-container-engine/`, and `15-compliance-and-auditing/linux-auditd-rules/` (the `linux-sysadmin/` hub stays at the repo root)
 - A colocated `SKILL.md` in each skill directory
 - Optional `references/` and `scripts/` folders inside each skill directory
 - Repo-wide engine and operational docs under `docs/`
@@ -107,7 +107,7 @@ Start from these skills unless the task is already narrowly scoped:
 - `skill-writing`: meta-skill for creating or upgrading portable skills
 - `skill-safety-audit`: review gate for new or imported skill content
 
-For current or uncertain distro, security, compliance, vendor, platform, legal, or safety claims, route to `C:\wamp64\www\digital-research-skills` and load its source-evaluation and source-verification skills before standardising a command or policy. This Linux engine is an operational consumer of that research engine, not a substitute for current-source verification.
+For current or uncertain distro, security, compliance, vendor, platform, legal, or safety claims, route to `C:\wamp64\www\digital-research-engine` and load its source-evaluation and source-verification skills before standardising a command or policy. This Linux engine is an operational consumer of that research engine, not a substitute for current-source verification.
 
 ## Routing
 
@@ -115,7 +115,7 @@ Use `linux-sysadmin` as the default entry point for server work, then route quic
 
 - Provisioning and bootstrap: `linux-server-provisioning`, `linux-cloud-init`, `linux-package-management`, `linux-config-management`
 - Deployment and web stack: `linux-site-deployment`, `linux-webstack`, `linux-mail-server`, `linux-service-management`
-- Security: `linux-security-analysis`, `linux-server-hardening`, `linux-access-control`, `linux-firewall-ssl`, `linux-intrusion-detection`, `linux-secrets`
+- Security: `linux-security-analysis`, `linux-server-hardening`, `linux-access-control`, `linux-firewall-ssl`, `linux-intrusion-detection`, `linux-ngo-cyber-resilience`, `linux-secrets`
 - Operations: `linux-system-monitoring`, `linux-log-management`, `linux-observability`, `linux-disk-storage`
 - Networking: `linux-network-admin`, `linux-dns-server`
 - Virtualization and automation: `linux-virtualization`, `linux-repo-sync`

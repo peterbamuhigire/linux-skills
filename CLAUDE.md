@@ -47,7 +47,7 @@ recovery-file path before a real run. It never pulls an existing checkout or
 executes a downloaded shell script.
 
 Available skills (use `linux-sysadmin` as the entry point):
-- `linux-sysadmin` — hub, routes to all 40 specialist skills below (grouped into 15 categories)
+- `linux-sysadmin` — hub, routes to all 41 specialist skills below (grouped into 15 categories)
 
 **Meta / foundation**
 - `linux-bash-scripting` — **meta-skill.** Canonical script template, `common.sh` library contract, standard flags, interactive UX rules. Load before writing or reviewing any `sk-*` script.
@@ -83,6 +83,7 @@ Available skills (use `linux-sysadmin` as the entry point):
 - `linux-server-hardening` — harden SSH, firewall, sysctl, web stack
 - `linux-firewall-ssl` — UFW/firewalld rules, certbot, TLS config
 - `linux-intrusion-detection` — fail2ban and active intrusion response
+- `linux-ngo-cyber-resilience` — practical security and incident resilience for NGOs and small mission-led teams
 
 **08 — Observability & logging**
 - `linux-system-monitoring` — CPU, memory, disk, network health

@@ -115,11 +115,11 @@ For a backup script that passes on Debian but has no RHEL fixture, baseline it a
 
 ## Mandatory Digital Research currentness gate
 
-Every Kaizen cycle must begin with `digital-research-skills` source evaluation
+Every Kaizen cycle must begin with `digital-research-engine` source evaluation
 and source verification. Record scope, dates, freshness class, support status,
 uncertainty, and review date for current distro, package, protocol, security,
 vendor, command, and lifecycle claims; quarantine unsupported claims as
-`NOT_ASSESSED`. Apply the [portfolio Kaizen currentness gate](../../../digital-research-skills/docs/continuous-improvement/kaizen-currentness-gate.md).
+`NOT_ASSESSED`. Apply the [portfolio Kaizen currentness gate](../../../digital-research-engine/docs/continuous-improvement/kaizen-currentness-gate.md).
 
 ## References
 
@@ -129,7 +129,7 @@ vendor, command, and lifecycle claims; quarantine unsupported claims as
 - [Two-family validation and recovery](../../docs/continuous-improvement/two-family-validation-and-recovery.md)
 - [Incident learning standard](../../docs/continuous-improvement/incident-learning-standard.md)
 - [Linux product audit checklist](../../docs/continuous-improvement/linux-product-audit-checklist.md)
-- Portfolio Kaizen standard: resolve `digital-research-skills` through the global engine-routing table, then read `docs/continuous-improvement/portfolio-kaizen-standard-2026-08.md`.
+- Portfolio Kaizen standard: resolve `digital-research-engine` through the global engine-routing table, then read `docs/continuous-improvement/portfolio-kaizen-standard-2026-08.md`.
 - [Linux Kaizen operations loop](../../linux-sysadmin/kaizen-operations-loop.md)
 - `meta/skill-safety-audit/`
 - `15-compliance-and-auditing/`

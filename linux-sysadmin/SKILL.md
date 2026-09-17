@@ -252,6 +252,7 @@ Linux Server Management
 | 37 | linux-auditd-rules |
 | 38 | linux-file-integrity |
 | 39 | linux-benchmark-scanning |
+| 40 | linux-ngo-cyber-resilience |
 
 ## Standing Rules
 
