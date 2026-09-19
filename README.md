@@ -474,6 +474,34 @@ context, approval checkpoints, least agency, observability, heartbeat kill, and
 rollback verification. It complements the Linux risk classes and does not claim
 live host or production readiness.
 
+## September 2026 operations-contract extensions
+
+The B33 Phase 1 fixture wave adds bounded references for scheduled operation
+plans, business-to-recovery evidence, agent-event review, and reversible runtime
+experiments:
+
+- [`agent-operation-contract.md`](10-automation-and-scripting/linux-bash-scripting/references/agent-operation-contract.md)
+  requires target identity, resource-root safety, timezone/missed-run semantics,
+  duplicate-trigger handling, partial outcomes, and native-exit mapping.
+- [`business-recovery-evidence.md`](09-troubleshooting-and-recovery/linux-disaster-recovery/references/business-recovery-evidence.md)
+  crosswalks business objectives to recovery-point, key, isolated-restore,
+  application-verification, and offline-access evidence.
+- [`agent-event-review.md`](08-observability-and-logging/linux-log-management/references/agent-event-review.md)
+  keeps capture, aggregation, redaction, and reviewer decisions distinct.
+- [`agent-runtime-experiments.md`](14-performance-and-kernel/linux-perf-profiling/references/agent-runtime-experiments.md)
+  requires baseline/treatment comparability, tail and error guardrails, and
+  rollback evidence.
+
+Run the synthetic normal and failure paths with:
+
+~~~powershell
+python -X utf8 -m unittest tests/test_kaizen_contracts.py -v
+~~~
+
+These fixtures prove structural decisions only. Host scheduling, Debian and
+RHEL execution, live log retention, restore, and production performance remain
+`NOT_ASSESSED`.
+
 Validated with `python -B -X utf8 -m unittest discover -s tests -v`: 14 tests
 passed. Next action is to connect the manifest to operator-collected read-only
 evidence and review distro-specific recovery paths before privileged action.

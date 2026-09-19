@@ -1,0 +1,12 @@
+{
+  "fixture_id": "linux-runtime-experiment-v1",
+  "data_classification": "fictional-test-data",
+  "execution_mode": "read-only-simulation",
+  "host_mutation": false,
+  "evidence_status": {"structural": "PASS", "live_performance": "NOT_ASSESSED", "production": "NOT_ASSESSED"},
+  "baseline": {"workload": "fictional-request", "environment": "fictional-lab", "instrumentation": "fixture-counter", "samples": 100, "latency_ms": {"p50": 10, "p95": 20, "p99": 40}, "errors": 0, "resource": {"cpu_percent": 20}},
+  "treatment": {"factor": "fictional-bounded-setting", "instrumentation": "fixture-counter", "samples": 100, "latency_ms": {"p50": 9, "p95": 19, "p99": 42}, "errors": 1, "resource": {"cpu_percent": 19}},
+  "guardrail": {"tail_regression": true, "error_regression": true, "decision": "REJECT_TREATMENT"},
+  "rollback": {"trigger": "tail or error guardrail regresses", "last_safe_state": "baseline", "action": "restore baseline setting", "verification": "repeat baseline fixture"},
+  "comparability_failure": {"baseline_instrumentation": "fixture-counter", "treatment_instrumentation": "different-counter", "decision": "INCOMPARABLE"}
+}

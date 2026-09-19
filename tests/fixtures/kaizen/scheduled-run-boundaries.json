@@ -1,0 +1,23 @@
+{
+  "fixture_id": "linux-scheduled-run-boundaries-v1",
+  "data_classification": "fictional-test-data",
+  "execution_mode": "read-only-simulation",
+  "host_mutation": false,
+  "evidence_status": "STRUCTURAL_ONLY",
+  "contract_version": "linux-agent-operation-v1",
+  "normal": {
+    "target": {"kind": "fictional-host", "name": "fictional-scheduler-01", "fingerprint": "host-fixture-01"},
+    "principal": {"name": "fictional-agent", "authority": "fixture-only"},
+    "resource": {"path": "fictional-root/job-input", "allowed_root": "fictional-root"},
+    "action": "inspect scheduled input",
+    "schedule": {"trigger_id": "trigger-001", "timezone": "Africa/Kampala", "missed_run": "skip"},
+    "expected": {"status": "NO_CHANGE", "native_exit_code": null, "side_effects": 0}
+  },
+  "failure_cases": [
+    {"case": "path-escape", "resource": "fictional-root/../outside", "expected": "BLOCKED_PATH_ESCAPE", "opened": false},
+    {"case": "duplicate-trigger", "trigger_ids": ["trigger-001", "trigger-001"], "expected": "BLOCKED_DUPLICATE_TRIGGER", "simulated_runs": 0},
+    {"case": "unknown-runtime", "runtime": "unknown-fixture-runtime", "expected": "NOT_ASSESSED", "executed": false},
+    {"case": "partial-output", "targets": [{"name": "fictional-a", "status": "SUCCEEDED"}, {"name": "fictional-b", "status": "FAILED"}], "expected": "PARTIAL"}
+  ],
+  "rollback": {"trigger": "precondition or verification fails", "last_safe_state": "fixture plan", "action": "discard plan", "verification": "re-run structural checks"}
+}

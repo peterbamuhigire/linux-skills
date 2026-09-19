@@ -1,0 +1,16 @@
+{
+  "fixture_id": "linux-business-recovery-evidence-v1",
+  "data_classification": "fictional-test-data",
+  "execution_mode": "read-only-simulation",
+  "host_mutation": false,
+  "evidence_status": "STRUCTURAL_ONLY",
+  "objective": {"owner": "fictional-service-owner", "service": "fictional-orders", "rpo": "4h", "rto": "2h", "acceptance_task": "complete fictional order lookup"},
+  "recovery_point": {"id": "fictional-rp-older", "integrity": "PASS", "age": "within-retention", "key_reference": "fictional-key-ref", "dependencies": ["fictional-dns", "fictional-identity"]},
+  "restore_test": {"target": "fictional-isolated-target", "application_task": "complete fictional order lookup", "access_check": "fictional-reader-can-connect", "status": "SIMULATED"},
+  "offline_access": {"instructions": "fictional-offline-runbook", "authority": "fictional-recovery-owner", "protected_secret_reference": "fictional-key-ref", "status": "AVAILABLE_IN_FIXTURE"},
+  "failure_cases": [
+    {"case": "unavailable-key", "key_reference_status": "UNAVAILABLE", "expected": "FAILED", "secret_exposed": false},
+    {"case": "catalogue-only", "catalogue_check": "PASS", "application_task": "NOT_RUN", "expected": "NOT_ASSESSED"},
+    {"case": "primary-docs-unavailable", "offline_access": "AVAILABLE_IN_FIXTURE", "expected": "RECOVERY_PLAN_REMAINS_ACCESSIBLE"}
+  ]
+}

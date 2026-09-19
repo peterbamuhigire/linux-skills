@@ -1,0 +1,12 @@
+{
+  "fixture_id": "linux-agent-event-review-v1",
+  "data_classification": "fictional-test-data",
+  "execution_mode": "read-only-simulation",
+  "host_mutation": false,
+  "evidence_status": "STRUCTURAL_ONLY",
+  "capture": {"event_id": "event-001", "source_locator": "fictional-journal:42", "target": "fictional-host", "occurred_at": "2026-09-19T10:00:00+03:00", "severity": "warning", "owner": "fictional-ops", "redacted": true},
+  "aggregation": {"event_id": "event-001", "count": 2, "first_seen": "2026-09-19T10:00:00+03:00", "last_seen": "2026-09-19T10:05:00+03:00", "source_locators": ["fictional-journal:42", "fictional-journal:43"]},
+  "review": {"decision": "investigate", "rationale": "repeated warning in bounded window", "next_verification": "fictional-health-check"},
+  "redaction": {"secret_field": "[REDACTED]", "trace_echo": false},
+  "failure_cases": [{"case": "rotated-period", "coverage": "UNKNOWN", "expected": "NOT_ASSESSED"}]
+}
