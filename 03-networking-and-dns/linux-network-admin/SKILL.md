@@ -95,6 +95,10 @@ and [`docs/multi-distro/plan.md`](../../docs/multi-distro/plan.md).
 - [`references/netplan-reference.md`](references/netplan-reference.md)
 - [`references/networkmanager-reference.md`](references/networkmanager-reference.md)
 - [`references/diagnostics-tree.md`](references/diagnostics-tree.md)
+- [`references/appliance-vlan-config.md`](references/appliance-vlan-config.md) —
+  appliance-side VLAN config (UniFi, pfSense/OPNsense, MikroTik) — the
+  switch/router/AP counterpart to this skill's own host-side netplan VLAN
+  coverage.
 
 ## Evidence Produced
 
@@ -158,6 +162,9 @@ Guide* (netplan, systemd-networkd, systemd-resolved).
 - Validating netplan YAML before applying it.
 - Testing whether a port is reachable from the server.
 - Verifying NTP sync is healthy.
+- Configuring VLANs on the **appliance** side (UniFi, pfSense/OPNsense,
+  MikroTik) rather than the host's own NIC — see
+  [`references/appliance-vlan-config.md`](references/appliance-vlan-config.md).
 
 ## When NOT to use
 
@@ -185,6 +192,14 @@ Guide* (netplan, systemd-networkd, systemd-resolved).
    systemd-resolved state.
 6. **Confirm before applying route changes over SSH.** A broken default
    route = no way back in.
+7. **Change-window verification is before/after, matched to the exact
+   change, not a generic re-check.** `netplan generate` (parse), `netplan
+   try` (apply with revert), then re-read the specific interface/route/DNS
+   state that changed and compare to the pre-change baseline before
+   confirming. This is the same discipline
+   [`cisco-ios-patterns`](../../16-network-equipment/cisco-ios-patterns/SKILL.md#change-window-verification)
+   applies to router/switch changes — capture state, apply the smallest
+   change, re-read and diff, only then persist.
 
 ---
 

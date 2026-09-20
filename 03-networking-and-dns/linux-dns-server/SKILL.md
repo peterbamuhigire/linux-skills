@@ -155,6 +155,11 @@ the Canonical *Ubuntu Server Guide* (BIND9 packaging).
 - Debugging zone transfer failures or serial mismatches.
 - Adding, removing, or editing DNS records in a managed zone.
 - Setting up reverse DNS (in-addr.arpa / ip6.arpa).
+- Installing or operating **Pi-hole** specifically — blocklists, DoH
+  upstream, DHCP-integrated sinkholing — see
+  [`references/pihole-blocklist-sinkholing.md`](references/pihole-blocklist-sinkholing.md)
+  (a different DNS product from the BIND/Unbound content in the rest of this
+  skill).
 
 ## When NOT to use
 
@@ -361,6 +366,10 @@ dig @127.0.0.1 -x 192.0.2.10 +short
 - [`references/zone-file-syntax.md`](references/zone-file-syntax.md) —
   zone file syntax with all record types, reverse zones, slave config,
   complete worked examples.
+- [`references/pihole-blocklist-sinkholing.md`](references/pihole-blocklist-sinkholing.md) —
+  Pi-hole install, blocklist management, DNS-over-HTTPS upstream, and
+  DHCP-integrated sinkholing — a different DNS product from BIND/Unbound,
+  documented separately from the rest of this skill.
 - Book: *Linux Network Administrator's Guide* — BIND chapters.
 - Book: *Ubuntu Server Guide* — BIND9 package layout.
 - Man pages: `named(8)`, `named.conf(5)`, `named-checkconf(8)`,

@@ -32,6 +32,13 @@ Alma, Oracle).
   `07-security-and-hardening`, `08-observability-and-logging`, `09-troubleshooting-and-recovery`,
   `10-automation-and-scripting`, `11-databases-and-caching`, `12-containers-and-orchestration`,
   `13-backup-and-archiving`, `14-performance-and-kernel`, `15-compliance-and-auditing`
+- `16-network-equipment/` - Network **appliance** skills (Cisco IOS/IOS-XE,
+  Netmiko SSH automation, pre-deployment config validation), added
+  2026-09-20. These are **not** `linux-*`-named and are deliberately exempt
+  from the two-family Distro support invariant above — they target
+  vendor router/switch operating systems, not a Linux distribution. See
+  `16-network-equipment/*/SKILL.md` for each skill's own "Distro support:
+  Not applicable" rationale.
 - `meta/` - Engine-authoring skills (`skill-writing`, `skill-safety-audit`)
 - `commands/` - Useful command references organized by topic
 - `scripts/` - Reusable shell scripts and snippets

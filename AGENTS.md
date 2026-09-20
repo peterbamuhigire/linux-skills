@@ -30,6 +30,13 @@ See `.skills-engine/engine-manifest.yaml` for the declarative contract used by t
 
 The package may read the router, discover skills, inspect Git, and run only declared checks. Missing evidence is NOT ASSESSED; writes, pulls, publication, submissions, ledger/filing changes, deployment, or control changes require explicit approval.
 
+## Rules
+
+Always-on cross-cutting principles live in `rules/` — see `rules/README.md`.
+Load `rules/common/core.md` alongside the routed skill for any non-trivial task;
+it is short and does not replace the skill, only sets the baseline the skill
+operates within.
+
 ## Mandatory Digital Research currentness gate for Kaizen
 
 Every Kaizen audit, skill edit, reference update, validator change, and
@@ -57,7 +64,7 @@ another agent runner without duplicating logic or requiring a particular directo
 
 The repository contains:
 
-- 41 specialist skills grouped into 15 numbered category directories (`01-provisioning-and-bootstrap` through `15-compliance-and-auditing`), e.g. `04-web-and-mail-services/linux-webstack/`, `07-security-and-hardening/linux-security-analysis/`, `12-containers-and-orchestration/linux-container-engine/`, and `15-compliance-and-auditing/linux-auditd-rules/` (the `linux-sysadmin/` hub stays at the repo root)
+- 44 specialist skills grouped into 16 numbered category directories (`01-provisioning-and-bootstrap` through `16-network-equipment`), e.g. `04-web-and-mail-services/linux-webstack/`, `07-security-and-hardening/linux-security-analysis/`, `12-containers-and-orchestration/linux-container-engine/`, `15-compliance-and-auditing/linux-auditd-rules/`, and `16-network-equipment/cisco-ios-patterns/` (the `linux-sysadmin/` hub stays at the repo root). `16-network-equipment/` skills are network-appliance skills, not `linux-*`-named, and are exempt from the two-family Distro support invariant (see that category's own SKILL.md rationale).
 - A colocated `SKILL.md` in each skill directory
 - Optional `references/` and `scripts/` folders inside each skill directory
 - Repo-wide engine and operational docs under `docs/`
@@ -125,6 +132,11 @@ Use `linux-sysadmin` as the default entry point for server work, then route quic
 - Performance and kernel: `linux-sysctl-tuning`, `linux-kernel-modules`, `linux-perf-profiling`
 - Compliance and auditing: `linux-auditd-rules`, `linux-file-integrity`, `linux-benchmark-scanning`
 - Incident and recovery: `linux-troubleshooting`, `linux-disaster-recovery`
+
+Windows hosts: `windows-admin-engine-skills` (`C:\wamp64\www\windows-admin-engine-skills`) —
+the reciprocal statement on that engine's side is "Linux hosts: `linux-skills`"
+(`windows-admin-engine-skills\AGENTS.md`). The two engines are the estate's paired
+infrastructure engines; route to whichever OS the target host actually runs.
 
 When the task is about creating or upgrading skills in this repo, use `skill-writing`. When the
 task is about script authoring or review under `scripts/`, use `linux-bash-scripting` first.

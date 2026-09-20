@@ -1,0 +1,21 @@
+{
+  "name": "chwezi-linux",
+  "owner": { "name": "Peter Bamuhigire", "email": "peter.bamuhigire@gmail.com" },
+  "metadata": { "description": "Chwezi Linux engine — sysadmin provisioning, hardening, networking, DNS/mail, firewall/SSL, storage, security analysis, observability, and disaster recovery" },
+  "plugins": [
+    {
+      "name": "linux",
+      "source": "./",
+      "description": "45 skills for Linux sysadmin work: provisioning, access and secrets, networking/DNS, web/mail services, virtualization, storage, hardening, observability, troubleshooting, automation, databases, containers, backup, performance, and compliance",
+      "version": "1.0.0",
+      "author": { "name": "Peter Bamuhigire" },
+      "homepage": "https://github.com/chwezi/linux-skills",
+      "repository": "https://github.com/chwezi/linux-skills",
+      "license": "MIT",
+      "keywords": ["linux", "sysadmin", "networking", "security", "hardening"],
+      "category": "infrastructure",
+      "tags": ["linux", "sysadmin", "infrastructure"],
+      "strict": false
+    }
+  ]
+}

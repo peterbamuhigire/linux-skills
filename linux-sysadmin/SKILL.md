@@ -205,6 +205,11 @@ Linux Server Management
   38.  File integrity (FIM with AIDE)
   39.  Benchmark scanning (security-benchmark / compliance scans)
 
+  NETWORK EQUIPMENT (routers/switches — not a Linux host)
+  41.  Cisco IOS / IOS-XE config review and change-window checks
+  42.  Netmiko SSH automation against network devices
+  43.  Pre-deployment router/switch config validation
+
 ═══════════════════════════════════════════════════════
 ```
 
@@ -253,6 +258,9 @@ Linux Server Management
 | 38 | linux-file-integrity |
 | 39 | linux-benchmark-scanning |
 | 40 | linux-ngo-cyber-resilience |
+| 41 | cisco-ios-patterns |
+| 42 | netmiko-ssh-automation |
+| 43 | network-config-validation |
 
 ## Standing Rules
 

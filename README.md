@@ -1,34 +1,54 @@
 # linux-skills
 
-Linux Skills is a portable, two-family operations engine for planning and carrying out safe Linux server-management work across Debian/Ubuntu and RHEL-family systems. It helps operators make one bounded change at a time with explicit targets, preconditions, distro-aware commands, failure recovery, rollback, and verification, so a procedure remains understandable and supportable under pressure.
-
-Linux administrators, infrastructure engineers, service owners, and support teams use it for provisioning, packages, access and secrets, networking, web and mail services, storage, security, observability, troubleshooting, databases, containers, backups, performance, and compliance. It covers the operational problems that arise when a host or service must be inspected, changed, recovered, and handed over without assuming the distro, authority to change it, or evidence from a production host.
-
-The engine helps operators make small, family-aware changes with explicit preconditions, validation, recovery, and user-visible verification, reducing unsafe guesswork and making handoffs actionable. It owns Linux operations, commands, scripts, and operational evidence; current or uncertain external claims route to the <a href="https://github.com/peterbamuhigire/digital-research-engine" target="_blank" rel="noopener noreferrer">Digital Research Engine</a>, while visual design and formal software or requirements work belong with companion engines.
+Linux Skills is a 48-skill, two-family operations engine for planning and carrying out safe Linux server-management work across Debian/Ubuntu and RHEL-family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) systems, plus a dedicated network-appliance cluster (Cisco IOS/IOS-XE, Netmiko SSH automation, pre-deployment config validation) for the routers and switches those servers sit behind. It helps operators make one bounded change at a time with explicit targets, preconditions, distro-aware commands, failure recovery, rollback, and verification, so a procedure remains understandable and supportable under pressure — never a distro-forked script or a command that silently does the wrong thing on the other family. Linux administrators, infrastructure engineers, service owners, support teams, and network engineers use it for provisioning, packages, access and secrets, networking, web and mail services, storage, security, observability, troubleshooting, databases, containers, backups, performance, and compliance. Concrete use cases: provisioning a fresh Ubuntu or Rocky Linux server with the right family-mapped commands (`01-provisioning-and-bootstrap/linux-server-provisioning`), hardening SSH/firewall/sysctl before go-live (`07-security-and-hardening/linux-server-hardening`), diagnosing a production incident with a symptom-based decision tree (`09-troubleshooting-and-recovery/linux-troubleshooting`), restoring from backup under pressure (`09-troubleshooting-and-recovery/linux-disaster-recovery`), or pushing and validating a Cisco switch config change safely (`16-network-equipment/`). The engine works with Claude Code, Codex, and other agent runners: `SKILL.md` is the portable execution unit, `AGENTS.md` is the canonical repository policy, and `CLAUDE.md` is an optional Claude-specific overlay. It owns Linux operations, commands, scripts, and operational evidence; current or uncertain external claims route to the <a href="https://github.com/peterbamuhigire/digital-research-engine" target="_blank" rel="noopener noreferrer">Digital Research Engine</a>, while visual design and formal software or requirements work belong with companion engines.
 
 **Author:** Peter Bamuhigire | [techguypeter.com](https://techguypeter.com) | +256 784 464 178
 
+Install it as a native Claude Code plugin, or npm-free from a clone:
+
+```
+# Native Claude Code plugin
+/plugin marketplace add https://github.com/peterbamuhigire/linux-skills
+/plugin install linux@chwezi-linux
+
+# npm-free, from a clone
+git clone https://github.com/peterbamuhigire/linux-skills
+cd linux-skills
+./install.sh --scope project      # macOS/Linux/Git Bash
+.\install.ps1 -scope project      # Windows PowerShell
+```
+
+(`chwezi-linux` is the marketplace name and `linux` the plugin name declared in `.claude-plugin/marketplace.json`; both installers delegate to the vendored `scripts/install-engine.js` and accept `--scope user|project`. Note this repository's own skills live at the repo root in numbered directories, e.g. `01-provisioning-and-bootstrap/`, not under a `skills/` subfolder — the installer copies from there.) The one confirmed sister engine, referenced reciprocally, is **windows-admin-engine-skills** — the two of them are the estate's paired infrastructure engines: this engine's own `AGENTS.md` routes Windows hosts to `windows-admin-engine-skills` ("Linux hosts: `linux-skills`" is the mirror statement on the Windows side), and the Windows engine's own delivery evidence and engine-parity planning docs name `linux-skills` as the reference engine and capability benchmark for its build. Both are independent, optional installs — pull in whichever OS the target host actually runs. For current or uncertain external facts (CVEs, distro EOL dates, vendor advisories), route to the **Digital Research Engine** (`digital-research-engine`), and for any visual/presentation work (reports, runbooks rendered as DOCX/PDF), route to **Design System Skills** (`design-system-skills`) — both named in this engine's own README "Related engines" section below.
+
 ## Capability map
 
-This engine covers the Linux operational lifecycle:
+| Category | SKILL.md files | Coverage |
+|---|---|---|
+| `07-security-and-hardening/` | 5 | Security analysis, hardening, firewall/SSL, intrusion detection, NGO cyber-resilience |
+| `01-provisioning-and-bootstrap/` | 4 | Server provisioning, cloud-init/Kickstart, package management, config management |
+| `08-observability-and-logging/` | 3 | System monitoring, log management, Prometheus/observability |
+| `04-web-and-mail-services/` | 3 | Nginx/Apache/PHP-FPM/Node webstack, site deployment, mail (Postfix/Exim) |
+| `11-databases-and-caching/` | 3 | MySQL/MariaDB, PostgreSQL, Redis/Memcached |
+| `12-containers-and-orchestration/` | 3 | Docker/Podman engine, container deployment, image hygiene |
+| `13-backup-and-archiving/` | 3 | Rsync sync, archive integrity, filesystem snapshots |
+| `14-performance-and-kernel/` | 3 | Sysctl tuning, kernel modules, perf profiling |
+| `15-compliance-and-auditing/` | 3 | Auditd rules, file integrity (AIDE), benchmark/compliance scanning |
+| `16-network-equipment/` | 3 | Cisco IOS patterns, Netmiko SSH automation, pre-deployment config validation (appliance OS, not a Linux distro — exempt from the two-family matrix) |
+| `02-users-access-and-secrets/` | 2 | Access control (users/SSH/sudo/wheel), secrets scanning and rotation |
+| `03-networking-and-dns/` | 2 | Network admin (interfaces/routes/DNS client/NTP), authoritative DNS server |
+| `05-services-and-virtualization/` | 2 | Systemd service management, KVM/libvirt/LXD virtualization |
+| `09-troubleshooting-and-recovery/` | 2 | Symptom-based troubleshooting, disaster recovery |
+| `10-automation-and-scripting/` | 2 | Repo-sync automation, (plus the meta bash-scripting skill below) |
+| `06-storage-and-filesystems/` | 1 | Disk usage, cleanup, inode issues, swap |
+| `linux-sysadmin/` | 1 | Hub skill — routes to all 47 specialist skills |
+| `meta/` | 3 | `linux-bash-scripting` (script template/common.sh contract), `skill-writing`, `skill-safety-audit` |
 
-- Debian/Ubuntu and RHEL-family provisioning and package management.
-- Bash scripting, common.sh abstractions, and family-aware automation.
-- Users, SSH access, secrets, permissions, and least-privilege controls.
-- Networking, DNS, NTP, NetworkManager, Netplan, mail, web stacks, and TLS.
-- Systemd services, virtualization, containers, databases, and caching.
-- Monitoring, logging, observability, alerting, and health endpoints.
-- Storage, filesystems, performance, kernel tuning, and kernel modules.
-- Backups, archive integrity, filesystem snapshots, restore, and disaster recovery.
-- Security analysis, hardening, firewalls, SELinux/AppArmor, intrusion detection,
-  auditd, file integrity, and benchmark/compliance scanning.
-- Troubleshooting, incident learning, migrations, cutovers, and stabilisation.
-- Product audits for servers, scripts, runbooks, automation, backup systems,
-  recovery procedures, and other operational deliverables.
+48 `SKILL.md` files across 16 numbered categories plus the hub and meta directories, at repository root (verified 2026-09-20 by direct count).
 
-The engine works with Claude Code, Codex, and other agent runners. `SKILL.md` is
-the portable execution unit; `AGENTS.md` is the canonical repository policy and
-`CLAUDE.md` is an optional Claude-specific overlay.
+## References
+
+- Mustafa, A. et al. *Everything Claude Code (ECC)*. GitHub: affaan-m/ECC, 2026. — This engine adapts ECC by name in several places, not by blanket mention: `16-network-equipment/cisco-ios-patterns`, `16-network-equipment/netmiko-ssh-automation`, and `16-network-equipment/network-config-validation` are each adapted directly from ECC's `skills/cisco-ios-patterns`, `skills/netmiko-ssh-automation`, and `skills/network-config-validation` (imported 2026-09-20 as the LNX-2 network-equipment cluster, confirmed to fill a gap this engine had no equivalent for). `rules/common/core.md` records a second-wave audit of ECC's `skills/safety-guard/SKILL.md` against this engine's own `hooks/destructive-bash-gate.js`: its mechanical destructive-command interception was judged redundant, but its **Freeze Mode** scoping discipline (declare the blast radius before a sensitive operation; flag anything outside it) was imported as operator/agent discipline, distinct from the destructive-command gate. The `install.sh`/`install.ps1` MSYS2 path-conversion and symlink-resolution logic is also adapted from ECC's own installer, per the same pattern documented across the Chwezi estate.
+- No further citations beyond ECC were found in this engine's `rules/`, `skills/`, `docs/`, or `book-extractions/`-equivalent material — this engine has no book-extraction directory; its doctrine is operational (distro-family mappings, safe-operations standard) rather than literature-derived.
 
 ## Start here
 
@@ -386,6 +406,7 @@ linux-skills/
 |-- 13-backup-and-archiving/         Rsync, archives, snapshots
 |-- 14-performance-and-kernel/       Profiling, sysctl, modules
 |-- 15-compliance-and-auditing/      Auditd, FIM, benchmark scanning
+|-- 16-network-equipment/            Cisco IOS, Netmiko automation, config validation
 |-- docs/                            Engine design and improvement records
 |-- scripts/                         Optional sk-* tools and validators
 |-- commands/                        Focused command references
@@ -443,6 +464,7 @@ its manual procedure when the accelerator is absent or unsuitable.
 This engine is an operational consumer of the shared engine portfolio. Route to
 the appropriate canonical engine when the work crosses domains:
 
+- <a href="https://github.com/peterbamuhigire/windows-admin-engine-skills" target="_blank" rel="noopener noreferrer">Windows Administration Engine</a>, this engine's paired infrastructure sister — Windows hosts route there (this engine's own `AGENTS.md` states "Linux hosts: `linux-skills`" as the reciprocal statement from that engine's side).
 - <a href="https://github.com/peterbamuhigire/digital-research-engine" target="_blank" rel="noopener noreferrer">Digital Research Engine</a> for current or uncertain external facts, source
   verification, OSINT, and evidence packs.
 - <a href="https://github.com/peterbamuhigire/chwezi-dev-engine" target="_blank" rel="noopener noreferrer">Chwezi Dev Engine</a> for software, APIs, databases, cloud, DevOps, and application
