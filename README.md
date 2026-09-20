@@ -20,6 +20,17 @@ cd linux-skills
 
 (`chwezi-linux` is the marketplace name and `linux` the plugin name declared in `.claude-plugin/marketplace.json`; both installers delegate to the vendored `scripts/install-engine.js` and accept `--scope user|project`. Note this repository's own skills live at the repo root in numbered directories, e.g. `01-provisioning-and-bootstrap/`, not under a `skills/` subfolder — the installer copies from there.) The one confirmed sister engine, referenced reciprocally, is **windows-admin-engine-skills** — the two of them are the estate's paired infrastructure engines: this engine's own `AGENTS.md` routes Windows hosts to `windows-admin-engine-skills` ("Linux hosts: `linux-skills`" is the mirror statement on the Windows side), and the Windows engine's own delivery evidence and engine-parity planning docs name `linux-skills` as the reference engine and capability benchmark for its build. Both are independent, optional installs — pull in whichever OS the target host actually runs. For current or uncertain external facts (CVEs, distro EOL dates, vendor advisories), route to the **Digital Research Engine** (`digital-research-engine`), and for any visual/presentation work (reports, runbooks rendered as DOCX/PDF), route to **Design System Skills** (`design-system-skills`) — both named in this engine's own README "Related engines" section below.
 
+## Content integrity
+
+This repository contains no client names, client data, or project-specific
+work product; it is a general-purpose skill engine with no client- or
+project-scoped directories to exclude. Users installing this engine should
+still exercise their own due diligence — you can ask Claude Code or Codex to
+run a security scan of this engine, its skills, and its reference files
+before relying on it in a sensitive environment (for example: "scan this
+repository for hardcoded secrets, personal paths, or unexpected network
+calls").
+
 ## Capability map
 
 | Category | SKILL.md files | Coverage |

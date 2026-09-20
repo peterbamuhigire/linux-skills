@@ -2,7 +2,7 @@
 
 Author: Peter Bamuhigire, [techguypeter.com](https://techguypeter.com), +256 784 464 178.
 
-This repository applies the July 2026 portable skill contract to all active `SKILL.md` files. The canonical external `skills-web-dev` engine is the benchmark; this document is the small local contract and does not copy that engine.
+This repository applies the July 2026 portable skill contract to all active `SKILL.md` files. The canonical external `chwezi-dev-engine` engine is the benchmark; this document is the small local contract and does not copy that engine.
 
 ## Active catalogue
 
@@ -38,6 +38,6 @@ Every active skill must meet these gates:
 ```powershell
 python -X utf8 scripts/validate_skills.py --baseline quality-baseline.json
 python -X utf8 scripts/routing_smoke_test.py
-python -X utf8 C:\wamp64\www\skills-web-dev\skills\sdlc-meta\skill-engine-audit\scripts\engine_compliance.py --root . --active-root . --details
+python -X utf8 C:\wamp64\www\chwezi-dev-engine\skills\sdlc-meta\skill-engine-audit\scripts\engine_compliance.py --root . --active-root . --details
 bash scripts/tests/check-distro-matrix.sh
 ```

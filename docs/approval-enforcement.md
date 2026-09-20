@@ -1,7 +1,7 @@
 # Approval enforcement adapter
 
 Linux actions are declared in [`approval-adapter.json`](approval-adapter.json)
-and use the shared contract from `skills-web-dev/docs/approval-contract.md`.
+and use the shared contract from `chwezi-dev-engine/docs/approval-contract.md`.
 
 ## Required change preview
 

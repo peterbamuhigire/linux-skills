@@ -54,7 +54,7 @@ primary sources; quarantine stale/ambiguous/unsupported claims and mark them
 
 The shared control plane is adapted to operational safety in
 [`docs/control-plane-adoption.md`](docs/control-plane-adoption.md); the central
-registry is `C:\wamp64\www\skills-web-dev\docs\engine-control-plane.json`.
+registry is `C:\wamp64\www\chwezi-dev-engine\docs\engine-control-plane.json`.
 
 ## Purpose
 
