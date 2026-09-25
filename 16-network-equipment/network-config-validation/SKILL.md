@@ -1,6 +1,6 @@
 ---
 name: network-config-validation
-description: Use when reviewing a router or switch configuration before deployment — pre-deployment checks for dangerous commands, duplicate addresses, subnet overlaps, stale ACL/route-map/prefix-list references, management-plane risk, and IOS-style security hygiene. Layered evidence, not a full parser; final approval still needs a network engineer. Not for Linux host config review — see linux-server-hardening for that.
+description: Use when statically preflighting router or switch configuration for dangerous commands, duplicate addresses, overlaps, stale references, or management-plane exposure. Not a full parser or push workflow; use linux-server-hardening for host configuration and cisco-ios-patterns for manual device review.
 license: MIT
 metadata:
   portable: true
@@ -30,7 +30,8 @@ This skill is exempt from `scripts/tests/check-distro-matrix.sh` by naming
 convention (it does not match the `linux-*` glob), deliberately, for the same
 reason as its sibling skills in this category.
 
-## When to Use
+<!-- dual-compat-start -->
+## Use When
 
 - Reviewing Cisco IOS or IOS-XE style snippets before deployment.
 - Auditing generated config from scripts or templates.
@@ -40,7 +41,7 @@ reason as its sibling skills in this category.
   referenced but not defined.
 - Building lightweight pre-flight scripts for network automation.
 
-## When NOT to Use
+## Do Not Use When
 
 - Linux host hardening review (SSH config, sysctl, SELinux/AppArmor, package
   CVEs) — use
@@ -51,7 +52,15 @@ reason as its sibling skills in this category.
   [`netmiko-ssh-automation`](../netmiko-ssh-automation/SKILL.md), with this
   skill as its pre-flight gate.
 
-## How It Works
+## Required Inputs
+
+| Artefact | Source | Required? | If absent |
+|---|---|---:|---|
+| Candidate router or switch configuration | Change author or automation output | yes | Stop; there is nothing to preflight. |
+| Target platform and intended change | Change request and operator | yes | Treat vendor-specific checks as `NOT_ASSESSED`. |
+| Reference definitions and management constraints | Reviewed baseline or change record | when relevant | Report unresolved references and request the missing context. |
+
+## Workflow
 
 Treat config validation as layered evidence, not as a complete parser. Regex
 checks are useful for pre-flight warnings, but final approval still needs a
@@ -64,6 +73,24 @@ Validate in this order:
 3. Duplicate addresses and overlapping subnets.
 4. Stale references to ACLs, route-maps, prefix-lists, and interfaces.
 5. Operational hygiene such as NTP, timestamps, remote logging, and banners.
+
+6. Separate hard findings from best-practice observations and record the
+   exact line or section for each.
+7. Return the candidate to a network engineer for syntax, intent, and rollback
+   review before any push.
+
+Stop when target syntax or change intent is unknown, or when a critical
+finding could affect management access. Recover by narrowing the assessment to
+checks supported by the supplied text and listing the gaps. Verify each
+finding against the candidate and its stated scope; a clean regex scan is not
+proof that the configuration is safe or valid.
+
+## Quality Standards
+
+- Keep the candidate configuration unchanged during review.
+- Report exact findings and distinguish blockers from hygiene suggestions.
+- State the platform, scope, parser limitations, and unresolved checks.
+- Require independent network-engineer review before deployment.
 
 ## Dangerous Command Detection
 
@@ -217,6 +244,56 @@ def check_missing_hygiene(config: str) -> list[str]:
     ]
 ```
 
+## Outputs
+
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Preflight findings with line or section references | Network engineer | Dangerous patterns, overlaps, references, and management exposure are separated. |
+| Scope and limitation note | Change owner | Platform assumptions and non-parser limitations are explicit. |
+
+## Evidence Produced
+
+| Category | Artefact | Acceptance condition |
+|---|---|---|
+| Correctness | Candidate and check results | Each finding points to the supplied configuration and check performed. |
+| Release readiness | Reviewer and unresolved-gap record | A clean scan is not represented as device validation or approval. |
+
+## Capability Contract
+
+This skill is read-only. It may inspect supplied configuration or run an
+authorised local preflight script; it must not connect to, change, or save
+device configuration. Deployment requires a separate approved workflow.
+
+## Degraded Mode
+
+Without complete configuration, platform context, or reference definitions,
+report only supported static findings and mark omitted checks `NOT_ASSESSED`.
+Do not infer that a missing line or reference is safe.
+
+## Decision Rules
+
+| Condition | Action | Wrong-choice failure |
+|---|---|---|
+| Candidate and target scope are available | Run layered static checks and cite findings | Missing scope can make a pattern check misleading. |
+| A dangerous command or management exposure is found | Block the preflight and escalate for review | A risky change may be pushed without control. |
+| No pattern matches are found | Report only that configured checks found none | Regex checks cannot certify full syntax or behavior. |
+
+## Worked Example
+
+Candidate snippet:
+
+```text
+line vty 0 4
+ transport input telnet
+```
+
+Preflight result: flag Telnet as a management-plane risk and note that this
+block has no visible inbound access-class or explicit exec-timeout. Do not
+rewrite or push the candidate. Ask the network engineer to confirm the
+intended remote-access policy and review the complete VTY configuration.
+This finding is limited to the supplied snippet; the rest of the device state
+is `NOT_ASSESSED`.
+
 ## Examples
 
 ### Change-Window Preflight
@@ -237,13 +314,12 @@ scope.
 
 ## Anti-Patterns
 
-- Treating regex validation as a device parser.
-- Applying generated config without a dry-run diff.
-- Recommending SNMPv2 community strings as a monitoring requirement.
-- Checking VTY blocks with regex that can accidentally span unrelated
-  sections.
-- Testing firewall behavior by disabling ACLs instead of reading
-  counters/logs.
+- Treating regex as a device parser. Fix: state the parser limit and require vendor review.
+- Applying generated config without a diff. Fix: compare the exact candidate with the reviewed baseline.
+- Treating SNMPv2 community strings as a required control. Fix: flag exposed communities and review the intended secure management design.
+- Letting a VTY regex span unrelated sections. Fix: parse and report each bounded block separately.
+- Testing firewall behavior by disabling ACLs. Fix: use counters and an approved test source.
+- Calling a clean scan an approval. Fix: retain platform, intent, behavior, and rollback checks for the network engineer.
 
 ## See Also
 
@@ -254,3 +330,9 @@ scope.
 - [`linux-troubleshooting`](../../09-troubleshooting-and-recovery/linux-troubleshooting/SKILL.md) —
   read-only OSI-layer diagnosis when a config passes validation but the
   symptom persists.
+## References
+
+- [`cisco-ios-patterns`](../cisco-ios-patterns/SKILL.md) — device syntax and change-window review.
+- [`netmiko-ssh-automation`](../netmiko-ssh-automation/SKILL.md) — guarded device access.
+- [`linux-troubleshooting`](../../09-troubleshooting-and-recovery/linux-troubleshooting/SKILL.md) — host/network symptom diagnosis boundary.
+<!-- dual-compat-end -->
