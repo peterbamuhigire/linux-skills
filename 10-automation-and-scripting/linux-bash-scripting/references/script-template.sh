@@ -7,8 +7,9 @@
 #: Version:     0.1.0
 #
 # This is the canonical template every `sk-*` script in the linux-skills repo
-# must start from. Copy it with `sk-new-script <skill> <name>`, then fill in
-# the sections. Do not remove or reorder the sections.
+# must start from. Copy it manually into the owning skill's scripts/ directory,
+# then fill in the sections. Do not remove or reorder the sections. No
+# sk-new-script wrapper is shipped in this checkout.
 #
 # Read linux-bash-scripting/SKILL.md and docs/engine-design/spec.md before
 # modifying this file.

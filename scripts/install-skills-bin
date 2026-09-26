@@ -39,8 +39,10 @@ source "$SK_LIB"
 # 2. Defaults
 # =============================================================================
 
-INSTALL_BIN_DIR="/usr/local/bin"
-INSTALL_LIB_DIR="/usr/local/lib/linux-skills"
+# Allow isolated integration tests and staged deployments to override system
+# destinations. Production defaults remain the conventional system paths.
+INSTALL_BIN_DIR="${SKILLS_INSTALL_BIN_DIR:-/usr/local/bin}"
+INSTALL_LIB_DIR="${SKILLS_INSTALL_LIB_DIR:-/usr/local/lib/linux-skills}"
 FORCE=0
 SKILL_NAME=""
 COMMAND=""

@@ -168,17 +168,21 @@ for the complete commands for each area.
 - **WARNING:** Keep existing SSH session open. Test login in a second terminal
   before closing the first session.
 - Config: `/etc/ssh/sshd_config.d/99-hardening.conf`
-- Script: `sudo sk-harden-ssh` (tests before reload, backs up existing config)
+- No SSH-hardening wrapper is shipped. Use the reviewed drop-in procedure in
+  `references/hardening-checklist.md`; validate with `sshd -t` and keep the
+  existing SSH session open until a second login succeeds.
 
 ### 2. Firewall (UFW)
 - Default deny incoming, allow 22/80/443 only
 - `sudo ufw status verbose` to check current state
-- Script: `sudo sk-ufw-reset` (interactive profile picker)
+- No UFW profile wrapper is shipped. Route firewall changes through
+  `linux-firewall-ssl` and its native UFW/firewalld procedures.
 
 ### 3. Kernel (sysctl)
 - Network stack hardening + ASLR + kernel pointer restriction
 - Config: `/etc/sysctl.d/99-linux-skills.conf`
-- Script: `sudo sk-harden-sysctl`
+- No sysctl-hardening wrapper is shipped. Use the reviewed file and apply
+  procedure in `references/hardening-checklist.md`.
 
 ### 4. Nginx
 - `server_tokens off` in nginx.conf
@@ -190,7 +194,8 @@ for the complete commands for each area.
 - Session cookie security settings
 - `disable_functions` for dangerous functions
 - Config: `/etc/php/8.3/fpm/php.ini`
-- Script: `sudo sk-harden-php`
+- No PHP-hardening wrapper is shipped. Use the installed PHP-FPM paths and
+  validator documented in `references/hardening-checklist.md`.
 
 ### 6. MySQL
 - `bind-address = 127.0.0.1` (never expose to network)
@@ -228,9 +233,6 @@ Running `sudo install-skills-bin linux-server-hardening` installs:
 
 | Task | Fast-path script |
 |---|---|
-| Apply SSH hardening (backs up first, tests before reload) | `sudo sk-harden-ssh` |
-| Apply sysctl kernel hardening | `sudo sk-harden-sysctl` |
-| Apply PHP hardening | `sudo sk-harden-php` |
 | Triage SELinux denials, build reviewed policy module (RHEL family) | `sudo sk-selinux-denials` |
 
 These wrap the manual steps in `references/hardening-checklist.md`.
@@ -245,7 +247,4 @@ sudo install-skills-bin linux-server-hardening
 
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
-| sk-harden-ssh | scripts/sk-harden-ssh.sh | no | Apply SSH hardening: disable root, password auth off, `MaxAuthTries=3`, banner; backs up original first. |
-| sk-harden-sysctl | scripts/sk-harden-sysctl.sh | no | Write `/etc/sysctl.d/99-linux-skills.conf` with ASLR, SYN cookies, rp_filter, icmp ignore_bogus. |
-| sk-harden-php | scripts/sk-harden-php.sh | no | Apply PHP hardening: `expose_php=off`, `display_errors=off`, `disable_functions`, session flags. |
 | sk-selinux-denials | scripts/sk-selinux-denials.sh | no | RHEL family only. Summarize recent AVC denials (`ausearch`/`aureport --avc`), explain with `audit2why`, then — only after you confirm — build a reviewed local policy module (`audit2allow -M` + `semodule -i`). Never disables SELinux. See `references/selinux-reference.md`. |

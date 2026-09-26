@@ -377,30 +377,9 @@ dig @127.0.0.1 -x 192.0.2.10 +short
 
 ---
 
-## Optional fast path (when sk-* scripts are installed)
+## Script availability
 
-Running `sudo install-skills-bin linux-dns-server` installs:
-
-| Task | Fast-path script |
-|---|---|
-| Validate a zone file + snapshot records for diff | `sudo sk-dns-zone-check --file <path>` |
-| Checked-reload (config + each zone + verify serial bumped) | `sudo sk-bind-reload [--zone <name>]` |
-
-These are optional wrappers around `named-checkconf`, `named-checkzone`,
-and `rndc`.
-
-## Scripts
-
-This skill installs the following scripts to `/usr/local/bin/`. To install:
-
-```bash
-sudo install-skills-bin linux-dns-server
-```
-
-| Script | Source | Core? | Purpose |
-|---|---|---|---|
-| sk-dns-zone-check | scripts/sk-dns-zone-check.sh | no | Validate a BIND zone file with `named-checkzone`, dump SOA/NS/A/MX, diff against previous snapshot. |
-| sk-bind-reload | scripts/sk-bind-reload.sh | no | Run `named-checkconf`, `named-checkzone` for each modified zone, `rndc reload`, verify serial bumped. |
+No wrapper commands for this skill are shipped in this checkout. Use the native procedures above; planned wrappers remain in [the script inventory](../../docs/engine-design/script-inventory.md) until their source files are present.
 
 ## Currentness reference
 

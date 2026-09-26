@@ -191,30 +191,6 @@ Full permission patterns and audit commands: `references/permissions-reference.m
 
 ---
 
-## Optional fast path (when sk-* scripts are installed)
+## Script availability
 
-Running `sudo install-skills-bin linux-access-control` installs:
-
-| Task | Fast-path script |
-|---|---|
-| All users, UID, lock state, sudo, password age | `sudo sk-user-audit` |
-| All authorized_keys across users | `sudo sk-ssh-key-audit` |
-| Create user + SSH key + sudo in one step | `sudo sk-new-sudoer --user <u> --key <file>` |
-| Lock or unlock a user account | `sudo sk-user-suspend --user <u> --lock\|--unlock` |
-
-These are optional wrappers. The manual commands above are the source of truth.
-
-## Scripts
-
-This skill installs the following scripts to `/usr/local/bin/`. To install:
-
-```bash
-sudo install-skills-bin linux-access-control
-```
-
-| Script | Source | Core? | Purpose |
-|---|---|---|---|
-| sk-user-audit | scripts/sk-user-audit.sh | yes | All users, UID/GID, lock state, password age, last login, sudoers. |
-| sk-ssh-key-audit | scripts/sk-ssh-key-audit.sh | yes | All `authorized_keys` across users, key type/age/comment, orphaned keys. |
-| sk-new-sudoer | scripts/sk-new-sudoer.sh | no | Create user, deploy SSH key, add to sudo group, verify with `sudo -l`. |
-| sk-user-suspend | scripts/sk-user-suspend.sh | no | Lock or unlock a user account (`passwd -l`, `usermod -s /usr/sbin/nologin`), with audit log. |
+No wrapper commands for this skill are shipped in this checkout. Use the native procedures above; planned wrappers remain in [the script inventory](../../docs/engine-design/script-inventory.md) until their source files are present.

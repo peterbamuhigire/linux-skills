@@ -166,11 +166,9 @@ for context.
 
 Every `sk-*` script must start from this six-section layout. See
 [`references/script-template.sh`](references/script-template.sh) for a
-copy-pasteable version. To create a new script, the recommended flow is:
-
-```bash
-sudo sk-new-script <skill-name> <script-name>   # scaffolds from template
-```
+copy-pasteable version. The `sk-new-script` wrapper is not shipped in this
+checkout; copy and adapt the reference template manually into the owning
+skill's `scripts/` directory.
 
 The six sections in order:
 
@@ -308,8 +306,9 @@ for the full rule set. Key points:
 
 ## Safety patterns every script must follow
 
-These rules are enforced by `sk-lint` (the pre-commit linter) and checked in
-code review. Violations block a merge.
+These are required review rules, but the `sk-lint` wrapper and its pre-commit
+hook are not shipped in this checkout. Check them manually and use the
+available shell and engine validators before merging.
 
 1. **Source `common.sh`** — never reimplement colors, prompts, traps.
 2. **`set -uo pipefail`** — always. **Never** `set -e`.
@@ -332,23 +331,8 @@ code review. Violations block a merge.
     configtest`, `visudo -c`, `sshd -t`, `named-checkconf`. Every time.
 14. **Destructive operations write a timestamped audit line** to
     `/var/log/linux-skills/<script>.log` regardless of `--log`.
-15. **Every script passes `shellcheck` with zero warnings.** Run `sk-lint`
-    before committing.
-
----
-
-## Scripts
-
-This skill installs the following scripts to `/usr/local/bin/`. To install:
-
-```bash
-sudo install-skills-bin linux-bash-scripting
-```
-
-| Script | Source | Core? | Purpose |
-|---|---|---|---|
-| sk-new-script | scripts/sk-new-script.sh | yes | Scaffold a new `sk-*` script from the canonical template in a skill's `scripts/` directory. |
-| sk-lint | scripts/sk-lint.sh | yes | Run `shellcheck` plus custom engine checks (standard flags present, `common.sh` sourced, no `set -e`, no unquoted vars) on one or more scripts. |
+15. **Every script passes `shellcheck` with zero warnings.** Run
+    `shellcheck <script>` and `bash -n <script>` before committing.
 
 ---
 

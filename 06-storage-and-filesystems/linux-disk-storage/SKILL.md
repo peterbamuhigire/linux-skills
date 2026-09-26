@@ -299,9 +299,6 @@ Running `sudo install-skills-bin linux-disk-storage` installs:
 
 | Task | Fast-path script |
 |---|---|
-| Top 20 consumers by dir/file | `sudo sk-disk-hogs [/path]` |
-| Interactive cleanup with preview | `sudo sk-disk-cleanup` |
-| Inode exhaustion detector | `sudo sk-inode-check` |
 | Mount a CIFS/SMB share (creds + test + fstab) | `sudo sk-cifs-mount //server/share /mnt/share` |
 
 These are optional wrappers around the commands above.
@@ -316,7 +313,4 @@ sudo install-skills-bin linux-disk-storage
 
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
-| sk-disk-hogs | scripts/sk-disk-hogs.sh | yes | Top 20 directories/files by size under a path; warns on `/var/log` and `/tmp` bloat. |
-| sk-disk-cleanup | scripts/sk-disk-cleanup.sh | no | Interactive cleanup: apt cache, journal, old logs, kernel images, tmp. Shows bytes reclaimed. |
-| sk-inode-check | scripts/sk-inode-check.sh | no | Find filesystems nearing inode exhaustion; top directories by inode count. |
 | sk-cifs-mount | scripts/sk-cifs-mount.sh | no | Mount a CIFS/SMB (Samba/Windows) share: install `cifs-utils`, build/verify a 0600 credentials file, test-mount, optionally add a persistent `_netdev,nofail` fstab entry. |

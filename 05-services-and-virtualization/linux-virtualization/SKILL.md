@@ -330,24 +330,7 @@ Running `sudo install-skills-bin linux-virtualization` installs:
 
 | Task | Fast-path script |
 |---|---|
-| LXD containers with state, IP, memory, disk, uptime | `sudo sk-lxd-list` |
-| Create / list / restore LXD snapshots | `sudo sk-lxd-snapshot` |
-| Full LXD container export to tar | `sudo sk-lxd-backup --container <n>` |
 
 These are optional wrappers. The `lxc` and `virsh` commands above are the
 source of truth. For Docker/Podman, see `sk-container-ps` /
 `sk-container-prune` in `12-containers-and-orchestration`.
-
-## Scripts
-
-This skill installs the following scripts to `/usr/local/bin/`. To install:
-
-```bash
-sudo install-skills-bin linux-virtualization
-```
-
-| Script | Source | Core? | Purpose |
-|---|---|---|---|
-| sk-lxd-list | scripts/sk-lxd-list.sh | no | All LXD containers with state, IPv4/IPv6, memory and disk usage, uptime. |
-| sk-lxd-snapshot | scripts/sk-lxd-snapshot.sh | no | Create, list, or restore LXD container snapshots with a naming convention. |
-| sk-lxd-backup | scripts/sk-lxd-backup.sh | no | Full LXD container export to tar, with restore metadata, for off-host backup. |

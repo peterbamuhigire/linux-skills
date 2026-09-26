@@ -239,21 +239,9 @@ ls /var/backups/<app>/              # safety backup always created first
 
 ---
 
-## Optional fast path (when sk-* scripts are installed)
+## Script availability
 
-Running `sudo install-skills-bin linux-disaster-recovery` installs wrappers
-for the above:
-
-| Task | Fast-path script |
-|---|---|
-| Verify last backup is usable | `sudo sk-backup-verify` |
-| Guided restore (pick backup, preview, confirm) | `sudo sk-restore-wizard` |
-| MySQL restore from a specific file | `sudo sk-mysql-restore --file <path>` |
-| PostgreSQL restore | `sudo sk-postgres-restore --file <path>` |
-| Site file restore | `sudo sk-site-restore --backup <path> --target <dir>` |
-| Maintenance mode on/off | `sudo sk-emergency-mode on\|off` |
-
-These are optional wrappers around the commands above.
+No wrapper commands for this skill are shipped in this checkout. Use the native procedures above; planned wrappers remain in [the script inventory](../../docs/engine-design/script-inventory.md) until their source files are present.
 
 ## Demo/Dev Reset (Git-Tracked SQL Dump Pattern)
 
@@ -276,13 +264,4 @@ sudo install-skills-bin linux-disaster-recovery
 
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
-| sk-backup-verify | scripts/sk-backup-verify.sh | yes | Verify last backup age, integrity (tar/gpg check), remote copy reachable via rclone. |
 | sk-mysql-backup | scripts/sk-mysql-backup.sh | yes | Dump all databases with gzip + gpg + rclone upload; rotate local and remote. Refactored to source common.sh and honor standard flags. |
-| sk-mysql-restore | scripts/sk-mysql-restore.sh | no | Guided restore: list backups, pick, download, decrypt, show sizes, confirm, restore. |
-| sk-postgres-backup | scripts/sk-postgres-backup.sh | no | `pg_dump` + compression + gpg + rclone, per database or all, with rotation. |
-| sk-postgres-restore | scripts/sk-postgres-restore.sh | no | Guided PostgreSQL restore from backup file or remote. |
-| sk-site-backup | scripts/sk-site-backup.sh | no | Tar a full site directory, exclude cache/node_modules, gpg, upload via rclone. |
-| sk-site-restore | scripts/sk-site-restore.sh | no | Restore a site backup to original path with permission repair. |
-| sk-config-snapshot | scripts/sk-config-snapshot.sh | no | Snapshot `/etc/` (and other declared dirs) to a git-tracked archive; diff against previous. |
-| sk-restore-wizard | scripts/sk-restore-wizard.sh | no | Interactive guided restore: pick backup set, pick target, preview, confirm, execute. |
-| sk-emergency-mode | scripts/sk-emergency-mode.sh | no | Toggle maintenance mode: drop Nginx to 503 page, stop non-essential services, show live status. |

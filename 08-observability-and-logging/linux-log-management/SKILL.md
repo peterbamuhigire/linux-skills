@@ -223,32 +223,6 @@ All log file locations: `references/log-locations.md`
 
 ---
 
-## Optional fast path (when sk-* scripts are installed)
+## Script availability
 
-Running `sudo install-skills-bin linux-log-management` installs:
-
-| Task | Fast-path script |
-|---|---|
-| Grouped recent errors from journal | `sudo sk-journal-errors --since 1h` |
-| Live tail with severity filter | `sudo sk-journal-tail <service>` |
-| Access log report (top IPs, 4xx/5xx, bots) | `sudo sk-access-log-report` |
-| Error log report (grouped) | `sudo sk-error-log-report` |
-| Logrotate config audit | `sudo sk-logrotate-check` |
-
-These are optional wrappers around the manual commands above.
-
-## Scripts
-
-This skill installs the following scripts to `/usr/local/bin/`. To install:
-
-```bash
-sudo install-skills-bin linux-log-management
-```
-
-| Script | Source | Core? | Purpose |
-|---|---|---|---|
-| sk-journal-errors | scripts/sk-journal-errors.sh | yes | Last 24h of `priority<=err` from journal, grouped by service, with counts. |
-| sk-access-log-report | scripts/sk-access-log-report.sh | no | Parse Nginx/Apache access logs: top IPs, status code histogram, top URLs, bot ratio. |
-| sk-error-log-report | scripts/sk-error-log-report.sh | no | Parse error logs: group by repeated message, severity, timeline. |
-| sk-journal-tail | scripts/sk-journal-tail.sh | no | Wrapper over `journalctl -f` with unit filter, severity filter, since-time shorthand, color. |
-| sk-logrotate-check | scripts/sk-logrotate-check.sh | no | Verify logrotate configs, show last rotation per config, warn on stale or mis-sized logs. |
+No wrapper commands for this skill are shipped in this checkout. Use the native procedures above; planned wrappers remain in [the script inventory](../../docs/engine-design/script-inventory.md) until their source files are present.

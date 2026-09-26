@@ -428,12 +428,10 @@ find ~ -maxdepth 3 -type f \( -name '.pgpass' -o -name '.netrc' -o \
     -exec chmod 600 {} +
 ```
 
-## Optional fast path
+## Script availability
 
-Running `sudo install-skills-bin linux-access-control` installs
-`sk-user-audit`, `sk-ssh-key-audit`, `sk-new-sudoer`, and
-`sk-user-suspend`, which wrap the commands above. The manual patterns in
-this file remain the source of truth.
+The user-audit, SSH-key-audit, sudoer-creation, and account-suspension wrappers
+are planned but not shipped. Use the manual commands and approval checks above.
 
 ## Sources
 

@@ -187,28 +187,6 @@ Full command reference with output interpretation: `references/monitoring-comman
 
 ---
 
-## Optional fast path (when sk-* scripts are installed)
+## Script availability
 
-Running `sudo install-skills-bin linux-system-monitoring` installs:
-
-| Task | Fast-path script |
-|---|---|
-| One-screen health snapshot | `sudo sk-system-health` |
-| Listening ports with risk notes | `sudo sk-open-ports` |
-| Swap usage and swappiness check | `sudo sk-swap-check` |
-
-These wrap the manual commands above — optional.
-
-## Scripts
-
-This skill installs the following scripts to `/usr/local/bin/`. To install:
-
-```bash
-sudo install-skills-bin linux-system-monitoring
-```
-
-| Script | Source | Core? | Purpose |
-|---|---|---|---|
-| sk-system-health | scripts/sk-system-health.sh | yes | One-screen snapshot: load, CPU, mem, swap, disk, top 5 processes, uptime. |
-| sk-open-ports | scripts/sk-open-ports.sh | yes | `ss -tulnp` pretty output with per-port risk notes (e.g. MySQL on 0.0.0.0 flagged). |
-| sk-swap-check | scripts/sk-swap-check.sh | no | Swap usage, swappiness, top swap consumers, recommend adjustments. |
+No wrapper commands for this skill are shipped in this checkout. Use the native procedures above; planned wrappers remain in [the script inventory](../../docs/engine-design/script-inventory.md) until their source files are present.

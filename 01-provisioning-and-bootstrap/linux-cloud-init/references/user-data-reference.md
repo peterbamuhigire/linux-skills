@@ -499,11 +499,11 @@ runcmd:
   - |
     sudo -u peter git clone https://github.com/petebwire/linux-skills.git \
       /home/peter/.claude/skills
-  # Install the core sk-* scripts so sk-provision-fresh etc. are on PATH
+  # Install shipped core helpers; finish server provisioning with the manual runbook
   - /home/peter/.claude/skills/scripts/install-skills-bin core
   - [systemctl, enable, --now, fail2ban]
 
-final_message: "Server bootstrap complete. Run sk-provision-fresh next."
+final_message: "Bootstrap complete. Continue with the linux-server-provisioning manual procedure before exposing services."
 ```
 
 ### Example 3 — Docker host

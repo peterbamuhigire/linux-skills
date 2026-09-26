@@ -277,7 +277,8 @@ APT::Periodic::Unattended-Upgrade "1";
 ```text
 // Managed by linux-package-management skill. Do not edit by hand.
 
-// (a) Security-only. Feature upgrades go through sk-apt-upgrade-safe.
+// (a) Security-only. Handle feature upgrades separately during an approved
+//     maintenance window using the native package-management procedure.
 Unattended-Upgrade::Allowed-Origins {
     "${distro_id}:${distro_codename}-security";
     "${distro_id}ESMApps:${distro_codename}-apps-security";

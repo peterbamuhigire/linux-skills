@@ -578,12 +578,10 @@ sudo rm -f /var/lib/fail2ban/fail2ban.sqlite3
 sudo systemctl start fail2ban
 ```
 
-## Optional fast path
+## Script availability
 
-`sudo sk-fail2ban-status` (when the `sk-*` scripts are installed)
-prints a condensed status: jails, active bans, total bans per jail,
-and recent bans with rough geolocation hints. It wraps the commands in
-this file.
+No `sk-fail2ban-status` wrapper is shipped in this checkout. Use
+`fail2ban-client status` and `fail2ban-client status <jail>` as shown above.
 
 ## Sources
 

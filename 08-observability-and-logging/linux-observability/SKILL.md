@@ -419,10 +419,7 @@ Running `sudo install-skills-bin linux-observability` installs:
 
 | Task | Fast-path script |
 |---|---|
-| Install node_exporter as unprivileged systemd service | `sudo sk-node-exporter-install --monitor-ip <ip>` |
 | Install Telegraf (OSS alternative) with metrics inputs + an output | `sudo sk-telegraf-setup --output prometheus` |
-| Create/verify a `/health` endpoint for a vhost | `sudo sk-health-endpoint --domain <d> --db mysql` |
-| Configure log forwarding over TLS | `sudo sk-log-forward-setup --collector <host>:<port> --tls` |
 
 These are optional wrappers around the manual steps above.
 
@@ -436,7 +433,4 @@ sudo install-skills-bin linux-observability
 
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
-| sk-node-exporter-install | scripts/sk-node-exporter-install.sh | no | Install Prometheus node_exporter as unprivileged systemd service, firewall-restrict, verify scrape. |
 | sk-telegraf-setup | scripts/sk-telegraf-setup.sh | no | Install InfluxData Telegraf (OSS alternative to node_exporter) on both families from the signed repo; write host-metrics inputs (cpu/mem/disk/net/systemd) + one output (Prometheus `/metrics` or InfluxDB v2); firewall-restrict the scrape port; validate with `telegraf --test`. Token read from the 0600 env file, never the config. |
-| sk-health-endpoint | scripts/sk-health-endpoint.sh | no | Create and verify `/health` for a vhost: checks db, disk, required services; 200/503 + JSON. |
-| sk-log-forward-setup | scripts/sk-log-forward-setup.sh | no | Configure rsyslog or fluent-bit to forward journald and webserver logs to a central collector over TLS. |

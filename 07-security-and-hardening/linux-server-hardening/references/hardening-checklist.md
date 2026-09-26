@@ -764,12 +764,11 @@ Everything that was CRITICAL or HIGH before should now be PASS. Any
 remaining findings are either deliberate exceptions or the next item on
 your todo list.
 
-## Optional fast path
+## Script availability
 
-Running `sudo install-skills-bin linux-server-hardening` installs
-`sk-harden-ssh`, `sk-harden-sysctl`, and `sk-harden-php` which wrap the
-commands in this document. They are convenience wrappers — the manual
-steps above remain the source of truth.
+This checkout does not ship SSH, sysctl, or PHP-hardening wrappers. Use the
+validated native procedures above; the engine design inventory lists future
+wrapper proposals separately from installed commands.
 
 ## Sources
 

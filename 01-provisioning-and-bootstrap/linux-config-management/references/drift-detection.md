@@ -296,8 +296,8 @@ sudo etckeeper unclean && echo "drift!" || echo "clean"
 sudo git -C /etc log --since="1 day ago" --stat
 ```
 
-The `sk-etc-track` helper wraps these commands so operators do not
-have to remember them.
+No `sk-etc-track` wrapper is shipped in this checkout. Use these native
+`etckeeper` and Git commands to review tracked configuration state.
 
 ---
 

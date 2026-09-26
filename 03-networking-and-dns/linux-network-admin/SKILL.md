@@ -411,32 +411,6 @@ journalctl -u chrony -n 50 --no-pager
 
 ---
 
-## Optional fast path (when sk-* scripts are installed)
+## Script availability
 
-Running `sudo install-skills-bin linux-network-admin` installs the
-following convenience wrappers. They are never required — the manual
-commands above are always the source of truth.
-
-| Task | Fast-path script |
-|---|---|
-| One-screen report: interfaces, addresses, default gateway, DNS, ports | `sudo sk-net-status` |
-| Validate netplan YAML, `try` with revert, apply on confirm | `sudo sk-netplan-apply` |
-| Test TCP/UDP port reachability with traceroute on failure | `sudo sk-port-check --target <h> --port <n>` |
-| Forward + reverse DNS lookup against local and public resolvers | `sudo sk-dns-check <domain>` |
-| NTP sync state, offset, peers | `sudo sk-ntp-sync` |
-
-## Scripts
-
-This skill installs the following scripts to `/usr/local/bin/`. To install:
-
-```bash
-sudo install-skills-bin linux-network-admin
-```
-
-| Script | Source | Core? | Purpose |
-|---|---|---|---|
-| sk-net-status | scripts/sk-net-status.sh | no | One-screen report: interfaces, addresses, default gateway, DNS servers, open ports, link state. |
-| sk-netplan-apply | scripts/sk-netplan-apply.sh | no | Validate netplan YAML, run `netplan try` with timeout rollback, confirm, then `apply`. |
-| sk-port-check | scripts/sk-port-check.sh | no | Test TCP/UDP port reachability from this server to a target, with traceroute on failure. |
-| sk-dns-check | scripts/sk-dns-check.sh | no | Forward + reverse DNS lookup against local resolver, systemd-resolved, and a public resolver; flags mismatches. |
-| sk-ntp-sync | scripts/sk-ntp-sync.sh | no | Report chrony/timesyncd state, offset, peers, last successful sync.
+No wrapper commands for this skill are shipped in this checkout. Use the native procedures above; planned wrappers remain in [the script inventory](../../docs/engine-design/script-inventory.md) until their source files are present.

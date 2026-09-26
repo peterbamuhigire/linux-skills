@@ -389,9 +389,11 @@ sudo -u www-data composer install --no-dev --optimize-autoloader
 
 ---
 
-## /etc restore from config snapshot
+## /etc restore from an existing configuration snapshot
 
-If `/etc/` was tracked in git (etckeeper) or backed up via `sk-config-snapshot`.
+If `/etc/` was tracked in Git (for example, with etckeeper) or included in a
+verified backup. This checkout does not ship the proposed `sk-config-snapshot`
+helper.
 
 ### From etckeeper
 
@@ -445,8 +447,8 @@ The server is destroyed. You have only the backups.
 
 ### Prerequisites
 
-- Cloud-init user-data for the original server (or `sk-provision-fresh`
-  wizard) saved somewhere.
+- Cloud-init user-data for the original server or the approved manual
+  provisioning record saved somewhere.
 - Backups accessible via rclone from a different machine.
 - DNS or reverse-proxy control to point traffic at the new server.
 - A GPG key file (`.backup-encryption-key`) stored safely off-server.
@@ -456,8 +458,8 @@ The server is destroyed. You have only the backups.
 1. **Launch a fresh Ubuntu/Debian VM** at the same or different provider.
 2. **Run cloud-init user-data** to bootstrap hostname, admin user, SSH key,
    UFW baseline, linux-skills clone.
-3. **Run `sk-provision-fresh`** (or manual `linux-server-provisioning`
-   sections) to install the web stack, databases, fail2ban, certbot.
+3. **Follow the `linux-server-provisioning` manual procedure** to install the
+   approved web stack and services. No `sk-provision-fresh` wrapper is shipped.
 4. **Install rclone and reconnect the backup remote**:
    ```bash
    sudo apt install rclone

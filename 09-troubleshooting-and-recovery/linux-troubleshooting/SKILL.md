@@ -337,9 +337,6 @@ interactive decision-tree walkers for each symptom:
 
 | Symptom | Fast-path script |
 |---|---|
-| High CPU / slow site | `sudo sk-load-investigate` → `sudo sk-why-slow` |
-| 502 / 504 | `sudo sk-why-500` |
-| Can't reach server | `sudo sk-why-cant-connect` |
 | Capture traffic on the wire | `sudo sk-capture --filter 'port 443' --count 200` |
 
 These scripts wrap the manual commands above in a guided walkthrough.
@@ -355,8 +352,4 @@ sudo install-skills-bin linux-troubleshooting
 
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
-| sk-load-investigate | scripts/sk-load-investigate.sh | no | Decompose load average: CPU-bound vs I/O-bound vs blocked, top offenders per category. |
-| sk-why-slow | scripts/sk-why-slow.sh | no | Decision-tree entry point: walks load/CPU/memory/disk/network/database to diagnose slowness. |
-| sk-why-500 | scripts/sk-why-500.sh | no | Decision-tree: PHP-FPM up? Nginx up? error log? permissions? AppArmor? disk full? |
-| sk-why-cant-connect | scripts/sk-why-cant-connect.sh | no | Decision-tree: firewall? service listening? DNS? routing? cert expired? rate-limited by fail2ban? |
 | sk-capture | scripts/sk-capture.sh | no | Safe bounded `tcpdump -w` capture: forces a packet-count or size/file ring so it can't fill the disk, excludes your SSH session, asks before writing pcap. Read back with `tcpdump -r` / tshark / Wireshark. |

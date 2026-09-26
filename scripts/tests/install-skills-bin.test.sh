@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 # Foundation test: install-skills-bin installer correctness
-# Self-locating, but DESTRUCTIVE (installs/uninstalls under /usr/local) — run
-# only in a throwaway container/VM, never on a workstation you care about.
+# Installs only under a temporary directory. Root/LXD is still required by the
+# production installer contract, but this test never changes /usr/local.
 #
 # Author: Peter Bamuhigire <techguypeter.com> +256784464178
 
 set -uo pipefail
+
+TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/linux-skills-installer-test.XXXXXX") || exit 1
+trap 'rm -rf -- "$TEST_ROOT"' EXIT
+export SKILLS_INSTALL_BIN_DIR="$TEST_ROOT/bin"
+export SKILLS_INSTALL_LIB_DIR="$TEST_ROOT/lib"
+mkdir -p "$SKILLS_INSTALL_BIN_DIR"
 
 FAILURES=0
 PASSED=0
@@ -34,47 +40,57 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# Test 3: Manifest parser reads every SKILL.md without error
-# -----------------------------------------------------------------------------
-PARSE_ERRORS=0
-for skill_md in linux-*/SKILL.md; do
-    if ! scripts/install-skills-bin --list >/dev/null 2>&1; then
-        PARSE_ERRORS=$((PARSE_ERRORS + 1))
-    fi
-done
-if (( PARSE_ERRORS == 0 )); then
-    pass_t "manifest parser reads every SKILL.md"
-else
-    fail_t "$PARSE_ERRORS SKILL.md files failed to parse"
-fi
-
-# -----------------------------------------------------------------------------
-# Test 3a: --list distinguishes root, skill-local, and missing sources
+# Test 3: Current checkout manifests contain only available sources
 # -----------------------------------------------------------------------------
 list_output=$(scripts/install-skills-bin --list 2>&1)
-if printf '%s\n' "$list_output" | awk '$1 == "sk-service-priority" && $2 == "linux-service-management" && $4 == "available" { found=1 } END { exit !found }'; then
+if printf '%s\n' "$list_output" | awk '$1 ~ /^sk-/ && $4 != "available" { bad=1 } END { exit bad }'; then
+    pass_t "all current manifest sources are available"
+else
+    fail_t "current manifests contain a missing source: $list_output"
+fi
+
+# -----------------------------------------------------------------------------
+# Test 3a: --list resolves root, skill-local, and missing sources
+# -----------------------------------------------------------------------------
+FIXTURE="$TEST_ROOT/fixture"
+mkdir -p "$FIXTURE/scripts/lib" "$FIXTURE/01-fixtures/linux-fixture/scripts"
+cp scripts/install-skills-bin "$FIXTURE/scripts/install-skills-bin"
+cp scripts/lib/common.sh "$FIXTURE/scripts/lib/common.sh"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$FIXTURE/scripts/root-tool.sh"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$FIXTURE/01-fixtures/linux-fixture/scripts/local-tool.sh"
+cat > "$FIXTURE/01-fixtures/linux-fixture/SKILL.md" <<'EOF'
+## Scripts
+
+| Script | Source | Core | Purpose |
+|---|---|---|---|
+| sk-root-tool | scripts/root-tool.sh | yes | fixture root source |
+| sk-local-tool | scripts/local-tool.sh | no | fixture skill-local source |
+| sk-missing-tool | scripts/missing-tool.sh | no | fixture missing source |
+EOF
+list_output=$("$FIXTURE/scripts/install-skills-bin" --list 2>&1)
+if printf '%s\n' "$list_output" | awk '$1 == "sk-root-tool" && $2 == "linux-fixture" && $4 == "available" { found=1 } END { exit !found }'; then
     pass_t "--list resolves engine-root script sources"
 else
-    fail_t "--list did not resolve an engine-root script source"
+    fail_t "--list did not resolve an engine-root script source: $list_output"
 fi
 
-if printf '%s\n' "$list_output" | awk '$1 == "sk-module-info" && $2 == "linux-kernel-modules" && $4 == "available" { found=1 } END { exit !found }'; then
+if printf '%s\n' "$list_output" | awk '$1 == "sk-local-tool" && $2 == "linux-fixture" && $4 == "available" { found=1 } END { exit !found }'; then
     pass_t "--list resolves skill-local script sources"
 else
-    fail_t "--list did not resolve a skill-local script source"
+    fail_t "--list did not resolve a skill-local script source: $list_output"
 fi
 
-if printf '%s\n' "$list_output" | awk '$1 == "sk-file-integrity-init" && $2 == "linux-file-integrity" && $4 == "missing" { found=1 } END { exit !found }'; then
+if printf '%s\n' "$list_output" | awk '$1 == "sk-missing-tool" && $2 == "linux-fixture" && $4 == "missing" { found=1 } END { exit !found }'; then
     pass_t "--list identifies missing manifest sources"
 else
-    fail_t "--list did not identify a missing manifest source"
+    fail_t "--list did not identify a missing manifest source: $list_output"
 fi
 
 # -----------------------------------------------------------------------------
 # Test 3b: dry-run summary does not count missing sources as installed
 # -----------------------------------------------------------------------------
-missing_output=$(scripts/install-skills-bin linux-file-integrity --dry-run 2>&1)
-if printf '%s\n' "$missing_output" | grep -q '0/2 scripts installed; 2 missing sources; 0 failed'; then
+missing_output=$("$FIXTURE/scripts/install-skills-bin" linux-fixture --dry-run 2>&1)
+if printf '%s\n' "$missing_output" | grep -q '2/3 scripts installed; 1 missing sources; 0 failed'; then
     pass_t "missing manifest sources are excluded from installed totals"
 else
     fail_t "missing source summary was inaccurate: $missing_output"
@@ -83,8 +99,8 @@ fi
 # -----------------------------------------------------------------------------
 # Test 3c: dry-run uses the skill-local source path when the engine path is absent
 # -----------------------------------------------------------------------------
-local_output=$(scripts/install-skills-bin linux-kernel-modules --dry-run 2>&1)
-if printf '%s\n' "$local_output" | grep -q 'linux-kernel-modules/scripts/sk-module-info.sh'; then
+local_output=$("$FIXTURE/scripts/install-skills-bin" linux-fixture --dry-run 2>&1)
+if printf '%s\n' "$local_output" | grep -q 'linux-fixture/scripts/local-tool.sh'; then
     pass_t "dry-run resolves skill-local script source"
 else
     fail_t "dry-run did not resolve skill-local script source: $local_output"
@@ -93,9 +109,6 @@ fi
 # -----------------------------------------------------------------------------
 # Test 4: --dry-run core doesn't actually install anything
 # -----------------------------------------------------------------------------
-# Remove any pre-installed sk-* just in case
-rm -f /usr/local/bin/sk-* 2>/dev/null || true
-
 dry_run_output=$(scripts/install-skills-bin core --dry-run 2>&1)
 dry_run_result=$?
 if printf '%s\n' "$dry_run_output" | grep -q 'core install complete:'; then
@@ -104,7 +117,7 @@ else
     fail_t "core --dry-run did not reach its source summary: $dry_run_output"
 fi
 
-count=$(ls /usr/local/bin/sk-* 2>/dev/null | wc -l)
+count=$(find "$SKILLS_INSTALL_BIN_DIR" -maxdepth 1 -type f -name 'sk-*' | wc -l)
 if (( count == 0 )); then
     pass_t "--dry-run installed nothing"
 else
@@ -124,18 +137,18 @@ else
     fail_t "core install status disagreed with its source summary: $core_output"
 fi
 
-count=$(ls /usr/local/bin/sk-* 2>/dev/null | wc -l)
+count=$(find "$SKILLS_INSTALL_BIN_DIR" -maxdepth 1 -type f -name 'sk-*' | wc -l)
 if (( count >= 1 )); then
-    pass_t "install placed $count sk-* binaries in /usr/local/bin"
+    pass_t "install placed $count sk-* binaries in the temporary destination"
 else
     fail_t "no sk-* binaries installed"
 fi
 
 # -----------------------------------------------------------------------------
-# Test 6: common.sh installed to /usr/local/lib/linux-skills/
+# Test 6: common.sh installed to the temporary library destination
 # -----------------------------------------------------------------------------
-if [[ -f /usr/local/lib/linux-skills/common.sh ]]; then
-    pass_t "common.sh installed to system lib dir"
+if [[ -f "$SKILLS_INSTALL_LIB_DIR/common.sh" ]]; then
+    pass_t "common.sh installed to temporary lib dir"
 else
     fail_t "common.sh not installed"
 fi
@@ -169,7 +182,7 @@ else
 fi
 
 # Verify sk-nginx-test-reload removed (if it was installed)
-if [[ ! -f /usr/local/bin/sk-nginx-test-reload ]]; then
+if [[ ! -f "$SKILLS_INSTALL_BIN_DIR/sk-nginx-test-reload" ]]; then
     pass_t "uninstall removed skill scripts"
 else
     fail_t "uninstall did not remove scripts"

@@ -613,13 +613,11 @@ Flag anything unexpected — users with `NP` (no password) and an
 interactive shell, users in `sudo` with no recent login for 180+ days,
 SSH keys with no matching `last` entry.
 
-## Optional fast path
+## Script availability
 
-When the `sk-*` scripts are installed, `sudo sk-user-audit` runs the
-audit commands in this file, `sudo sk-ssh-key-audit` walks every
-`authorized_keys` with age and fingerprint, and `sudo sk-new-sudoer
---user <u> --key <file>` creates a hardened sudoer in one step. These
-are wrappers around the manual commands documented here.
+The user-audit, SSH-key-audit, and sudoer-creation wrappers are planned but
+not shipped in this checkout. Use the manual commands in this reference and
+review each account or key change before applying it.
 
 ## Sources
 

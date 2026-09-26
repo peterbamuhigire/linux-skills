@@ -425,29 +425,6 @@ sudo etckeeper commit "drift remediation: ssh config restored to baseline"
 
 ---
 
-## Optional fast path (when sk-* scripts are installed)
+## Script availability
 
-Running `sudo install-skills-bin linux-config-management` installs:
-
-| Task | Fast-path script |
-|---|---|
-| Compare key configs/packages vs git-tracked state | `sudo sk-drift-check` |
-| Run an Ansible playbook in check mode with clean summary | `sudo sk-ansible-dry-run --playbook <file>` |
-| Initialize and verify /etc tracking, stage + commit | `sudo sk-etc-track [--commit]` |
-
-These are optional wrappers around `ansible-playbook`, `etckeeper`, and
-`git`.
-
-## Scripts
-
-This skill installs the following scripts to `/usr/local/bin/`. To install:
-
-```bash
-sudo install-skills-bin linux-config-management
-```
-
-| Script | Source | Core? | Purpose |
-|---|---|---|---|
-| sk-drift-check | scripts/sk-drift-check.sh | no | Compare key config files and package list against git-tracked declared state; report drift with diffs. |
-| sk-ansible-dry-run | scripts/sk-ansible-dry-run.sh | no | Run an Ansible playbook in `--check --diff` mode against localhost with a clean summary of would-be changes. |
-| sk-etc-track | scripts/sk-etc-track.sh | no | Initialize git tracking for `/etc`, verify it's clean, optionally auto-stage + commit. |
+No wrapper commands for this skill are shipped in this checkout. Use the native procedures above; planned wrappers remain in [the script inventory](../../docs/engine-design/script-inventory.md) until their source files are present.

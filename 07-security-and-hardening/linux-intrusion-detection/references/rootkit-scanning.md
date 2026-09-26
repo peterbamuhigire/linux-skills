@@ -411,8 +411,8 @@ fail2ban/AIDE/auditd:
 
 - **Pair scanner property-warnings with AIDE.** Both flag binary drift; if
   rkhunter warns on `/usr/sbin/sshd` and AIDE *also* shows a hash change on
-  the same file, that correlation is strong. Run `sk-file-integrity-check`
-  (this skill) on the same paths the scanner flagged.
+  the same file, that correlation is strong. Run the manual `aide --check`
+  procedure in `linux-file-integrity` and compare the same flagged paths.
 - **Attribute with auditd.** When a binary changed, `ausearch -f <path>` (see
   `references/aide-and-auditd.md`) tells you which process and `auid` touched
   it and when — the *who/when* the scanners cannot give you.

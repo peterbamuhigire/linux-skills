@@ -388,31 +388,6 @@ sudo apt update
 
 ---
 
-## Optional fast path (when sk-* scripts are installed)
+## Script availability
 
-Running `sudo install-skills-bin linux-package-management` installs:
-
-| Task | Fast-path script |
-|---|---|
-| `apt update` + held-back detection + security-only filter | `sudo sk-apt-update-safe` |
-| Snapshot /etc, full-upgrade, warn on kernel | `sudo sk-apt-upgrade-safe` |
-| Unattended-upgrades config + last run + next scheduled | `sudo sk-unattended-status` |
-| Snap list with revision, refresh date, auto-update state | `sudo sk-snap-audit` |
-
-These are optional wrappers around `apt`, `snap`, and
-`unattended-upgrade`.
-
-## Scripts
-
-This skill installs the following scripts to `/usr/local/bin/`. To install:
-
-```bash
-sudo install-skills-bin linux-package-management
-```
-
-| Script | Source | Core? | Purpose |
-|---|---|---|---|
-| sk-apt-update-safe | scripts/sk-apt-update-safe.sh | no | `apt update` + `apt list --upgradable` with held-back detection, security-only filter, and PPA listing. |
-| sk-apt-upgrade-safe | scripts/sk-apt-upgrade-safe.sh | no | Pre-snapshot /etc, run `apt full-upgrade`, log changed packages, warn and gate on kernel updates. |
-| sk-unattended-status | scripts/sk-unattended-status.sh | no | Show unattended-upgrades config, last run, next schedule, pending reboots. |
-| sk-snap-audit | scripts/sk-snap-audit.sh | no | List snaps with revision, last refresh, auto-refresh state; flag stale revisions. |
+No wrapper commands for this skill are shipped in this checkout. Use the native procedures above; planned wrappers remain in [the script inventory](../../docs/engine-design/script-inventory.md) until their source files are present.

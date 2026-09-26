@@ -228,6 +228,6 @@ warn "$TOTAL scanner warning(s) total (rkhunter: $RKH_WARN, chkrootkit: $CHK_WAR
 info "Triage: (1) check whether a recent package update explains it"
 info "        (2) re-run after 'rkhunter --propupd' on a clean host to clear"
 info "            benign property-change warnings"
-info "        (3) cross-check flagged paths with AIDE (sk-file-integrity-check)"
+info "        (3) cross-check flagged paths with AIDE (linux-file-integrity: aide --check)"
 info "            and auditd (ausearch -f <path>) before declaring an incident."
 exit 1

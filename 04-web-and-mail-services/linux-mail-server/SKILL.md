@@ -410,31 +410,6 @@ sudo postfix reload
 
 ---
 
-## Optional fast path (when sk-* scripts are installed)
+## Script availability
 
-Running `sudo install-skills-bin linux-mail-server` installs:
-
-| Task | Fast-path script |
-|---|---|
-| MX records for domain + reachability + TLS + PTR match | `sudo sk-mx-check --domain <d>` |
-| Audit SPF, DKIM, DMARC records for a domain | `sudo sk-spf-dkim-dmarc --domain <d>` |
-| Postfix/Exim queue inspection grouped by recipient | `sudo sk-mail-queue` |
-| Full SMTP conversation tester (wraps swaks) | `sudo sk-smtp-test --host <h> --port 587 --tls` |
-
-These are optional wrappers around `dig`, `swaks`, `postqueue`, and
-`openssl s_client`.
-
-## Scripts
-
-This skill installs the following scripts to `/usr/local/bin/`. To install:
-
-```bash
-sudo install-skills-bin linux-mail-server
-```
-
-| Script | Source | Core? | Purpose |
-|---|---|---|---|
-| sk-mx-check | scripts/sk-mx-check.sh | no | MX records for a domain, preference order, reachability, reverse DNS, TLS cert of each MX. |
-| sk-spf-dkim-dmarc | scripts/sk-spf-dkim-dmarc.sh | no | Audit SPF, DKIM, and DMARC records for a domain; report missing or misaligned. |
-| sk-mail-queue | scripts/sk-mail-queue.sh | no | Postfix/Exim queue inspection: depth, oldest, stuck, by recipient domain. |
-| sk-smtp-test | scripts/sk-smtp-test.sh | no | Full SMTP handshake tester (EHLO / STARTTLS / AUTH / MAIL FROM / RCPT TO / DATA), reports each step. |
+No wrapper commands for this skill are shipped in this checkout. Use the native procedures above; planned wrappers remain in [the script inventory](../../docs/engine-design/script-inventory.md) until their source files are present.

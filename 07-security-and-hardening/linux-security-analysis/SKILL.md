@@ -203,7 +203,6 @@ Running `sudo install-skills-bin linux-security-analysis` installs:
 | Task | Fast-path script |
 |---|---|
 | Full 14-section audit (same as the existing `server-audit.sh`) | `sudo sk-audit` |
-| AppArmor profile status + recent denials | `sudo sk-apparmor-status` |
 
 These are optional wrappers. The 10-layer manual procedure above is the
 source of truth.
@@ -219,4 +218,3 @@ sudo install-skills-bin linux-security-analysis
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
 | sk-audit | scripts/sk-audit.sh | yes | Read-only 14-section security audit producing PASS/WARN/FAIL report with score. |
-| sk-apparmor-status | scripts/sk-apparmor-status.sh | no | List all AppArmor profiles with enforce/complain/disabled status, recent denials from audit.log. |

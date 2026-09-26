@@ -61,7 +61,7 @@ executes the test file for the script.
 OPTIONS:
     --suite <name>      Run a named test suite:
                           foundation - common.sh + install-skills-bin
-                          tier1      - every tier-1 (core) script
+                          tier1      - available per-script tier-1 tests (none shipped yet)
                           all        - every test file under scripts/tests/
     --keep              Leave containers running after tests (for inspection)
     --image <name>      LXD image to use (default: ubuntu:24.04)
@@ -72,7 +72,7 @@ STANDARD FLAGS:
     -v, --verbose       Extra diagnostic output
 
 POSITIONAL:
-    script-name...      Run tests for specific scripts (e.g. sk-audit sk-lint)
+    script-name...      Run named test files (e.g. common-sh install-skills-bin)
 
 EXIT CODES:
     0  all tests passed
@@ -84,11 +84,8 @@ EXAMPLES:
     # Run the foundation suite (fast)
     sudo ./scripts/tests/run-test.sh --suite foundation
 
-    # Run tier-1 scripts
-    sudo ./scripts/tests/run-test.sh --suite tier1
-
     # Run one specific test
-    sudo ./scripts/tests/run-test.sh sk-audit
+    sudo ./scripts/tests/run-test.sh install-skills-bin
 
     # Run everything and keep containers on failure (default)
     sudo ./scripts/tests/run-test.sh --suite all
@@ -211,10 +208,15 @@ expand_suite() {
             echo "common-sh install-skills-bin"
             ;;
         tier1)
-            echo "sk-audit sk-update-all-repos sk-new-script sk-lint sk-system-health \
-                  sk-disk-hogs sk-open-ports sk-service-health sk-cert-status sk-cron-audit \
-                  sk-user-audit sk-ssh-key-audit sk-fail2ban-status sk-journal-errors \
-                  sk-backup-verify"
+            local test_file count=0
+            for test_file in "$SCRIPT_DIR"/sk-*.test.sh; do
+                [[ -f "$test_file" ]] || continue
+                basename "$test_file" .test.sh
+                count=$((count + 1))
+            done
+            if (( count == 0 )); then
+                die "no per-script tier1 tests are shipped yet; run --suite foundation for the available installer and common-library tests" 2
+            fi
             ;;
         all)
             local f

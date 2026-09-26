@@ -405,27 +405,6 @@ cd /tmp/autoinstall && python3 -m http.server 3003
 
 ---
 
-## Optional fast path (when sk-* scripts are installed)
+## Script availability
 
-Running `sudo install-skills-bin linux-cloud-init` installs:
-
-| Task | Fast-path script |
-|---|---|
-| Validate user-data YAML + dry render of modules | `sudo sk-cloud-init-validate --file <path>` |
-| Extract errors from cloud-init logs with module timeline | `sudo sk-cloud-init-debug` |
-
-These are optional wrappers around `cloud-init schema`, `cloud-init
-status`, and `cloud-init analyze`.
-
-## Scripts
-
-This skill installs the following scripts to `/usr/local/bin/`. To install:
-
-```bash
-sudo install-skills-bin linux-cloud-init
-```
-
-| Script | Source | Core? | Purpose |
-|---|---|---|---|
-| sk-cloud-init-validate | scripts/sk-cloud-init-validate.sh | no | Validate cloud-init user-data YAML against the schema and render a dry summary of modules. |
-| sk-cloud-init-debug | scripts/sk-cloud-init-debug.sh | no | Extract errors from cloud-init logs, classify by module, show runcmd exit codes and boot timeline. |
+No wrapper commands for this skill are shipped in this checkout. Use the native procedures above; planned wrappers remain in [the script inventory](../../docs/engine-design/script-inventory.md) until their source files are present.

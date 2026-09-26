@@ -231,31 +231,6 @@ DB to a write-once or remote location after every (re)baseline, and compare
 against that copy before trusting a check. Detail in
 [`references/aide-reference.md`](references/aide-reference.md).
 
-## Optional fast path (when sk-* scripts are installed)
+## Script availability
 
-Running `sudo install-skills-bin linux-file-integrity` installs:
-
-| Task | Fast-path script |
-|---|---|
-| First-time AIDE install + init + nightly schedule | `sudo sk-file-integrity-init` |
-| Run AIDE check, classify drift, alert on binary changes | `sudo sk-file-integrity-check` |
-
-These are optional wrappers around `aide`. The commands above are the source
-of truth. (The script sources are declared in the
-`linux-intrusion-detection` manifest, which retains them for backward
-compatibility; this skill documents their use.)
-
-## Scripts
-
-These scripts are declared in the `linux-intrusion-detection` skill's
-manifest (they predate this category and are kept there to avoid breaking
-existing installs). Install them via:
-
-```bash
-sudo install-skills-bin linux-intrusion-detection
-```
-
-| Script | Source | Core? | Purpose |
-|---|---|---|---|
-| sk-file-integrity-init | scripts/sk-file-integrity-init.sh | no | Initialize the AIDE database on a known-clean host, verify the baseline, and install a nightly check. |
-| sk-file-integrity-check | scripts/sk-file-integrity-check.sh | no | Run an AIDE check, summarize the changes, classify them (config/log/binary), and alert on binary drift. |
+No wrapper commands for this skill are shipped in this checkout. Use the native procedures above; planned wrappers remain in [the script inventory](../../docs/engine-design/script-inventory.md) until their source files are present.

@@ -357,7 +357,7 @@ ambiguity.
     minute: "17"
     hour: "3"
     user: root
-    job: "/usr/local/bin/sk-drift-check >/var/log/drift-check.log 2>&1"
+    job: "if test -n \"$(git -C /etc status --porcelain)\"; then logger -p authpriv.warning 'tracked /etc configuration drift detected'; fi"
 
 - name: Create a system user
   ansible.builtin.user:
@@ -507,8 +507,9 @@ Or set it inside the play:
 ```
 
 The `-i 'localhost,'` form (note the trailing comma) bypasses the
-inventory file entirely — useful for one-shot scripts and for the
-`sk-ansible-dry-run` helper this skill ships.
+inventory file entirely. Run a dry check directly with
+`ansible-playbook -i 'localhost,' playbook.yml --check --diff`; this checkout
+does not ship an `sk-ansible-dry-run` wrapper.
 
 ---
 
@@ -744,7 +745,7 @@ Other knobs:
 
 ## 16. Three complete playbooks
 
-### 16a. SSH hardening (matches `sk-harden-ssh`)
+### 16a. SSH hardening (manual procedure; wrapper not shipped)
 
 ```yaml
 ---
@@ -859,7 +860,7 @@ ClientAliveCountMax 2
     - name: Run the linux-skills setup script
       ansible.builtin.command: /root/.claude/skills/scripts/setup-claude-code.sh
       args:
-        creates: /usr/local/bin/sk-drift-check
+      creates: /usr/local/lib/linux-skills/common.sh
 ```
 
 ### 16c. Nightly drift detection cron

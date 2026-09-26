@@ -133,8 +133,8 @@ For a new Rocky Linux web host, create and test a `wheel` administrator from a s
 
 **This skill is self-contained.** The 11-section manual procedure below uses
 only standard tools — Debian/Ubuntu by default, with RHEL-family equivalents
-per the **Distro support** matrix above. The `sk-provision-fresh` script in the
-**Optional fast path** section is a convenience wrapper — never required.
+per the **Distro support** matrix above. No `sk-provision-fresh` wrapper is
+shipped in this checkout; use the manual procedure below.
 
 Sets up a fresh server. Ask first:
 1. **Hostname?**
@@ -234,7 +234,6 @@ After the basic OS and linux-skills are in place, running
 
 | Task | Fast-path script |
 |---|---|
-| Guided wizard for sections 1–11 | `sudo sk-provision-fresh` |
 | List kernels / roll back to a known-good kernel | `sudo sk-kernel-rollback [--list \| --to <version>]` |
 
 These are optional wrappers — every action is also a plain command documented in
@@ -250,5 +249,4 @@ sudo install-skills-bin linux-server-provisioning
 
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
-| sk-provision-fresh | scripts/sk-provision-fresh.sh | no | Guided fresh-server wizard covering hostname, timezone, admin user, SSH, UFW, fail2ban, unattended-upgrades, certbot, and linux-skills clone. |
 | sk-kernel-rollback | scripts/sk-kernel-rollback.sh | no | List installed kernels and set a chosen prior kernel as the GRUB2 default (grubby on RHEL, grub-set-default + update-grub on Debian). Read-only with --list; asks before changing the default; never removes a kernel. |

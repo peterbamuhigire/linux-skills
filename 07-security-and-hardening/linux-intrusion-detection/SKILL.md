@@ -213,10 +213,7 @@ Running `sudo install-skills-bin linux-intrusion-detection` installs:
 
 | Task | Fast-path script |
 |---|---|
-| fail2ban status report with recent blocks | `sudo sk-fail2ban-status` |
 | Run rkhunter + chkrootkit with summarised warnings | `sudo sk-rootkit-scan` |
-| First-time AIDE install + init + cron (see `linux-file-integrity`) | `sudo sk-file-integrity-init` |
-| Run AIDE check with classified results (see `linux-file-integrity`) | `sudo sk-file-integrity-check` |
 
 These are optional wrappers around `fail2ban-client`, `rkhunter`, and
 `chkrootkit`. The two `sk-file-integrity-*` rows drive AIDE — documented in
@@ -233,7 +230,4 @@ sudo install-skills-bin linux-intrusion-detection
 
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
-| sk-fail2ban-status | scripts/sk-fail2ban-status.sh | yes | Jails, active bans, total bans by jail, recent blocks with geo hints. |
-| sk-file-integrity-init | scripts/sk-file-integrity-init.sh | no | Initialize AIDE database, verify baseline, install nightly cron. |
-| sk-file-integrity-check | scripts/sk-file-integrity-check.sh | no | Run AIDE check, summarize changes, classify (config/log/binary), alert on binary drift. |
 | sk-rootkit-scan | scripts/sk-rootkit-scan.sh | no | Run rkhunter + chkrootkit, summarize warning counts, gate `--propupd` re-baseline, point triage at AIDE/auditd. |

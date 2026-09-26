@@ -217,7 +217,7 @@ sudo install-skills-bin linux-repo-sync
 
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
-| sk-update-all-repos | scripts/sk-update-all-repos.sh | no | Pull every registered git repo on this server using `git pull --rebase --autostash` and a porcelain dirty-check; interactive menu plus `--all`/`--repo` flags. This is the engine implementation of the safe-update doctrine above (shared with `linux-site-deployment`, which installs it as a core tool). |
+| sk-update-all-repos | scripts/sk-update-all-repos.sh | no | Pull every registered git repo on this server using `git pull --rebase --autostash` and a porcelain dirty-check; interactive menu plus `--all`/`--repo` flags. This is the engine implementation of the safe-update doctrine above and is owned by this skill. |
 
 ## Verify
 

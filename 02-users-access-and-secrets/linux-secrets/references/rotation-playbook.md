@@ -408,11 +408,10 @@ single-host audit trail.
 
 ## 11. Dry-run and verification requirements
 
-Every `sk-secret-rotate` invocation must support `--dry-run`, which
-prints the steps without writing. Every invocation must require
-`--verify-with="<command>"` and must run that command after the
-rotation, refusing to mark the rotation "done" unless the verify
-command exits zero.
+The proposed `sk-secret-rotate` wrapper is not shipped in this checkout; this
+section records requirements for any future helper. For a manual rotation,
+preview each dependent change, use the authorised secret store, and run the
+named verification command before recording completion.
 
 A rotation with no verification step is not a rotation — it is an
 unprotected change to a live system. The book's self-healing chapter

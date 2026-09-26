@@ -416,26 +416,6 @@ sudo find /etc/mysql /root/.ssh /etc/ssl/private -type f \
 
 ---
 
-## Optional fast path (when sk-* scripts are installed)
+## Script availability
 
-Running `sudo install-skills-bin linux-secrets` installs:
-
-| Task | Fast-path script |
-|---|---|
-| Scan a tree or filesystem for credentials + permissions | `sudo sk-secret-scan --path <dir>` |
-| Rotate a managed credential with verification | `sudo sk-secret-rotate --credential <name> --verify-with <cmd>` |
-
-These are optional wrappers around `trufflehog`, `age`, `sops`, `gpg`.
-
-## Scripts
-
-This skill installs the following scripts to `/usr/local/bin/`. To install:
-
-```bash
-sudo install-skills-bin linux-secrets
-```
-
-| Script | Source | Core? | Purpose |
-|---|---|---|---|
-| sk-secret-scan | scripts/sk-secret-scan.sh | no | Scan a repo tree or filesystem path for credentials, API keys, private keys; verify credential file permissions. |
-| sk-secret-rotate | scripts/sk-secret-rotate.sh | no | Rotate a managed credential, update dependent services, run a verification command, audit-log the rotation. |
+No wrapper commands for this skill are shipped in this checkout. Use the native procedures above; planned wrappers remain in [the script inventory](../../docs/engine-design/script-inventory.md) until their source files are present.
