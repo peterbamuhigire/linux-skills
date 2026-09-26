@@ -62,7 +62,7 @@ COMMANDS:
     all                         Install every script in every skill (opt-in)
     <skill-name>                Install one skill's scripts
                                 (e.g. install-skills-bin linux-webstack)
-    --list                      List available scripts and whether installed
+    --list                      List manifest source availability and installation status
     --update [<skill>]          git pull + re-install changed scripts
     --uninstall <skill-name>    Remove a skill's scripts
 
@@ -136,18 +136,39 @@ parse_manifest() {
 # ----------------------------------------------------------------------------
 # Install a single script from a manifest row
 # ----------------------------------------------------------------------------
+resolve_script_source() {
+    local skill_md="$1"
+    local source="$2"
+    local repo_source="$REPO_ROOT/$source"
+    local skill_source="${skill_md%/*}/$source"
+
+    if [[ "$source" == /* ]]; then
+        printf '%s\n' "$source"
+    elif [[ -f "$repo_source" ]]; then
+        # Preserve the engine-root-relative manifest convention.
+        printf '%s\n' "$repo_source"
+    elif [[ -f "$skill_source" ]]; then
+        # Also support skill-owned scripts stored beside their SKILL.md.
+        printf '%s\n' "$skill_source"
+    else
+        # Keep the canonical path for a useful missing-source diagnostic.
+        printf '%s\n' "$repo_source"
+    fi
+}
+
 install_one() {
     local skill="$1"
-    local name="$2"
-    local source="$3"
-    local purpose="$4"
+    local skill_md="$2"
+    local name="$3"
+    local source="$4"
+    local purpose="$5"
 
-    local src="$REPO_ROOT/$source"
+    local src; src="$(resolve_script_source "$skill_md" "$source")"
     local dest="$INSTALL_BIN_DIR/$name"
 
     if [[ ! -f "$src" ]]; then
-        warn "$name: source file missing: $src (skipped)"
-        return 0
+        warn "$name: source file missing (manifest path: $source; checked engine and skill roots)"
+        return 2
     fi
 
     if [[ -f "$dest" && "$FORCE" != "1" ]]; then
@@ -210,19 +231,29 @@ install_skill() {
 
     local count=0
     local installed=0
+    local missing=0
+    local failed=0
     while IFS='|' read -r name source core purpose; do
         [[ -z "$name" ]] && continue
         count=$((count + 1))
-        if install_one "$skill" "$name" "$source" "$purpose"; then
+        if install_one "$skill" "$skill_md" "$name" "$source" "$purpose"; then
             installed=$((installed + 1))
+        else
+            local result=$?
+            if (( result == 2 )); then
+                missing=$((missing + 1))
+            else
+                failed=$((failed + 1))
+            fi
         fi
     done < <(parse_manifest "$skill_md")
 
     if (( count == 0 )); then
         info "$skill has no scripts in its manifest"
     else
-        info "$skill: $installed/$count scripts installed"
+        info "$skill: $installed/$count scripts installed; $missing missing sources; $failed failed"
     fi
+    (( failed == 0 ))
 }
 
 # ----------------------------------------------------------------------------
@@ -234,6 +265,8 @@ install_core() {
 
     local total_count=0
     local total_installed=0
+    local total_missing=0
+    local total_failed=0
 
     local skill_md
     for skill_md in "$REPO_ROOT"/linux-*/SKILL.md "$REPO_ROOT"/[0-9]*-*/linux-*/SKILL.md; do
@@ -244,14 +277,22 @@ install_core() {
             [[ -z "$name" ]] && continue
             if [[ "$core" == "yes" ]]; then
                 total_count=$((total_count + 1))
-                if install_one "$skill" "$name" "$source" "$purpose"; then
+                if install_one "$skill" "$skill_md" "$name" "$source" "$purpose"; then
                     total_installed=$((total_installed + 1))
+                else
+                    local result=$?
+                    if (( result == 2 )); then
+                        total_missing=$((total_missing + 1))
+                    else
+                        total_failed=$((total_failed + 1))
+                    fi
                 fi
             fi
         done < <(parse_manifest "$skill_md")
     done
 
-    info "core install complete: $total_installed/$total_count scripts"
+    info "core install complete: $total_installed/$total_count scripts installed; $total_missing missing sources; $total_failed failed"
+    (( total_failed == 0 && total_missing == 0 ))
 }
 
 # ----------------------------------------------------------------------------
@@ -261,31 +302,36 @@ install_all() {
     header "Installing ALL scripts (every skill)"
     install_library
 
+    local failed=0
     local skill_md
     for skill_md in "$REPO_ROOT"/linux-*/SKILL.md "$REPO_ROOT"/[0-9]*-*/linux-*/SKILL.md; do
         local skill
         skill="$(basename "$(dirname "$skill_md")")"
         [[ "$skill" == "linux-sysadmin" ]] && continue
-        install_skill "$skill"
+        install_skill "$skill" || failed=$((failed + 1))
     done
+    (( failed == 0 ))
 }
 
 # ----------------------------------------------------------------------------
 # List what's available and what's installed
 # ----------------------------------------------------------------------------
 list_scripts() {
-    header "Available scripts"
-    printf "  %-30s %-30s %-6s %s\n" "SCRIPT" "SKILL" "CORE?" "INSTALLED?"
-    printf "  %-30s %-30s %-6s %s\n" "------" "-----" "-----" "----------"
+    header "Script manifest sources and installation status"
+    printf "  %-30s %-30s %-6s %-12s %s\n" "SCRIPT" "SKILL" "CORE?" "SOURCE?" "INSTALLED?"
+    printf "  %-30s %-30s %-6s %-12s %s\n" "------" "-----" "-----" "-------" "----------"
     local skill_md
     for skill_md in "$REPO_ROOT"/linux-*/SKILL.md "$REPO_ROOT"/[0-9]*-*/linux-*/SKILL.md; do
         local skill
         skill="$(basename "$(dirname "$skill_md")")"
         while IFS='|' read -r name source core purpose; do
             [[ -z "$name" ]] && continue
-            local status="no"
-            [[ -f "$INSTALL_BIN_DIR/$name" ]] && status="yes"
-            printf "  %-30s %-30s %-6s %s\n" "$name" "$skill" "$core" "$status"
+            local source_path; source_path="$(resolve_script_source "$skill_md" "$source")"
+            local source_status="available"
+            local installed_status="no"
+            [[ -f "$source_path" ]] || source_status="missing"
+            [[ -f "$INSTALL_BIN_DIR/$name" ]] && installed_status="yes"
+            printf "  %-30s %-30s %-6s %-12s %s\n" "$name" "$skill" "$core" "$source_status" "$installed_status"
         done < <(parse_manifest "$skill_md")
     done
 }
@@ -324,6 +370,7 @@ uninstall_skill() {
 # ----------------------------------------------------------------------------
 update_skills() {
     local target_skill="${1:-}"
+    local install_failed=0
 
     header "Updating linux-skills repo"
     require_cmd git
@@ -348,7 +395,7 @@ update_skills() {
     info "new HEAD: $(cd "$REPO_ROOT" && git rev-parse --short HEAD)"
 
     if [[ -n "$target_skill" ]]; then
-        install_skill "$target_skill"
+        install_skill "$target_skill" || install_failed=1
     else
         # Re-install every currently-installed script
         info "re-installing every currently-installed script"
@@ -366,11 +413,12 @@ update_skills() {
                 fi
             done < <(parse_manifest "$skill_md")
             if (( any_installed )); then
-                install_skill "$skill"
+                install_skill "$skill" || install_failed=1
             fi
         done
     fi
     install_library
+    (( install_failed == 0 ))
 }
 
 # =============================================================================
@@ -411,18 +459,19 @@ esac
 # 6. Main logic
 # =============================================================================
 
+COMMAND_RESULT=0
 case "$COMMAND" in
     core)
-        install_core
+        install_core || COMMAND_RESULT=$?
         ;;
     all)
-        install_all
+        install_all || COMMAND_RESULT=$?
         ;;
     --list)
         list_scripts
         ;;
     --update)
-        update_skills "${REMAINING_ARGS[0]:-}"
+        update_skills "${REMAINING_ARGS[0]:-}" || COMMAND_RESULT=$?
         ;;
     --uninstall)
         if (( ${#REMAINING_ARGS[@]} == 0 )); then
@@ -431,7 +480,7 @@ case "$COMMAND" in
         uninstall_skill "${REMAINING_ARGS[0]}"
         ;;
     linux-*)
-        install_skill "$COMMAND"
+        install_skill "$COMMAND" || COMMAND_RESULT=$?
         ;;
     *)
         die "unknown command: $COMMAND (try --help)" 2
@@ -439,3 +488,4 @@ case "$COMMAND" in
 esac
 
 print_summary
+exit "$COMMAND_RESULT"

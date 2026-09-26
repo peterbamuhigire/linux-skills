@@ -49,15 +49,59 @@ else
 fi
 
 # -----------------------------------------------------------------------------
+# Test 3a: --list distinguishes root, skill-local, and missing sources
+# -----------------------------------------------------------------------------
+list_output=$(scripts/install-skills-bin --list 2>&1)
+if printf '%s\n' "$list_output" | awk '$1 == "sk-service-priority" && $2 == "linux-service-management" && $4 == "available" { found=1 } END { exit !found }'; then
+    pass_t "--list resolves engine-root script sources"
+else
+    fail_t "--list did not resolve an engine-root script source"
+fi
+
+if printf '%s\n' "$list_output" | awk '$1 == "sk-module-info" && $2 == "linux-kernel-modules" && $4 == "available" { found=1 } END { exit !found }'; then
+    pass_t "--list resolves skill-local script sources"
+else
+    fail_t "--list did not resolve a skill-local script source"
+fi
+
+if printf '%s\n' "$list_output" | awk '$1 == "sk-file-integrity-init" && $2 == "linux-file-integrity" && $4 == "missing" { found=1 } END { exit !found }'; then
+    pass_t "--list identifies missing manifest sources"
+else
+    fail_t "--list did not identify a missing manifest source"
+fi
+
+# -----------------------------------------------------------------------------
+# Test 3b: dry-run summary does not count missing sources as installed
+# -----------------------------------------------------------------------------
+missing_output=$(scripts/install-skills-bin linux-file-integrity --dry-run 2>&1)
+if printf '%s\n' "$missing_output" | grep -q '0/2 scripts installed; 2 missing sources; 0 failed'; then
+    pass_t "missing manifest sources are excluded from installed totals"
+else
+    fail_t "missing source summary was inaccurate: $missing_output"
+fi
+
+# -----------------------------------------------------------------------------
+# Test 3c: dry-run uses the skill-local source path when the engine path is absent
+# -----------------------------------------------------------------------------
+local_output=$(scripts/install-skills-bin linux-kernel-modules --dry-run 2>&1)
+if printf '%s\n' "$local_output" | grep -q 'linux-kernel-modules/scripts/sk-module-info.sh'; then
+    pass_t "dry-run resolves skill-local script source"
+else
+    fail_t "dry-run did not resolve skill-local script source: $local_output"
+fi
+
+# -----------------------------------------------------------------------------
 # Test 4: --dry-run core doesn't actually install anything
 # -----------------------------------------------------------------------------
 # Remove any pre-installed sk-* just in case
 rm -f /usr/local/bin/sk-* 2>/dev/null || true
 
-if scripts/install-skills-bin core --dry-run >/dev/null 2>&1; then
-    pass_t "install-skills-bin core --dry-run exits 0"
+dry_run_output=$(scripts/install-skills-bin core --dry-run 2>&1)
+dry_run_result=$?
+if printf '%s\n' "$dry_run_output" | grep -q 'core install complete:'; then
+    pass_t "core --dry-run reaches its truthful source summary (exit $dry_run_result)"
 else
-    fail_t "install-skills-bin core --dry-run failed"
+    fail_t "core --dry-run did not reach its source summary: $dry_run_output"
 fi
 
 count=$(ls /usr/local/bin/sk-* 2>/dev/null | wc -l)
@@ -70,10 +114,14 @@ fi
 # -----------------------------------------------------------------------------
 # Test 5: Real core install places files in /usr/local/bin/
 # -----------------------------------------------------------------------------
-if scripts/install-skills-bin core >/dev/null 2>&1; then
-    pass_t "install-skills-bin core exits 0"
+core_output=$(scripts/install-skills-bin core 2>&1)
+core_result=$?
+if printf '%s\n' "$core_output" | grep -Eq 'core install complete: .*; [1-9][0-9]* missing sources; [0-9]+ failed' && (( core_result != 0 )); then
+    pass_t "core install reports unavailable required sources and returns nonzero"
+elif printf '%s\n' "$core_output" | grep -q 'core install complete: .*; 0 missing sources; 0 failed' && (( core_result == 0 )); then
+    pass_t "core install succeeds when all required sources are available"
 else
-    fail_t "install-skills-bin core failed"
+    fail_t "core install status disagreed with its source summary: $core_output"
 fi
 
 count=$(ls /usr/local/bin/sk-* 2>/dev/null | wc -l)
