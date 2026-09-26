@@ -267,19 +267,18 @@ For creating a new Node.js systemd unit, see `linux-webstack`.
 
 ---
 
-## Optional fast path (when sk-* scripts are installed)
+## Available fast path
 
-Running `sudo install-skills-bin linux-service-management` installs:
+Running `sudo install-skills-bin linux-service-management` installs the
+script listed here from this checkout:
 
 | Task | Fast-path script |
 |---|---|
-| One-screen service status + recent logs | `sudo sk-service-health <service>` |
-| Safe restart with pre/post health check | `sudo sk-service-restart <service>` |
-| All systemd timers with next/last run | `sudo sk-timer-list` |
-| Crontab audit across all users | `sudo sk-cron-audit` |
 | Show or cap a service's CPU/IO/memory limits | `sudo sk-service-priority <service> [--cpu-quota 50% --memory-max 512M]` |
 
-These are optional wrappers around `systemctl` and `journalctl`.
+Service status, journal, timer, cron, and restart procedures use the systemd
+and cron commands documented above; this checkout does not ship the other
+wrappers named in older manifests.
 
 ## Scripts
 
@@ -291,8 +290,4 @@ sudo install-skills-bin linux-service-management
 
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
-| sk-service-health | scripts/sk-service-health.sh | yes | Show state, last 20 journal lines, recent restart count, and failed dependencies for a systemd service. |
-| sk-cron-audit | scripts/sk-cron-audit.sh | yes | Enumerate all user + system crontabs, verify `MAILTO`, flag jobs that haven't run recently, validate syntax. |
-| sk-service-restart | scripts/sk-service-restart.sh | no | Safe restart: check health before, restart, wait, verify, show logs. Rollback hint on failure. |
-| sk-timer-list | scripts/sk-timer-list.sh | no | All systemd timers with next and last run, unit, state; flags timers that never fired. |
 | sk-service-priority | scripts/sk-service-priority.sh | no | Show a service's effective cgroup limits (CPUWeight/CPUQuota/IOWeight/MemoryMax/Nice) and live usage; with limit flags, applies them via `systemctl set-property` (asks first) so a background service can't starve the host. |

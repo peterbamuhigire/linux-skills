@@ -270,21 +270,18 @@ relationship, `iptables-save`/`netfilter-persistent`, migration, and
 
 ---
 
-## Optional fast path (when sk-* scripts are installed)
+## Available fast paths
 
-Running `sudo install-skills-bin linux-firewall-ssl` installs:
+Running `sudo install-skills-bin linux-firewall-ssl` installs the two netfilter
+helpers below from this checkout:
 
 | Task | Fast-path script |
 |---|---|
-| List certs, days-to-expiry, renewal timer | `sudo sk-cert-status` |
-| Interactive UFW profile picker + apply | `sudo sk-ufw-reset` |
-| Diff UFW rules against a baseline | `sudo sk-ufw-audit` |
-| Force-renew cert + reload web server | `sudo sk-cert-renew --domain <d>` |
 | Show raw netfilter (nft/iptables) + routes | `sudo sk-nft-show` |
 | Apply a default-deny nftables ruleset (dry-run) | `sudo sk-nft-apply --profile web-server --dry-run` |
 
-These are optional wrappers. The `ufw` and `certbot` commands above are the
-source of truth.
+No Certbot or UFW helper scripts are supplied by this checkout; use the
+documented `certbot`, `ufw`, and native service commands for those tasks.
 
 ## Scripts
 
@@ -296,9 +293,5 @@ sudo install-skills-bin linux-firewall-ssl
 
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
-| sk-cert-status | scripts/sk-cert-status.sh | yes | List all certbot certs, days-to-expiry, domains covered, renewal timer state. |
-| sk-ufw-reset | scripts/sk-ufw-reset.sh | no | Interactive UFW wizard: pick profile (web-server / bastion / db / custom), apply, enable. |
-| sk-ufw-audit | scripts/sk-ufw-audit.sh | no | Diff active UFW rules against a baseline file; flag drift. |
-| sk-cert-renew | scripts/sk-cert-renew.sh | no | Force certbot renewal for one or all domains, reload nginx/apache on success. |
-| sk-nft-show | scripts/sk-nft-show.sh | yes | Read-only view of the raw netfilter layer: active front-end, live nftables ruleset, iptables backend mode, persistence state, IP routing table. Both families. |
-| sk-nft-apply | scripts/sk-nft-apply.sh | no | Apply a raw nftables ruleset from a built-in profile (web-server/ssh-only) or a .nft file; always syntax-checks, dry-run-capable, asks before replacing the live ruleset; optional persistence. Refuses while ufw/firewalld is active unless --force. |
+| sk-nft-show | 07-security-and-hardening/linux-firewall-ssl/scripts/sk-nft-show.sh | yes | Read-only view of the raw netfilter layer: active front-end, live nftables ruleset, iptables backend mode, persistence state, IP routing table. Both families. |
+| sk-nft-apply | 07-security-and-hardening/linux-firewall-ssl/scripts/sk-nft-apply.sh | no | Apply a raw nftables ruleset from a built-in profile (web-server/ssh-only) or a .nft file; always syntax-checks, dry-run-capable, asks before replacing the live ruleset; optional persistence. Refuses while ufw/firewalld is active unless --force. |
