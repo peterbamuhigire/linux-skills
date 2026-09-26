@@ -21,8 +21,12 @@ from pathlib import Path
 
 START = "<!-- chwezi-codex-model-policy:start -->"
 END = "<!-- chwezi-codex-model-policy:end -->"
-ROOT_KEYS = ("model", "review_model")
-POLICY_KEYS = {"model": "root_model", "review_model": "review_model"}
+ROOT_KEYS = ("model", "review_model", "model_reasoning_effort")
+POLICY_KEYS = {
+    "model": "root_model",
+    "review_model": "review_model",
+    "model_reasoning_effort": "reasoning_effort",
+}
 
 
 class PolicyError(Exception):
@@ -209,6 +213,7 @@ def assert_semantic(before: dict, after: dict, policy: dict) -> None:
         result = dict(value)
         result.pop("model", None)
         result.pop("review_model", None)
+        result.pop("model_reasoning_effort", None)
         agents = dict(result.get("agents", {}))
         for role in policy["roles"]:
             agents.pop(role, None)
@@ -229,6 +234,8 @@ def check(home: Path, root: Path) -> None:
     parsed = parse_config(config_path)
     if parsed.get("model") != policy["root_model"] or parsed.get("review_model") != policy["review_model"]:
         raise PolicyDrift("root model policy drift")
+    if parsed.get("model_reasoning_effort") != policy["reasoning_effort"]:
+        raise PolicyDrift("root reasoning effort policy drift")
     expected_files = expected(home, policy, policy_text, templates)
     safe_destination(config_path, home)
     safe_destination(home / "AGENTS.md", home)
@@ -237,7 +244,16 @@ def check(home: Path, root: Path) -> None:
     for role in policy["roles"]:
         role_path = home / "agents" / f"{role}.toml"
         safe_destination(role_path, home)
-        if not role_path.exists() or role_path.read_bytes() != templates[role]:
+        if not role_path.exists():
+            raise PolicyDrift(f"role template drift: {role}")
+        try:
+            actual_role = tomllib.loads(role_path.read_text(encoding="utf-8"))
+            expected_role = tomllib.loads(templates[role].decode("utf-8"))
+        except (OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
+            raise PolicyError(f"invalid existing role file {role}: {exc}") from exc
+        # CRLF/LF changes do not alter the TOML policy. Preserve the user's
+        # equivalent file instead of reporting drift or normalizing its bytes.
+        if actual_role != expected_role:
             raise PolicyDrift(f"role template drift: {role}")
     doc = home / "AGENTS.md"
     if not doc.exists() or merge_agents_doc(doc.read_text(encoding="utf-8"), policy_text).encode() != doc.read_bytes():
