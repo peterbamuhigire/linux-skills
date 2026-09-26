@@ -9,10 +9,10 @@ candidate_scope:
   - 05-services-and-virtualization/linux-service-management/SKILL.md
 environment:
   required: disposable Linux lab, Debian 13 for the plan's ERPNext scenario
-  current_state: docker and podman executables were not found via PATH; WSL distribution inventory and usable lab capability are not assessed
+  current_state: Windows read-only inventory found WSL default version 2 but no installed distribution; Docker, Podman, containerd, and nerdctl were absent from PATH
   live_host_access: not assessed
   erpnext_integration: not assessed
-  note: Record image digest, distro release, package versions, kernel, service state, and test-data hashes when a lab is available.
+  note: Linux execution remains NOT_ASSESSED. When a Linux lab is available, record image digest, distro release, package versions, kernel, service state, and test-data hashes.
 cases:
   - id: LWS-FAIL-01-invalid-vhost
     setup: Candidate vhost contains a controlled syntax error; preserve a known-good config and snapshot service state.
