@@ -110,3 +110,16 @@ The three retained source paths exist in this checkout. Installer dry-runs were
 attempted but the installer rejected the environment before source resolution
 because the shell was not root; no escalation or installation was attempted.
 Static source-path existence checks are the available evidence.
+
+## Follow-up evidence — disposable Linux lab availability (2026-09-26)
+
+Read-only Windows inventory found `wsl.exe`; `wsl.exe --status` returned
+success and reported default version 2. `wsl.exe --list --verbose` reported
+that no distributions are installed. Docker, Podman, containerd, and nerdctl
+were not found on `PATH`; the engine's `wsa-wsl-status` helper is also not
+available on `PATH`. No WSL distribution or container runtime was installed
+and no host configuration was changed. The Windows Administration Hyper-V
+skill treats VM/host changes as outside its assessed mutation capability, and
+P10 allows missing lab access to remain **NOT_ASSESSED**. Therefore the
+Debian/ERPNext failure/rollback cases remain unexecuted; this check does not
+convert them to a pass.
