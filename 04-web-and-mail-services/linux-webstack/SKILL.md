@@ -231,33 +231,7 @@ gzip on;
 
 ---
 
-## Optional fast path (when sk-* scripts are installed)
-
-Running `sudo install-skills-bin linux-webstack` installs wrappers for the
-most common workflows:
-
-| Task | Fast-path script |
-|---|---|
-| Validate + reload Nginx | `sudo sk-nginx-test-reload` |
-| Validate + reload Apache | `sudo sk-apache-test-reload` |
-| Generate a new PHP-FPM pool | `sudo sk-php-fpm-pool --site <domain>` |
-| Analyze MySQL config | `sudo sk-mysql-tune` |
-| Audit MySQL users & grants | `sudo sk-mysql-user-audit` |
-
-These are optional convenience wrappers around the manual commands above.
-
-## Scripts
-
-This skill installs the following scripts to `/usr/local/bin/`. To install:
-
-```bash
-sudo install-skills-bin linux-webstack
-```
-
-| Script | Source | Core? | Purpose |
-|---|---|---|---|
-| sk-nginx-test-reload | scripts/sk-nginx-test-reload.sh | no | `nginx -t` then graceful reload; shows config summary and what changed since last reload. |
-| sk-apache-test-reload | scripts/sk-apache-test-reload.sh | no | `apache2ctl configtest` then graceful reload. |
-| sk-php-fpm-pool | scripts/sk-php-fpm-pool.sh | no | Generate a PHP-FPM pool for a site (socket, user, pm settings), enable, restart. |
-| sk-mysql-tune | scripts/sk-mysql-tune.sh | no | Analyze `my.cnf` + runtime variables, suggest improvements. Non-destructive. |
-| sk-mysql-user-audit | scripts/sk-mysql-user-audit.sh | no | Show MySQL users, hosts, grants; flag anonymous, `%` hosts, over-privileged users. |
+No Nginx/Apache reload, PHP-FPM pool, or MySQL tuning/audit wrapper sources
+are shipped for this skill in the current checkout. Use the native commands
+and configuration procedures above; run a syntax validator before any
+authorised reload.

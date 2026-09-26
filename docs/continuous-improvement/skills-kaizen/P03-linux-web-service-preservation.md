@@ -25,7 +25,7 @@ These trigger, input/output, and authority differences are material. Decision: *
 | Source | Direct references (content SHA-256) | Skill-manifest tools/scripts named by source | Mapping decision |
 |---|---|---|---|
 | LWS-01 | `references/deployment-checklist.md` `d44145aef25bcee8fb2a1b38ce96b30046c08e59c2149ad32816b0cb95212f42`; `references/nginx-templates.md` `c7943505ccea62aa0757674cf11d41898a75d8080239c9253edb4567895114cf`; `references/apache-backend.md` `184d456e15f3ce089fef765ebc6dc30e6ab1b7595f147a9dd0344a732279efcf`; shared `linux-webstack/references/httpd-reference.md` `5434d5464e6a999800ae804c7f2b2290b7b611420de80cc42f64129329ef21ed`; `linux-server-hardening/references/selinux-reference.md` `dce1c2fbf2fe51fb3bb74d7424a4818145a48e8745b0ad6be5ab5ab4bb1cb575`; `docs/multi-distro/plan.md` `6bed3d06fd41ab6baf0de3caf5d0f562a20430d11bb6372e4f6a307fffd1f3d1`. | No site-deployment wrapper sources are shipped. `sk-update-all-repos` is owned by `linux-repo-sync` and is not a staged release helper. | Removed stale fast-path and manifest claims after checking their declared source paths and installer resolution. The shared updater's host-specific/runtime safety remains not assessed; do not substitute it for pinned-revision staging or cutover. |
-| LWS-02 | `references/config-patterns.md` `02a178bd4c1c1d7bfdb8b729e2067bb3f9ed92a544b9223f5e60d10875fee3af`; `references/httpd-reference.md` `5434d5464e6a999800ae804c7f2b2290b7b611420de80cc42f64129329ef21ed`; `references/nginx-directives.md` `c6c870aa0b8dde5b69bc951a9f4c3ce51144273ac1717257b4ea0195b251e7f3`; `references/php-fpm-tuning.md` `043e8a3cfc24e461a43df0c2ee72ce9705efaed847c3d4c02ed43d1ae93fa44a`; multi-distro plan as above. | `sk-nginx-test-reload`, `sk-apache-test-reload`, `sk-php-fpm-pool` (plus unrelated MySQL tools excluded from this cohort). | Only the two config-test/reload tools overlap a site cutover; application-stack diagnosis remains separate. |
+| LWS-02 | `references/config-patterns.md` `02a178bd4c1c1d7bfdb8b729e2067bb3f9ed92a544b9223f5e60d10875fee3af`; `references/httpd-reference.md` `5434d5464e6a999800ae804c7f2b2290b7b611420de80cc42f64129329ef21ed`; `references/nginx-directives.md` `c6c870aa0b8dde5b69bc951a9f4c3ce51144273ac1717257b4ea0195b251e7f3`; `references/php-fpm-tuning.md` `043e8a3cfc24e461a43df0c2ee72ce9705efaed847c3d4c02ed43d1ae93fa44a`; multi-distro plan as above. | No Nginx/Apache reload, PHP-FPM pool, or MySQL tuning/audit wrapper sources are shipped in this checkout. | Removed unsupported helper claims. Config validation remains on native commands; application-stack diagnosis stays separate. |
 | LWS-03 | `references/ufw-reference.md` `6d48b271beb43e490df3f9b2792e70510a614606dbb52168a325ba0b5a53981e`; `references/firewalld-reference.md` `5ee568e0c92ef0ebecdbec2d5f2fafce4431c167d83906207b5ad4ee281de054`; `references/nftables-and-iptables.md` `3764a63bc7359ce5a107b0bc1646544031da55216392e9713e70efd83091de6e`; `references/certbot-reference.md` `480734f96a9fa56eb15f9a089546aeed0ec02f2b68ab00c27dc006cc5af0bbe7`; `references/ssl-config.md` `2fc1dfbf98f07a92eda30b30414d2835db3ccde40fa8bc8134ac2294dbc8c295`; multi-distro plan as above. | Shipped: `sk-nft-show`, `sk-nft-apply`. Certbot and UFW wrappers are not present in this checkout. | Netfilter helpers are listed with engine-root-relative source paths. TLS and firewall controls remain owned here; certificate lifecycle uses documented native commands. Runtime helper behavior is not certified by this inventory. |
 | LWS-04 | `references/service-reference.md` `8ff4278feabeb7adcff103b065e489ae163f08761a969e5faf128e76c6d137e2`; `references/timers-and-cron.md` `3152cfa5f4797a34452074559a63fcd034ad051f25f0a65e58eca3bdbdbc012e`; `references/resource-control-and-targets.md` `79e02d20aa8cb70bda0358e376826eb75e2f523919cdaedec40593f57ca84dfe`; safe-reversible and incident-learning standards; multi-distro plan as above. | Shipped: `sk-service-priority`. The service-health, restart, timer, and cron wrappers named in the prior manifest are absent. | Generic unit routines stay separate; use native service status/journal/health procedures for deployment verification. Runtime behavior of the resource-control helper remains unverified here. |
 
@@ -123,3 +123,18 @@ skill treats VM/host changes as outside its assessed mutation capability, and
 P10 allows missing lab access to remain **NOT_ASSESSED**. Therefore the
 Debian/ERPNext failure/rollback cases remain unexecuted; this check does not
 convert them to a pass.
+
+## Follow-up evidence — web-stack wrapper claims (2026-09-26)
+
+The mapped shared `linux-webstack` entrypoint also advertised five wrappers
+(`sk-nginx-test-reload`, `sk-apache-test-reload`, `sk-php-fpm-pool`,
+`sk-mysql-tune`, and `sk-mysql-user-audit`) whose source files are absent from
+both the skill-local and engine-root paths. Removed those fast-path and script
+manifest claims while keeping the native configuration procedures. Removed the
+stale `sk-nginx-test-reload` alternative from `linux-sysadmin`; the Nginx
+syntax check remains the native `nginx -t` command. Candidate hashes:
+linux-webstack `c91fcda5834e8472e0556213e21cc8923f61e4fda332b5edb0c50efa985361a4`;
+linux-sysadmin `a412345bd5eda10a7d99f725b27edb61d62e59cc8d01771d5493a3fdb38039b6`.
+No wrapper sources or host actions were added. This is a source-availability
+correction only; runtime behavior of native commands remains target-host
+dependent and any operational execution is **NOT_ASSESSED**.

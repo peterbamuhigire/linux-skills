@@ -267,7 +267,7 @@ Linux Server Management
 - All skills work on any Ubuntu/Debian server — no product names in guidance.
 - Confirm before every destructive operation (restore, drop, reset, delete).
   Use `confirm_destructive` from `common.sh` — requires the literal word `yes`.
-- Run `sudo nginx -t` (or `sk-nginx-test-reload`) before every Nginx reload — never skip.
+- Run `sudo nginx -t` before every Nginx reload — never skip. This checkout does not ship the `sk-nginx-test-reload` wrapper.
 - Every new repo on the server MUST be registered in
   `/usr/local/bin/update-all-repos`.
 - Repo-update scripts MUST preserve local work. Use
