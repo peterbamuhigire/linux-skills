@@ -24,7 +24,7 @@ These trigger, input/output, and authority differences are material. Decision: *
 
 | Source | Direct references (content SHA-256) | Skill-manifest tools/scripts named by source | Mapping decision |
 |---|---|---|---|
-| LWS-01 | `references/deployment-checklist.md` `d44145aef25bcee8fb2a1b38ce96b30046c08e59c2149ad32816b0cb95212f42`; `references/nginx-templates.md` `c7943505ccea62aa0757674cf11d41898a75d8080239c9253edb4567895114cf`; `references/apache-backend.md` `184d456e15f3ce089fef765ebc6dc30e6ab1b7595f147a9dd0344a732279efcf`; shared `linux-webstack/references/httpd-reference.md` `5434d5464e6a999800ae804c7f2b2290b7b611420de80cc42f64129329ef21ed`; `linux-server-hardening/references/selinux-reference.md` `dce1c2fbf2fe51fb3bb74d7424a4818145a48e8745b0ad6be5ab5ab4bb1cb575`; `docs/multi-distro/plan.md` `6bed3d06fd41ab6baf0de3caf5d0f562a20430d11bb6372e4f6a307fffd1f3d1`. | `sk-update-all-repos`, `sk-nginx-new-site`, `sk-apache-new-site`, `sk-astro-deploy`, `sk-php-site-deploy`, `sk-static-site-deploy`; references `sk-nginx-test-reload`, `sk-apache-test-reload`, `sk-cert-status`. | References resolve. Hashes pin files, not semantic equivalence. Scripts remain separate implementations; no script is merged or retired by this map. |
+| LWS-01 | `references/deployment-checklist.md` `d44145aef25bcee8fb2a1b38ce96b30046c08e59c2149ad32816b0cb95212f42`; `references/nginx-templates.md` `c7943505ccea62aa0757674cf11d41898a75d8080239c9253edb4567895114cf`; `references/apache-backend.md` `184d456e15f3ce089fef765ebc6dc30e6ab1b7595f147a9dd0344a732279efcf`; shared `linux-webstack/references/httpd-reference.md` `5434d5464e6a999800ae804c7f2b2290b7b611420de80cc42f64129329ef21ed`; `linux-server-hardening/references/selinux-reference.md` `dce1c2fbf2fe51fb3bb74d7424a4818145a48e8745b0ad6be5ab5ab4bb1cb575`; `docs/multi-distro/plan.md` `6bed3d06fd41ab6baf0de3caf5d0f562a20430d11bb6372e4f6a307fffd1f3d1`. | No site-deployment wrapper sources are shipped. `sk-update-all-repos` is owned by `linux-repo-sync` and is not a staged release helper. | Removed stale fast-path and manifest claims after checking their declared source paths and installer resolution. The shared updater's host-specific/runtime safety remains not assessed; do not substitute it for pinned-revision staging or cutover. |
 | LWS-02 | `references/config-patterns.md` `02a178bd4c1c1d7bfdb8b729e2067bb3f9ed92a544b9223f5e60d10875fee3af`; `references/httpd-reference.md` `5434d5464e6a999800ae804c7f2b2290b7b611420de80cc42f64129329ef21ed`; `references/nginx-directives.md` `c6c870aa0b8dde5b69bc951a9f4c3ce51144273ac1717257b4ea0195b251e7f3`; `references/php-fpm-tuning.md` `043e8a3cfc24e461a43df0c2ee72ce9705efaed847c3d4c02ed43d1ae93fa44a`; multi-distro plan as above. | `sk-nginx-test-reload`, `sk-apache-test-reload`, `sk-php-fpm-pool` (plus unrelated MySQL tools excluded from this cohort). | Only the two config-test/reload tools overlap a site cutover; application-stack diagnosis remains separate. |
 | LWS-03 | `references/ufw-reference.md` `6d48b271beb43e490df3f9b2792e70510a614606dbb52168a325ba0b5a53981e`; `references/firewalld-reference.md` `5ee568e0c92ef0ebecdbec2d5f2fafce4431c167d83906207b5ad4ee281de054`; `references/nftables-and-iptables.md` `3764a63bc7359ce5a107b0bc1646544031da55216392e9713e70efd83091de6e`; `references/certbot-reference.md` `480734f96a9fa56eb15f9a089546aeed0ec02f2b68ab00c27dc006cc5af0bbe7`; `references/ssl-config.md` `2fc1dfbf98f07a92eda30b30414d2835db3ccde40fa8bc8134ac2294dbc8c295`; multi-distro plan as above. | `sk-cert-status`, `sk-cert-renew`; firewall policy scripts remain excluded from site-deployment merge scope. | TLS and firewall controls remain owned here. `sk-cert-renew` behavior is not certified by its name or manifest description alone. |
 | LWS-04 | `references/service-reference.md` `8ff4278feabeb7adcff103b065e489ae163f08761a969e5faf128e76c6d137e2`; `references/timers-and-cron.md` `3152cfa5f4797a34452074559a63fcd034ad051f25f0a65e58eca3bdbdbc012e`; `references/resource-control-and-targets.md` `79e02d20aa8cb70bda0358e376826eb75e2f523919cdaedec40593f57ca84dfe`; safe-reversible and incident-learning standards; multi-distro plan as above. | `sk-service-health`, `sk-service-restart` (other timer, cron, and cgroup tools excluded from this site-release map). | Generic unit routines stay separate; a web-service health check must also prove application behavior. Script behavior remains unverified here. |
@@ -54,7 +54,7 @@ The linked baseline `references/deployment-checklist.md` repeated the same defec
 
 ## Cohort decision and open acceptance
 
-- Candidate content identities (SHA-256): `linux-site-deployment/SKILL.md` `409126fc18859963dcb09de90acc16be5d10f5f7c766b5eecd83864939e5daa3`; `references/deployment-checklist.md` `2f39d9678ac58fa066ad73ede4e4a91d6bc0a4136a3f9e56f482d6e97e51ea69`; `references/nginx-templates.md` `d0acc13801a18ab44e0d3154c8863f9589e7fc3452354867c057caf0ebe63b05`; `references/apache-backend.md` `1dd254414e83a1c1c7f5661219970d7c294fb139e05bb48adb0bf847261d1eac`.
+- Candidate content identities (SHA-256): `linux-site-deployment/SKILL.md` `3ae526c6aae0b71b46ff6f909132d311a426c6f1631baf0831e402ca55b15204`; `references/deployment-checklist.md` `2f39d9678ac58fa066ad73ede4e4a91d6bc0a4136a3f9e56f482d6e97e51ea69`; `references/nginx-templates.md` `d0acc13801a18ab44e0d3154c8863f9589e7fc3452354867c057caf0ebe63b05`; `references/apache-backend.md` `1dd254414e83a1c1c7f5661219970d7c294fb139e05bb48adb0bf847261d1eac`.
 - Test identities: `tests/fixtures/routing.json` `fc9bfab11ddd6b2024d8f0742b45c2d1235250ea619f6c623e831babb9d93ebb`; `quality-baseline.json` `b0883a4f97f691639418aaf2ea666d61780222c69101f46f071299155802caaf`; `tests/fixtures/web-service-operations/acceptance-cases.yaml` `70e774257e3fc8e69c491adf8736ec2dbc7682860e19ba483f4ed183d6c9d9fb`.
 - Keep the four task entrypoints separate; preserve the route identities and the stricter firewall/service approval boundaries.
 - Repair the contradictory site-deployment workflow in-place and conditionally reference the existing web-stack, firewall/TLS, and service-management owners. Do not merge or retire any source file.
@@ -65,3 +65,25 @@ The linked baseline `references/deployment-checklist.md` repeated the same defec
 - P03-T05 migration/alias testing and T06 retiring-map reconciliation are **not applicable** to this repair. The full P03 portfolio is not complete.
 - Linux model-policy check still reports the pre-existing `DRIFT: role template drift: default`; it was not applied. The required canonical `quick_validate.py` was not present in the Chwezi Dev checkout (`rg --files -uu` inventory), so that specific check is **NOT_ASSESSED**.
 - A self-review found the described capability/approval differences; independent domain review, dynamic runtime routes, optional deploy-script semantics, target cipher profile, WSL/container lab capability, and live lab behavior remain **NOT_ASSESSED**.
+
+## Follow-up evidence — optional site wrappers (2026-09-26)
+
+Read-only inventory of `linux-site-deployment` confirmed that its declared
+`scripts/` directory is absent and none of the listed `sk-*-deploy` or vhost
+wrapper sources are tracked in this repository. The installer resolves each
+manifest source relative to the engine root and skips a missing file; the
+documented commands therefore were not installable from this checkout. The
+available `sk-update-all-repos` source is the repo-sync tool: it follows a
+registered working tree's Git upstream and may run a post-pull command, so it
+does not implement the pinned-revision staging/cutover contract. Removed the
+unsupported fast-path table and install manifest from the site-deployment
+entrypoint and clarified that ownership boundary. This corrects the documented
+capability without adding a wrapper or changing installer behavior.
+
+Candidate `linux-site-deployment/SKILL.md` SHA-256 after this correction is
+`3ae526c6aae0b71b46ff6f909132d311a426c6f1631baf0831e402ca55b15204`.
+The skill validator and 30-case routing smoke test pass after the edit.
+The Chwezi Dev compliance script is absent from the canonical checkout in this
+workspace, so that additional check was not rerun for this correction.
+Runtime installation, host effects, and use of the repo updater remain
+**NOT_ASSESSED**.

@@ -136,11 +136,9 @@ For an Astro site on AlmaLinux, build the pinned revision into a versioned relea
 
 <!-- dual-compat-end -->
 
-This skill is self-contained. Every step below works with only the tools
-that ship with the Debian/Ubuntu and RHEL families (see Distro support above
-for the per-family command differences). The `sk-*` scripts listed in the Scripts
-manifest are an **optional fast path** that wraps the same steps — install
-them if they make your life easier, but they are never required.
+This skill describes a gated release workflow. No site-deployment command
+wrappers are shipped in this repository; use the reviewed manual steps below
+and confirm target-host paths and command behavior before changing production.
 
 Ask these questions first:
 
@@ -234,38 +232,12 @@ Full Nginx/Apache config templates: `references/nginx-templates.md`
 
 ---
 
-## Optional fast path (when sk-* scripts are installed)
+## Repository update boundary
 
-If the optional `linux-site-deployment` scripts are installed, inspect each
-script's current source and dry-run behavior before use. The manifest below is
-an inventory, not proof that a script implements the staged sequence above or
-is safe for a particular host.
-
-| Site type | Fast path |
-|---|---|
-| A — Astro / static | `sudo sk-astro-deploy --domain <d> --repo <url>` |
-| A — static only | `sudo sk-static-site-deploy --domain <d> --repo <url>` |
-| B — PHP | `sudo sk-php-site-deploy --domain <d> --repo <url>` |
-| C — Astro + PHP hybrid | `sudo sk-astro-deploy --hybrid --domain <d> --repo <url>` |
-
-Helper scripts for individual steps: `sk-nginx-new-site`,
-`sk-apache-new-site`, `sk-nginx-test-reload`, `sk-apache-test-reload`,
-`sk-cert-status`. All are optional wrappers around the manual commands
-above.
-
-## Scripts
-
-This skill installs the following scripts to `/usr/local/bin/`. To install:
-
-```bash
-sudo install-skills-bin linux-site-deployment
-```
-
-| Script | Source | Core? | Purpose |
-|---|---|---|---|
-| sk-update-all-repos | scripts/sk-update-all-repos.sh | yes | Pull all registered repos on this server; interactive menu + `--all`/`--repo` flags. |
-| sk-nginx-new-site | scripts/sk-nginx-new-site.sh | no | Generate a new Nginx vhost from template, issue cert via certbot, reload. |
-| sk-apache-new-site | scripts/sk-apache-new-site.sh | no | Generate an Apache vhost on port 8080, `a2ensite`, `configtest`, reload. |
-| sk-astro-deploy | scripts/sk-astro-deploy.sh | no | Clone an Astro site, install deps, build, set up Nginx vhost + SSL, register in `update-all-repos`. |
-| sk-php-site-deploy | scripts/sk-php-site-deploy.sh | no | Clone a PHP site, set ownership, configure vhost, SSL, register in `update-all-repos`. |
-| sk-static-site-deploy | scripts/sk-static-site-deploy.sh | no | Clone a static site, configure vhost, SSL, register in `update-all-repos`. |
+The `sk-update-all-repos` command belongs to [`linux-repo-sync`](../../10-automation-and-scripting/linux-repo-sync/SKILL.md).
+It updates registered working trees from their configured Git upstream and may
+run an approved post-pull command. It is not a pinned-revision, staged site
+release tool and must not be used as a substitute for the release and cutover
+gates above. The repository currently ships no `linux-site-deployment` script
+manifest; do not assume commands such as `sk-astro-deploy` or
+`sk-nginx-new-site` are installed.
