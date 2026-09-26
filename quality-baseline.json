@@ -5,7 +5,7 @@
   "expected_template_count": 1,
   "failure_counts": {},
   "routing": {
-    "fixture_count": 26,
+    "fixture_count": 30,
     "top_k": 3,
     "required_precision": 1.0
   }

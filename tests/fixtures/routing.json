@@ -28,5 +28,10 @@
   {"id":"failure-restore","kind":"failure-path","prompt":"Backup restore failed and the server will not boot; recover services and verify data","expected":"linux-disaster-recovery"},
   {"id":"failure-repo-diverged","kind":"failure-path","prompt":"Git repository pull diverged while local changes exist; preserve work and recover safely","expected":"linux-repo-sync"},
   {"id":"failure-service-reload","kind":"failure-path","prompt":"A systemd service failed after reload; inspect status journal and roll back configuration","expected":"linux-service-management"},
-  {"id":"failure-sysctl","kind":"failure-path","prompt":"A sysctl performance change caused instability; restore the previous kernel parameters","expected":"linux-sysctl-tuning"}
+  {"id":"failure-sysctl","kind":"failure-path","prompt":"A sysctl performance change caused instability; restore the previous kernel parameters","expected":"linux-sysctl-tuning"},
+
+  {"id":"positive-site-deployment","kind":"positive","prompt":"Deploy one approved PHP website revision to an existing Nginx and Apache Linux host; prepare the versioned release, vhost, TLS, external health check, and rollback","expected":"linux-site-deployment","also_top_three":["linux-webstack","linux-firewall-ssl"]},
+  {"id":"negative-webstack-vs-site-deployment","kind":"negative","prompt":"Install Apache, Nginx, and PHP-FPM packages on a fresh server and diagnose shared platform listeners","expected":"linux-webstack","forbidden":["linux-site-deployment"]},
+  {"id":"negative-cert-renewal-vs-site-deployment","kind":"negative","prompt":"Investigate Certbot renewal failure and validate current certificate expiry and ACME challenges for an already-running hostname","expected":"linux-firewall-ssl","forbidden":["linux-site-deployment"]},
+  {"id":"failure-site-release-health","kind":"failure-path","prompt":"After cutover of a named website revision, the systemd unit is active but its external application health check fails; inspect systemctl status and journal then restore prior release and vhost","expected":"linux-site-deployment","also_top_three":["linux-service-management"]}
 ]

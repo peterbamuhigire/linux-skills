@@ -2,6 +2,8 @@
 
 **Author:** Peter Bamuhigire · [techguypeter.com](https://techguypeter.com) · +256 784 464 178
 
+**Scope:** The paths and `a2*` commands in this reference are Debian/Ubuntu examples. Do not use them as a RHEL-family template; use the target-specific guidance in [`../../linux-webstack/references/httpd-reference.md`](../../linux-webstack/references/httpd-reference.md) and verify PHP-FPM/socket details on the host. Command blocks illustrate privileged changes and do not grant authority to apply them; follow the parent deployment skill's approval and rollback gates.
+
 Apache is not the public-facing web server in this stack — Nginx is. Apache runs bound to `127.0.0.1:8080` and exists for one reason: to host PHP apps that depend on `.htaccess`, mod_php, or other Apache-specific features. This reference explains the mod_php / PHP-FPM trade-off, gives a production-ready vhost template for port 8080, walks through the `a2en*/a2dis*` workflow, covers Apache-layer hardening, shows how Apache and Nginx coexist safely on the same host, and documents MPM tuning for `event` vs `prefork`.
 
 ## Table of contents

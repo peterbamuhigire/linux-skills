@@ -1,391 +1,93 @@
-# Site Deployment Checklist
+# Staged site-release checklist
 
 **Author:** Peter Bamuhigire · [techguypeter.com](https://techguypeter.com) · +256 784 464 178
 
-An ordered, end-to-end checklist for deploying a new site to an Ubuntu/Debian server running the Nginx + Apache + PHP-FPM dual stack. Every step includes the exact command to run, the expected result, and what to do if it fails. The 8-step sequence is followed by a post-deploy verification block and a tested rollback procedure — so a bad deploy can be undone in under two minutes without leaving the server in a broken state.
+Use this checklist with [`../SKILL.md`](../SKILL.md). It is a planning and evidence aid, not a tested command script. Execute only the operations authorised for the exact host and release. The Debian/Ubuntu and RHEL 9 path notes below are source-backed; other RHEL-family derivatives and locally changed package layouts need target-host confirmation.
 
-## Table of contents
+## 1. Release request and authority
 
-1. Pre-flight checks
-2. The 8 deployment steps
-3. Post-deploy verification
-4. Rollback procedure
-5. Sources
+- [ ] Record the domain(s), repository, immutable revision, application/runtime, build procedure, document root, host release, service topology, and DNS owner.
+- [ ] Identify the release owner, approved maintenance window, intended public exposure, external application-health check, and explicit cutover authority.
+- [ ] Name the prior release and configuration to restore. Confirm that the recovery path does not rely on the listener or access route being changed.
+- [ ] Identify the approved source for deploy credentials, runtime secrets, certificate material, and repository registration. Do not place secrets in a URL, command history, repository, web root, or shared evidence.
+- [ ] Set each gate to `pass`, `fail`, or `not assessed`. Missing lab/host access is not a pass.
 
----
+**Stop:** an unknown revision, host, domain owner, expected application response, approval, or recoverable prior state keeps the work at read-only planning.
 
-## 1. Pre-flight checks
+## 2. Baseline and candidate
 
-Before you touch the server, confirm the following. Skipping any one of these turns into an emergency 30 minutes later.
+- [ ] Capture the current release pointer, relevant vhost files, service state, listeners, DNS/TLS observations, and application-health result.
+- [ ] Keep the current release and a restorable configuration copy. Record paths, ownership, timestamps, and content hashes; exclude private-key bytes and credentials.
+- [ ] Fetch the approved repository revision into a new versioned release directory outside the live document root.
+- [ ] Build with the designated unprivileged release account, project lockfile, and project-documented procedure. Do not install dependencies or run project build scripts as root.
+- [ ] Verify the candidate output, ownership/read permissions, secret references, and required application files before preparing a cutover.
+- [ ] Do not delete the current release, modify another site's files, or recursively change ownership of the live tree to repair a candidate permission error.
 
-```bash
-# DNS A record points at the server's public IP
-dig +short <domain>
-dig +short www.<domain>
-# Expect: the server's public IPv4
+Record the exact source revision, build command, account, environment, exit status, build log path, and candidate digest. Keep logs free of credentials.
 
-# Server has DNS for the ACME challenge
-curl -s https://acme-v02.api.letsencrypt.org/directory | head
+## 3. Family-aware vhost preparation
 
-# Enough disk space for the clone + build
-df -h /var/www/html /var/log /var
-# Expect: > 500 MB free everywhere
+Use the configuration bodies in [`nginx-templates.md`](nginx-templates.md) only after confirming that the selected pattern matches the application and target. A template's example path is not proof that the host includes that path.
 
-# Nginx and Apache both running and healthy
-systemctl is-active nginx apache2 php8.3-fpm
-# Expect: active, active, active
+| Component | Debian/Ubuntu evidence | RHEL 9 evidence | Required host check |
+|---|---|---|---|
+| Nginx | Ubuntu package guide documents `sites-available`/`sites-enabled`. | RHEL guide configures virtual hosts through `/etc/nginx/nginx.conf`. | Inspect the installed configuration's active include path; use only that path. |
+| Apache | Ubuntu uses `/etc/apache2/sites-available/`; `a2ensite` creates the enabled-site link. | RHEL 9 `httpd` includes auxiliary files from `/etc/httpd/conf.d/`. | Confirm the actual service, include path, vhost order, listener, and target release. Do not use `a2ensite` on RHEL. |
+| Config syntax | Nginx `-t`; Apache `apache2ctl configtest`. | Nginx `-t`; Apache `apachectl configtest`. | Check installed binary/config path; capture the exact output and exit status. |
 
-# Existing sites test-pass
-sudo nginx -t
-sudo apache2ctl configtest
-```
+For an Apache backend, [`apache-backend.md`](apache-backend.md) gives Debian/Ubuntu examples. It is not a RHEL vhost template. Use the RHEL-family guidance in [`../../linux-webstack/references/httpd-reference.md`](../../linux-webstack/references/httpd-reference.md) and confirm PHP-FPM/socket details on the target before preparing an equivalent candidate.
 
-If DNS is wrong, **stop**. Fix DNS first — waiting for propagation is faster than fighting a cert that can't validate.
+- [ ] Review a narrow diff of the candidate config, route, document root, proxy target, and listener exposure.
+- [ ] Confirm the backend and management ports are not exposed unintentionally.
+- [ ] Confirm persistent SELinux labels and required permissions for custom content paths; do not disable SELinux to make a deployment work.
+- [ ] Keep firewall rules and certificate lifecycle under [`linux-firewall-ssl`](../../../07-security-and-hardening/linux-firewall-ssl/SKILL.md).
 
----
+## 4. Preflight and cutover gate
 
-## 2. The 8 deployment steps
+- [ ] Confirm DNS points to the intended host and the ACME challenge path is reachable by the selected method.
+- [ ] Record current certificate names, issuer/chain, validity, renewal method, and expiry. Do not copy or print private keys into evidence.
+- [ ] Run Nginx and/or Apache syntax validation before enabling or reloading the candidate. A failed check blocks cutover.
+- [ ] Check the requested ports and owning processes. Resolve unexplained collisions before changing a firewall or killing a process.
+- [ ] Have the service owner approve the exact candidate diff, target services, planned reload/restart, verification probes, and rollback trigger.
+- [ ] If a Certbot plugin changes web-server configuration, review that diff and rerun the owning server's syntax test before reloading.
 
-### Step 1 — Clone
+**Stop:** failed syntax, missing DNS/TLS evidence, unexpected listeners, missing recovery, or missing authority blocks activation. A successful local build or daemon start does not establish external application health.
 
-```bash
-cd /var/www/html
-sudo git clone <repo-url> <folder>
-sudo chown -R www-data:www-data /var/www/html/<folder>
-```
+## 5. Verification and evidence
 
-**Expected output:** `Cloning into '<folder>'... done.`
+After the authorised cutover, verify the requested domain from outside the host and through the application path. Match the expected status/redirect and response content; do not treat a generic HTTP 200 as sufficient.
 
-**If it fails:**
-- `fatal: unable to access ... 403`: the repo is private — add an SSH deploy key or use a PAT in the URL.
-- `Permission denied (publickey)`: server has no SSH key for the git host.
-- `No space left on device`: clean up `/var/www` before retrying.
+- [ ] Hostname resolves to the intended target.
+- [ ] TLS hostname, validity, chain, and redirect behavior match the release request.
+- [ ] Required assets and application routes return the expected content.
+- [ ] A dynamic request reaches the correct backend and dependency path.
+- [ ] The correct service is healthy, logs contain no new release-blocking errors, and the application probe passes.
+- [ ] The repository update procedure identifies the approved revision/build action and uses the authorised `linux-repo-sync` workflow.
+- [ ] Record commands, environment, timestamps, exit/status codes, outputs, config/release hashes, and any redaction. Preserve failures as failures.
 
-### Step 2 — Build (Patterns A and E only)
+Do not record a pass for a probe that was blocked, unavailable, or not run. Mark missing external, service, certificate, or application checks `not assessed`.
 
-```bash
-cd /var/www/html/<folder>
-sudo -u www-data npm install --production
-sudo -u www-data npm run build
-# For hybrid (Astro + PHP):
-sudo -u www-data composer install --no-dev --optimize-autoloader
-```
+## 6. Failure and recovery
 
-**Expected output:** A `dist/` directory containing `index.html` and asset files.
+Trigger recovery on any failed required health check, syntax/activation error, unintended exposure, unexpected error increase, or confirmed mismatch with the approved revision.
 
-**If it fails:**
-- `npm ERR! peer dep missing`: check Node version (`node --version`) — some projects need Node 20 LTS.
-- Out-of-memory kill during `npm run build`: temporarily add swap or run the build locally and rsync the `dist/` directory up.
-- `composer install` asking for auth: the composer.lock references a private package — add credentials to `~www-data/.composer/auth.json`.
+1. Stop further writes, retries, and cleanup. Preserve diagnostics and the failed candidate.
+2. Restore only the named site's prior vhost and release pointer from the recorded snapshot.
+3. Validate the restored configuration before reloading only the owning service.
+4. Repeat the prior external application-health check and inspect relevant service logs.
+5. Record each restore command, exit status, restored hashes, and residual issue; leave unrelated sites, firewall policy, certificate state, and repository data unchanged unless a separately approved recovery requires them.
 
-### Step 3 — Create the Nginx vhost
+Do not automatically revoke a certificate or remove a repository/release as rollback. Retain the failed candidate and recovery evidence until the owner accepts the outcome and the rollback-retention period ends. Never use an unqualified recursive deletion as a generic cleanup step.
 
-```bash
-sudo nano /etc/nginx/sites-available/<domain>.conf
-```
+## 7. Source notes
 
-Paste the correct template from `references/nginx-templates.md`:
-- Pattern A — Astro / pure static
-- Pattern B — PHP direct via PHP-FPM
-- Pattern C — PHP via Apache 8080
-- Pattern D — Astro + PHP hybrid
-- Pattern E — Node.js reverse-proxy
+- Debian `a2ensite(8)`: <https://manpages.debian.org/testing/apache2/a2ensite.8.en.html> — Debian testing layout; accessed 2026-09-26.
+- Ubuntu Apache: <https://ubuntu.com/server/docs/how-to/web-services/configure-apache2-settings/> — Ubuntu vhost setup; accessed 2026-09-26.
+- Ubuntu Nginx: <https://ubuntu.com/server/docs/how-to/web-services/configure-nginx/> — Ubuntu package site layout; accessed 2026-09-26.
+- Red Hat RHEL 9 Apache: <https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/deploying_web_servers_and_reverse_proxies/setting-apache-http-server_deploying-web-servers-and-reverse-proxies> — version-specific `httpd` paths and checks; accessed 2026-09-26.
+- Red Hat RHEL 9 web servers: <https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/deploying_web_servers_and_reverse_proxies/index> — version-specific Nginx/Apache procedure; accessed 2026-09-26.
+- Apache `apachectl`: <https://httpd.apache.org/docs/2.4/programs/apachectl.html> — upstream syntax-test behavior; accessed 2026-09-26.
+- Nginx command-line parameters: <https://nginx.org/en/docs/switches.html> — `-t` and reload behavior; accessed 2026-09-26.
+- Certbot command reference: <https://eff-certbot.readthedocs.io/en/stable/man/certbot.html> — plugin and dry-run semantics; accessed 2026-09-26.
 
-Replace every `<domain>` and `<folder>` placeholder. Save and exit.
-
-### Step 4 — Enable the site
-
-```bash
-sudo ln -s /etc/nginx/sites-available/<domain>.conf /etc/nginx/sites-enabled/
-ls -la /etc/nginx/sites-enabled/<domain>.conf
-# Expect: symlink → /etc/nginx/sites-available/<domain>.conf
-```
-
-**If the symlink already exists:** you're re-deploying; remove and re-create with `sudo rm` first.
-
-### Step 5 — Test and reload Nginx
-
-```bash
-sudo nginx -t
-```
-
-**Expected output:**
-```
-nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
-nginx: configuration file /etc/nginx/nginx.conf test is successful
-```
-
-**If it fails:**
-- `unknown directive`: typo in the vhost file.
-- `host not found in upstream`: an `upstream` block references a name that doesn't resolve — fix the upstream host.
-- `could not build server_names_hash`: raise `server_names_hash_bucket_size` in `nginx.conf`.
-- `duplicate listen options`: another vhost already claims `default_server` on the same port — drop the duplicate.
-
-Once `nginx -t` passes:
-
-```bash
-sudo systemctl reload nginx
-```
-
-**Expected:** command returns without output. A failed reload will log to `journalctl -u nginx`.
-
-Smoke-test the HTTP (not HTTPS) vhost before issuing certs:
-
-```bash
-curl -sI -H "Host: <domain>" http://127.0.0.1/
-# Expect: HTTP/1.1 301 Moved Permanently + Location: https://<domain>/
-```
-
-### Step 6 — Issue SSL via certbot
-
-```bash
-sudo certbot --nginx -d <domain> -d www.<domain>
-```
-
-Certbot will:
-1. Ask for an email (first run only).
-2. Ask you to agree to the ToS.
-3. Validate via HTTP-01 on port 80.
-4. Rewrite the vhost to add `ssl_certificate` / `ssl_certificate_key`.
-5. Reload Nginx.
-
-**Expected output:** `Successfully received certificate.` and `Deploying certificate` for each domain.
-
-**If it fails:**
-- `Challenge failed for domain <domain>`: DNS isn't pointing here yet, or UFW is blocking port 80, or the `acme-challenge.conf` snippet isn't included in the HTTP server block. Check with `curl http://<domain>/.well-known/acme-challenge/test`.
-- `Too many certificates already issued`: hit the Let's Encrypt rate limit — use `--staging` to iterate, then switch back once the config is stable.
-- `The server experienced an internal error`: check `/var/log/letsencrypt/letsencrypt.log`.
-
-Verify the cert is installed and loads:
-
-```bash
-sudo certbot certificates | grep -A4 "<domain>"
-curl -sI https://<domain>/ | head
-# Expect: HTTP/2 200 (or a valid redirect)
-```
-
-### Step 7 — Apache vhost (Patterns C and D only)
-
-```bash
-sudo nano /etc/apache2/sites-available/<domain>.conf
-```
-
-Paste the Apache template from `references/apache-backend.md`. Replace `<domain>` and `<folder>`.
-
-```bash
-sudo a2ensite <domain>.conf
-sudo apache2ctl configtest
-sudo systemctl reload apache2
-```
-
-Smoke-test Apache directly on loopback:
-
-```bash
-curl -sI -H "Host: <domain>" http://127.0.0.1:8080/
-# Expect: HTTP/1.1 200 OK (or the app's expected redirect)
-```
-
-Then test the full public path:
-
-```bash
-curl -sI https://<domain>/
-# Expect: HTTP/2 200
-```
-
-**If the Nginx→Apache proxy returns 502:**
-- Is Apache running? `sudo systemctl status apache2`.
-- Is Apache bound to 127.0.0.1:8080? `sudo ss -tlnp | grep apache2`.
-- Is the vhost enabled? `sudo a2query -s <domain>.conf`.
-- Tail the logs in parallel: `sudo tail -f /var/log/nginx/<domain>.error.log /var/log/apache2/<domain>-error.log`.
-
-### Step 8 — Register in update-all-repos
-
-```bash
-sudo nano /usr/local/bin/update-all-repos
-```
-
-Add a line for the new site in the REPOS array. Example entry format:
-
-```bash
-"Example Site|/var/www/html/example|npm install --production && npm run build"
-```
-
-Build commands by pattern:
-- **A** (Astro / static): `npm install --production && npm run build`
-- **B** (PHP direct): *(leave empty)*
-- **C** (PHP via Apache): *(leave empty)*
-- **D** (Astro + PHP hybrid): `composer install --no-dev --optimize-autoloader && npm install --production && npm run build`
-- **E** (Node.js API): `npm install --production && npm run build && sudo systemctl restart <service-name>`
-
-**Local work is preserved.** `update-all-repos` uses `git pull --rebase --autostash` with a `git status --porcelain` dirty-check — it never runs `git reset --hard` or `git clean -fd`. Uncommitted edits to tracked files are stashed and re-applied; untracked files are left in place. On a rebase conflict it stops and reports the recovery path. See the `linux-repo-sync` skill for the binding doctrine.
-
-Per `~/.claude/skills/notes/new-repo-checklist.md`, this step is **not optional** — if the repo is not in `update-all-repos` it will silently stop getting updates.
-
----
-
-## 3. Post-deploy verification
-
-Run every check below. All must pass before announcing the site as live.
-
-### 3.1 HTTP status
-
-```bash
-curl -sI https://<domain>/ | grep -E "HTTP/|Server:"
-# Expect: HTTP/2 200   (or HTTP/2 301 if the app redirects)
-
-curl -sI https://www.<domain>/ | grep -E "HTTP/|Server:"
-# Expect: HTTP/2 200 or HTTP/2 301 to apex
-```
-
-### 3.2 Certificate is valid
-
-```bash
-sudo certbot certificates | grep -A4 "<domain>"
-# Expect: VALID: 89 days (or similar), key type: ECDSA/RSA
-
-echo | openssl s_client -servername <domain> -connect <domain>:443 2>/dev/null | openssl x509 -noout -dates
-# Expect: notAfter = ~90 days from now
-```
-
-### 3.3 Nginx logs clean
-
-```bash
-sudo journalctl -u nginx -n 50 --no-pager | tail -30
-sudo tail -20 /var/log/nginx/<domain>.error.log
-# Expect: no recent errors at warn/crit level
-```
-
-### 3.4 PHP-FPM pool running (Pattern B, C, D)
-
-```bash
-sudo systemctl is-active php8.3-fpm
-# Expect: active
-
-# Per-site pool socket exists
-ls -la /run/php/<site>.sock 2>/dev/null || ls -la /run/php/php8.3-fpm.sock
-# Expect: srw-rw---- www-data www-data
-```
-
-### 3.5 update-all-repos pulls successfully
-
-```bash
-sudo /usr/local/bin/update-all-repos <site-number>
-# Expect: "Already up to date." or a successful pull + rebuild
-```
-
-### 3.6 UFW isn't blocking
-
-```bash
-sudo ufw status verbose | grep -E '80|443'
-# Expect: 80/tcp ALLOW, 443/tcp ALLOW; 8080 must NOT appear
-```
-
-### 3.7 Permissions correct
-
-```bash
-stat -c '%U:%G %a %n' /var/www/html/<folder>
-find /var/www/html/<folder> -type d -exec stat -c '%U:%G %a %n' {} \; | head
-# Expect: owner www-data:www-data, dirs 755, files 644
-```
-
-Fix if wrong:
-
-```bash
-sudo chown -R www-data:www-data /var/www/html/<folder>
-sudo find /var/www/html/<folder> -type d -exec chmod 755 {} \;
-sudo find /var/www/html/<folder> -type f -exec chmod 644 {} \;
-```
-
-### 3.8 No world-writable files in webroot
-
-```bash
-sudo find /var/www/html/<folder> -type f -perm -o+w
-# Expect: (no output)
-```
-
-If any appear, strip the bit:
-
-```bash
-sudo find /var/www/html/<folder> -type f -perm -o+w -exec chmod o-w {} \;
-```
-
-### 3.9 Secrets not in git
-
-```bash
-cd /var/www/html/<folder>
-git ls-files | grep -Ei '\.(env|pem|key|sql)$' && echo "LEAK" || echo "clean"
-# Expect: clean
-```
-
-### 3.10 Certbot auto-renewal works
-
-```bash
-sudo systemctl status certbot.timer
-sudo certbot renew --dry-run
-# Expect: "Congratulations, all renewals succeeded" and the timer is active
-```
-
----
-
-## 4. Rollback procedure
-
-If any step fails and the site is now broken, follow this order. Each phase is a clean undo of the step before; you can stop wherever things work again.
-
-### Phase 1 — Disable the new Nginx vhost
-
-```bash
-sudo rm /etc/nginx/sites-enabled/<domain>.conf
-sudo nginx -t && sudo systemctl reload nginx
-```
-
-The site now returns from the catch-all (444 / closed) or the previous vhost if one existed. Other sites on the box are unaffected.
-
-### Phase 2 — Disable the Apache vhost (if Pattern C/D)
-
-```bash
-sudo a2dissite <domain>.conf
-sudo apache2ctl configtest && sudo systemctl reload apache2
-```
-
-### Phase 3 — Revoke the certificate (only if you issued it in this session)
-
-```bash
-sudo certbot delete --cert-name <domain>
-```
-
-**Only do this** if you're abandoning the deployment entirely. Otherwise, leave the cert — it doesn't hurt anything and will be reused on the next attempt.
-
-### Phase 4 — Remove the clone
-
-```bash
-sudo rm -rf /var/www/html/<folder>
-```
-
-### Phase 5 — Remove from update-all-repos
-
-```bash
-sudo nano /usr/local/bin/update-all-repos
-# Delete the entry for this site
-```
-
-### Phase 6 — Re-verify other sites
-
-After every rollback, confirm unrelated sites still work:
-
-```bash
-for site in site1.com site2.com; do
-    code=$(curl -s -o /dev/null -w '%{http_code}' https://$site/)
-    echo "$site → $code"
-done
-```
-
-Any non-200 means the rollback damaged something — check `sudo nginx -t`, `sudo apache2ctl configtest`, and `journalctl -u nginx -u apache2 -n 50`.
-
----
-
-## 5. Sources
-
-- Atef, Ghada. *Mastering Ubuntu: A Comprehensive Guide to Linux's Favorite.* 2023 — Chapter V (System Administration) and Chapter VI (Ubuntu for Servers).
-- Canonical. *Ubuntu Server Guide — Linux 20.04 LTS (Focal).* 2020 — web servers, TLS, and systemd chapters.
-- Let's Encrypt / certbot documentation at <https://eff-certbot.readthedocs.io/>.
-- `man 8 certbot`, `man 8 a2ensite`, `man 8 nginx` on Ubuntu 22.04/24.04.
+Publication dates are not stated on the living upstream pages; the source and scope are rechecked on the dates above. Recheck volatile instructions by 2026-10-03. These sources do not prove behavior on a particular host or in an ERPNext lab.

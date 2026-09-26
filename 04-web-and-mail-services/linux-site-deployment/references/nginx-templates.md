@@ -2,45 +2,41 @@
 
 **Author:** Peter Bamuhigire · [techguypeter.com](https://techguypeter.com) · +256 784 464 178
 
-Full copy-pasteable Nginx vhost templates for every deployment pattern handled by the `linux-site-deployment` skill: Astro/static, PHP direct via PHP-FPM, PHP via Apache on port 8080, Astro+PHP hybrid, and Node.js reverse-proxy. Each template survives `certbot --nginx --expand` cleanly (certbot inserts the SSL directives without clobbering the rest), includes the HTTP-to-HTTPS redirect with the ACME challenge exemption, modern TLS, security headers, long-lived cache headers for static assets, and error pages. The Apache-on-8080 backend template used by patterns B and C appears at the end, together with the snippet library every template references.
+These Nginx server-block examples cover Astro/static, PHP direct via PHP-FPM, PHP via Apache on port 8080, Astro+PHP hybrid, and Node.js reverse-proxy patterns. They contain placeholders and version/path assumptions; they are not copy-paste-ready or a complete TLS profile. Code blocks that use `sudo` illustrate possible actions, not authority to run them. Follow [`../SKILL.md`](../SKILL.md) for approval and rollback. The Apache-on-8080 backend template appears at the end with shared snippets.
 
-## Table of contents
-
-1. Pre-requisite snippets
-2. Pattern A — Astro / pure static site
-3. Pattern B — PHP direct via PHP-FPM socket
-4. Pattern C — PHP via Apache 8080
-5. Pattern D — Astro + PHP hybrid
-6. Pattern E — Node.js reverse-proxy
-7. Apache backend vhost template (port 8080)
-8. What certbot adds (and how to survive it)
-9. Sources
+Contents: shared snippets, patterns A?E, Apache backend, certificate review, and sources.
 
 ---
 
 ## 1. Pre-requisite snippets
 
-Every template below expects these files in `/etc/nginx/snippets/`. If any are missing, the `include` lines error out in `nginx -t`. Install all snippets once on a new server — the provisioning skill does this in Section 9.
+Every template below references snippet files. Confirm the target Nginx prefix and configured include paths, then prepare the reviewed snippets there; `/etc/nginx/snippets/` is an example, not a universal package default. Missing includes fail `nginx -t`.
 
 ### 1.1 `ssl-params.conf`
 
 ```nginx
 ssl_protocols TLSv1.2 TLSv1.3;
-ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305;
-ssl_prefer_server_ciphers on;
+# Cipher-suite policy is intentionally not prescribed by this shared template.
+# Select and verify it for the target Nginx/OpenSSL package and client scope.
 ssl_session_cache shared:SSL:10m;
 ssl_session_timeout 1d;
 ssl_session_tickets off;
-ssl_stapling on;
-ssl_stapling_verify on;
-resolver 1.1.1.1 8.8.8.8 valid=300s;
-resolver_timeout 5s;
+# OCSP stapling is also target-specific. Enable only after configuring the
+# trusted certificate chain and an approved resolver, then verify the response.
+# ssl_stapling on;
+# ssl_stapling_verify on;
+# ssl_trusted_certificate <verified-ca-chain>;
+# resolver <approved-resolver-addresses> valid=300s;
+# resolver_timeout 5s;
 ```
 
 ### 1.2 `security-headers.conf`
 
 ```nginx
-add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+# Enable HSTS only after external HTTPS passes; start with a short host-only policy.
+# `includeSubDomains` covers all subdomains (RFC 6797); require all to be HTTPS-ready
+# and get domain-owner approval. Do not add `preload` by default.
+# add_header Strict-Transport-Security "max-age=300" always;
 add_header X-Content-Type-Options    "nosniff" always;
 add_header X-Frame-Options           "SAMEORIGIN" always;
 add_header Referrer-Policy           "strict-origin-when-cross-origin" always;
@@ -66,7 +62,7 @@ location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|webp|avif|woff|woff2|ttf|eot|otf)
 }
 ```
 
-### 1.5 `fastcgi-php.conf`
+### 1.5 `fastcgi-php.conf` (Ubuntu-style example)
 
 ```nginx
 fastcgi_pass unix:/run/php/php8.3-fpm.sock;
@@ -106,7 +102,18 @@ location ^~ /.well-known/acme-challenge/ {
 }
 ```
 
+### 1.8 Nginx HTTP/2 version selection
+
+Check version/module with `nginx -v`/`-V`. Nginx 1.25.1+ uses
+`listen 443 ssl;` plus `http2 on;`; older versions add `http2` to both listen
+lines and omit `http2 on;`. If unavailable, omit HTTP/2. The old parameter is
+deprecated; RHEL 9 documents 1.20/1.22. Run `nginx -t` before activation.
+
 ---
+
+The following vhost file paths use the Ubuntu package layout as an example.
+Place each server block under the host's actual included configuration path;
+the directives do not create or enable a vhost by themselves.
 
 ## 2. Pattern A — Astro / pure static site
 
@@ -127,8 +134,9 @@ server {
 
 # --- HTTPS ---
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name <domain> www.<domain>;
 
     root /var/www/html/<folder>/dist;
@@ -175,8 +183,9 @@ server {
 
 # --- HTTPS ---
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name <domain> www.<domain>;
 
     root /var/www/html/<folder>/public;   # /public for Laravel/Symfony; webroot for WordPress
@@ -238,8 +247,9 @@ server {
 
 # --- HTTPS ---
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name <domain> www.<domain>;
 
     root /var/www/html/<folder>;
@@ -301,8 +311,9 @@ server {
 
 # --- HTTPS ---
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name <domain> www.<domain>;
 
     root /var/www/html/<folder>/dist;
@@ -362,8 +373,9 @@ server {
 
 # --- HTTPS ---
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name <domain>;
 
     include snippets/ssl-params.conf;
@@ -454,20 +466,13 @@ sudo systemctl reload apache2
 
 ---
 
-## 8. What certbot adds (and how to survive it)
+## 8. Certificate installation and configuration review
 
-When you run `sudo certbot --nginx -d <domain> -d www.<domain>`, the nginx plugin rewrites your config by:
-
-1. Adding `ssl_certificate` and `ssl_certificate_key` directives inside the `listen 443` server block.
-2. Adding `include /etc/letsencrypt/options-ssl-nginx.conf;` and `ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;`.
-3. Adding a managed-by-certbot comment block at the bottom.
-
-To survive `certbot --nginx --expand` cleanly later:
-
-- Keep your `server_name` line alphabetised and on one line — certbot parses it with a naive regex.
-- Leave your `include snippets/ssl-params.conf` line in place; certbot's `options-ssl-nginx.conf` does not conflict with it (the later include wins on overlapping directives).
-- Don't wrap the `listen 443 ssl http2;` block in an `if`. Certbot won't find it.
-- After running certbot, diff the file and confirm nothing outside the SSL server block changed:
+Certbot's Nginx plugin can install certificates; treat it as a privileged
+config change. Preserve the file, obtain authority, review the diff, run
+`nginx -t`, and verify external health. Use
+[`linux-firewall-ssl`](../../../07-security-and-hardening/linux-firewall-ssl/SKILL.md)
+for certificate and renewal steps.
 
 ```bash
 sudo certbot --nginx -d <domain>
@@ -475,7 +480,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-Dry-run the renewal to be certain it will work unattended:
+Test renewal behavior without saving a certificate:
 
 ```bash
 sudo certbot renew --dry-run
@@ -485,7 +490,9 @@ sudo certbot renew --dry-run
 
 ## 9. Sources
 
-- Atef, Ghada. *Mastering Ubuntu: A Comprehensive Guide to Linux's Favorite.* 2023 — Chapter VI (Ubuntu for Servers), Apache and Nginx installation and configuration.
-- Canonical. *Ubuntu Server Guide — Linux 20.04 LTS (Focal).* 2020 — Web servers (Apache, Nginx) and TLS chapters.
-- Let's Encrypt / certbot documentation at <https://eff-certbot.readthedocs.io/> for the `--nginx` installer behaviour.
-- Mozilla SSL Configuration Generator (intermediate profile) for the cipher list baseline.
+Current references checked 2026-09-26: NGINX [HTTP/2](https://nginx.org/en/docs/http/ngx_http_v2_module.html), [`listen`](https://nginx.org/en/docs/http/ngx_http_core_module.html), [headers](https://nginx.org/en/docs/http/ngx_http_headers_module.html), [SSL](https://nginx.org/en/docs/http/ngx_http_ssl_module.html); [RFC 6797](https://www.rfc-editor.org/info/rfc6797/); [RHEL 9 web guide](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/deploying_web_servers_and_reverse_proxies/index); [Certbot CLI](https://eff-certbot.readthedocs.io/en/stable/man/certbot.html).
+
+The legacy cipher list was removed without a replacement: target-specific
+cipher selection and OCSP stapling remain **NOT_ASSESSED** until checked against
+the chosen Nginx/OpenSSL packages and client requirements. These examples are
+not a complete TLS profile.

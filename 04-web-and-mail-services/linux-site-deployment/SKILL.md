@@ -1,6 +1,6 @@
 ---
 name: linux-site-deployment
-description: Use when deploying a static, PHP, Node.js, or hybrid website to an existing Nginx/Apache host, including build, vhost, TLS, SELinux labelling, verification, and update registration. Use linux-webstack to install or repair the shared web platform.
+description: Use when releasing one named website from a pinned repository revision to an existing Linux host, including versioned candidate, vhost cutover, rollback, external verification, and update registration. Use linux-webstack for stack setup.
 license: MIT
 metadata:
   portable: true
@@ -40,14 +40,15 @@ from `common.sh`. Plan: [`docs/multi-distro/plan.md`](../../docs/multi-distro/pl
 <!-- dual-compat-start -->
 ## Use when
 
-- Deploying a new website to the standard Nginx plus Apache server model in this repo.
-- Adding a static site, PHP app, or Astro/PHP hybrid to an existing host.
-- Issuing TLS and registering the repo in the repo-update workflow as part of deployment.
+- Releasing one named website from an approved repository revision to an existing host.
+- Preparing a versioned release, site-specific vhost, cutover, and rollback for that release.
+- Verifying external site health and registering the approved repository update procedure after release.
 
 ## Do not use when
 
 - The server itself is not yet provisioned; use `linux-server-provisioning`.
 - The task is generic web stack debugging rather than a new deployment; use `linux-webstack`.
+- The task is certificate issue/renewal for an existing service outside a named site release; use `linux-firewall-ssl`.
 
 ## Required inputs
 
@@ -95,6 +96,17 @@ from `common.sh`. Plan: [`docs/multi-distro/plan.md`](../../docs/multi-distro/pl
 - [`references/apache-backend.md`](references/apache-backend.md)
 - [`../../04-web-and-mail-services/linux-webstack/references/httpd-reference.md`](../../04-web-and-mail-services/linux-webstack/references/httpd-reference.md) — httpd conf.d model (RHEL family)
 - [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md) — SELinux docroot labeling (RHEL family)
+- [`../../07-security-and-hardening/linux-firewall-ssl/SKILL.md`](../../07-security-and-hardening/linux-firewall-ssl/SKILL.md) — firewall changes and certificate issue/renewal authority
+- [`../../05-services-and-virtualization/linux-service-management/SKILL.md`](../../05-services-and-virtualization/linux-service-management/SKILL.md) — generic systemd actions and service-health evidence
+- [`../../10-automation-and-scripting/linux-repo-sync/SKILL.md`](../../10-automation-and-scripting/linux-repo-sync/SKILL.md) — repository registration, update permissions, and conflict recovery
+- [Apache `apachectl` reference](https://httpd.apache.org/docs/2.4/programs/apachectl.html) — config-test behavior; checked 2026-09-26
+- [Debian `a2ensite(8)` reference](https://manpages.debian.org/testing/apache2/a2ensite.8.en.html) — Debian available/enabled site layout; checked 2026-09-26
+- [Ubuntu Apache2 configuration guide](https://ubuntu.com/server/docs/how-to/web-services/configure-apache2-settings/) — Ubuntu vhost configuration and `a2ensite`; checked 2026-09-26
+- [Ubuntu Nginx configuration guide](https://ubuntu.com/server/docs/how-to/web-services/configure-nginx/) — Ubuntu package site layout; checked 2026-09-26
+- [Red Hat Enterprise Linux 9 Apache guide](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/deploying_web_servers_and_reverse_proxies/setting-apache-http-server_deploying-web-servers-and-reverse-proxies) — version-scoped `httpd` configuration paths and syntax check; checked 2026-09-26
+- [Red Hat Enterprise Linux 9 web-server guide](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/deploying_web_servers_and_reverse_proxies/index) — version-scoped NGINX and Apache configuration; checked 2026-09-26
+- [NGINX command-line parameters](https://nginx.org/en/docs/switches.html) — `-t` syntax and referenced-file checks; checked 2026-09-26
+- [Certbot command reference](https://eff-certbot.readthedocs.io/en/stable/man/certbot.html) — plugin, issue, renew, and dry-run boundaries; checked 2026-09-26
 
 ## Evidence Produced
 
@@ -142,70 +154,71 @@ Ask these questions first:
 
 ---
 
-## The 8 Steps
+## Staged deployment sequence
 
-### 1. Clone
-```bash
-cd /var/www/html   # or /var/www for some Astro sites
-sudo git clone <repo-url> <folder-name>
-```
+These stages are a gated workflow, not commands to paste unchanged into a live
+host. Keep the existing production release available until the candidate has
+passed validation and its rollback path is known.
 
-### 2. Build (A and C only)
-```bash
-cd /var/www[/html]/<folder>
-# Pattern A:  sudo npm install --production && sudo npm run build
-# Pattern C:  sudo composer install --no-dev && sudo npm install --production && sudo npm run build
-```
+1. **Confirm authority and baseline.** Pin the approved repository revision,
+   domain, document root, DNS state, runtime, release owner, change window,
+   external health check, and rollback revision. Snapshot the existing vhost,
+   service state, and current release before editing.
+2. **Prepare a versioned candidate.** Check out the approved revision into a
+   new release directory outside the live document root. Use the designated
+   unprivileged build/deploy account and the repository's lockfile and
+   documented build procedure. Never run dependency installation or project
+   build scripts as root. Keep secrets outside the repository and served tree.
+3. **Review the candidate.** Confirm that the build output, ownership, runtime
+   secret references, and required application files are present. Do not
+   overwrite the current release or delete retained rollback material.
+4. **Prepare the vhost in the host's configured include path.** Use the
+   appropriate pattern in [`references/nginx-templates.md`](references/nginx-templates.md).
+   Its path labels are examples; do not assume that the target package loads
+   `sites-available`. The Apache backend template in
+   [`references/apache-backend.md`](references/apache-backend.md) is for
+   Debian/Ubuntu; on RHEL-family hosts use the family-specific
+   [`linux-webstack` httpd guidance](../linux-webstack/references/httpd-reference.md)
+   and verify the PHP-FPM socket/service on the target.
+   For Apache on Debian/Ubuntu, place the candidate under
+   `/etc/apache2/sites-available/` and enable it through `a2ensite` only after
+   review. For RHEL-family Apache, use the configured `/etc/httpd/conf.d/`
+   include path and the `httpd` service; this path is documented for RHEL 9,
+   while Rocky/Alma/CentOS behavior must be checked on the target release.
+   Nginx package layouts vary, so inspect the host's configured include path
+   instead of assuming `sites-available` exists.
+5. **Validate before activation.** Run `nginx -t` for Nginx and the installed
+   Apache frontend's syntax check (`apache2ctl configtest` on Debian/Ubuntu,
+   `apachectl configtest` on RHEL 9). Check the resulting virtual-host mapping
+   and confirm the candidate will not expose a backend or management port.
+   Stop on any failed check or unexplained diff.
+6. **Complete TLS and firewall work through their owner.** Check DNS, challenge
+   reachability, certificate names/expiry, and intended exposure. Use
+   [`linux-firewall-ssl`](../../07-security-and-hardening/linux-firewall-ssl/SKILL.md)
+   for certificate or firewall actions. Certificate issuance, web-server
+   installation by a Certbot plugin, and firewall changes are privileged
+   mutations; approve each action and revalidate any configuration the tool
+   changes. A local build or successful syntax check is not proof that TLS or
+   public reachability works.
+7. **Cut over and verify.** Only after explicit cutover authority, activate the
+   reviewed vhost and switch the site-specific release pointer. Reload only
+   the affected service after its syntax test passes. Verify the external
+   hostname, TLS name/chain, redirect behavior, required assets, application
+   health, logs, and update path. If a check fails, restore the saved vhost and
+   release pointer, validate them, then verify the prior external health check.
+8. **Register the update path.** Add the repository to the authorized update
+   mechanism as required by the engine's new-repository policy. Follow
+   [`linux-repo-sync`](../../10-automation-and-scripting/linux-repo-sync/SKILL.md)
+   for exact permissions and recovery. Do not edit system update scripts or
+   run an update until the change owner authorizes it; test the registered
+   revision/build procedure outside the live release first.
 
-### 3. Create Nginx Config
-```bash
-sudo nano /etc/nginx/sites-available/<domain>.conf
-```
-See `references/nginx-templates.md` for the correct template per pattern.
-
-### 4. Enable Site
-```bash
-sudo ln -s /etc/nginx/sites-available/<domain>.conf /etc/nginx/sites-enabled/
-```
-
-### 5. Test & Reload (mandatory)
-```bash
-sudo nginx -t && sudo systemctl reload nginx
-# Fix any errors before continuing — never skip nginx -t
-```
-
-### 6. Issue SSL
-```bash
-sudo certbot --nginx -d <domain>
-```
-
-### 7. Apache Vhost (B and C only)
-```bash
-sudo nano /etc/apache2/sites-available/<domain>.conf
-sudo a2ensite <domain>.conf
-sudo apache2ctl configtest && sudo systemctl reload apache2
-```
-See `references/nginx-templates.md` for the Apache vhost template.
-
-### 8. Register in update-all-repos (mandatory)
-```bash
-sudo nano /usr/local/bin/update-all-repos
-# Add entry: "Display Name|/path/to/repo|build command"
-```
-
-Per `~/.claude/skills/notes/new-repo-checklist.md` — this step is never optional.
-
-**Build command by pattern:**
-- A (Astro): `npm install --production && npm run build`
-- B (PHP): *(leave empty)*
-- C (Astro+PHP): `composer install --no-dev && npm install --production && npm run build`
-
-**Local work is preserved.** `update-all-repos` uses
-`git pull --rebase --autostash` and a `git status --porcelain` dirty-check; it
-never runs `git reset --hard` or `git clean -fd`. Uncommitted edits are
-stashed and re-applied, untracked files are left in place. On a rebase
-conflict it stops and reports the recovery path rather than discarding work.
-See the `linux-repo-sync` skill for the binding doctrine.
+For the shared Nginx/Apache/PHP-FPM configuration, route to
+[`linux-webstack`](../linux-webstack/SKILL.md). For service mutation and generic
+systemd recovery, route to
+[`linux-service-management`](../../05-services-and-virtualization/linux-service-management/SKILL.md).
+These references preserve distinct task entrypoints; they do not grant
+additional host authority.
 
 ---
 
@@ -223,9 +236,10 @@ Full Nginx/Apache config templates: `references/nginx-templates.md`
 
 ## Optional fast path (when sk-* scripts are installed)
 
-If the `linux-site-deployment` scripts are installed
-(`sudo install-skills-bin linux-site-deployment`), these one-liners run
-the same 8 steps:
+If the optional `linux-site-deployment` scripts are installed, inspect each
+script's current source and dry-run behavior before use. The manifest below is
+an inventory, not proof that a script implements the staged sequence above or
+is safe for a particular host.
 
 | Site type | Fast path |
 |---|---|
