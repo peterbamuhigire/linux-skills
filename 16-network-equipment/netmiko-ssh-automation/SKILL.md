@@ -1,6 +1,6 @@
 ---
 name: netmiko-ssh-automation
-description: Use when writing or reviewing Python automation that connects to network devices (routers, switches, firewalls) with Netmiko — collecting show output, batch SSH across an inventory, TextFSM parsing, or guarded config pushes. Keep the default path read-only; config changes need a separate change window, peer review, and rollback plan. Not for Linux host automation — use linux-bash-scripting or linux-config-management for that.
+description: Use when automating an explicit router/switch inventory with Netmiko, collecting device CLI output, or parsing show commands. For Linux host automation use linux-config-management.
 license: MIT
 metadata:
   portable: true
@@ -31,15 +31,16 @@ This skill is exempt from `scripts/tests/check-distro-matrix.sh` by naming
 convention (it does not match the `linux-*` glob), signalling deliberately
 that it targets network-equipment automation, not a Linux host.
 
-## When to Use
+<!-- dual-compat-start -->
+## Use When
 
-- Collecting `show` command output across routers, switches, or firewalls.
+- Collecting CLI output from explicitly named routers and switches.
 - Building a small audit script for interface, routing, or config evidence.
-- Adding timeouts and exception handling to network SSH scripts.
+- Adding per-device timeouts and exception handling to device CLI sessions.
 - Parsing command output with TextFSM when a template exists.
 - Reviewing automation before it touches production devices.
 
-## When NOT to Use
+## Do Not Use When
 
 - Automating Linux host configuration (users, packages, services) — use
   [`linux-config-management`](../../01-provisioning-and-bootstrap/linux-config-management/SKILL.md)
@@ -50,7 +51,34 @@ that it targets network-equipment automation, not a Linux host.
   [`network-config-validation`](../network-config-validation/SKILL.md) as the
   gate this skill's guarded-config path should run through.
 
-## Safety Defaults
+## Required Inputs
+
+| Artefact | Source | Required? | If absent |
+|---|---|---:|---|
+| Explicit device inventory and device type | Operator-reviewed inventory | Yes | Stop; do not discover targets from a CIDR range or guess a device type. |
+| Named read-only commands and collection purpose | Audit or change request | Yes for collection | Ask for the evidence question before connecting. |
+| Credential source and timeout values | Environment, vault, or secure prompt; script settings | Yes for a live run | Do not connect; mark live collection not assessed. |
+| Change flag, approved window, reviewer, and rollback | Change record | Required for config writes | Keep the run read-only and return a candidate plan. |
+
+## Workflow
+
+1. Confirm the explicit inventory, device type, requested commands, credential
+   source, and concurrency limit.
+2. Connect with read-only commands first; record raw output and each device's
+   success or failure separately.
+3. Parse only supported output and retain the raw text beside parsed results.
+4. Route candidate configuration through
+   [`network-config-validation`](../network-config-validation/SKILL.md), then
+   require the explicit operator flag, approved window, peer review, and
+   rollback before a write.
+5. Compare before/after state and verify behavior; treat saving as a separate
+   approved step.
+
+Stop on an unknown device, unreviewed inventory, authentication failure, or
+missing rollback. Recover by closing the connection, preserving the per-device
+error, and returning to read-only review; do not retry against broader targets.
+
+## Quality Standards
 
 - Start with read-only `send_command()` collection.
 - Keep inventory small and explicit; do not sweep whole address ranges.
@@ -199,13 +227,59 @@ dangerous-command and management-plane checks before setting
 
 ## Anti-Patterns
 
-- Hardcoding passwords, enable secrets, or private keys in source.
-- Sending config commands as the default code path.
-- Running automation against a CIDR range instead of a reviewed inventory.
-- Logging full running configs to shared systems without sanitization.
-- Treating parser success as proof that the device state is correct.
+- Hardcoding passwords, enable secrets, or private keys in source. Fix: load them from a vault, environment, or secure prompt and keep them out of logs.
+- Sending config commands as the default code path. Fix: make read-only collection the default and require a separate explicit write flag.
+- Running automation against a CIDR range instead of a reviewed inventory. Fix: enumerate the approved devices and cap concurrency.
+- Logging full running configs to shared systems without sanitization. Fix: capture only needed sections and redact secrets and topology.
+- Treating parser success as proof that device state is correct. Fix: retain raw output and verify the relevant state and behavior.
 
-## See Also
+## Outputs
+
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Per-device collection record | Network operator or auditor | Each device is identified; command, raw output, status, and error class are preserved. |
+| Parsed result | Reviewer | Parser output is traceable to its raw command output and is not treated as device-state proof. |
+| Config-change record | Change owner | Candidate, dry-run state, approval, rollback, and before/after checks are explicit. |
+
+## Evidence Produced
+
+| Category | Artefact | Acceptance condition |
+|---|---|---|
+| Collection | Per-device command log | Target, command, timestamp, exit/error state, and raw output are recorded with secrets redacted. |
+| Parsing | Raw and structured output pair | Reviewer can inspect parser mismatches without reconnecting. |
+| Change | Before/after state and approval record | Write authorization, validation, rollback, and behavior check are recorded. |
+
+## Capability Contract
+
+Read/search and explicitly scoped network access are required for live
+collection. Do not scan beyond the approved inventory. Configuration writes
+require explicit operator authority, a separate change window, a peer review,
+and a rollback plan. Saving remains a distinct approved action.
+
+## Degraded Mode
+
+If Netmiko, credentials, a supported parser, network access, or the device is
+unavailable, return the narrowest read-only plan and mark live results not
+assessed. Keep errors per device and do not present missing output as a clean
+configuration.
+
+## Decision Rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Device inventory and credentials are explicit | Collect only the named devices | Avoids broad, unauthorised network access. |
+| Authentication or connection fails | Record that device's error and stop its run | Avoids unsafe retries or false coverage claims. |
+| Parser returns unstructured text | Preserve raw output and flag manual review | Avoids treating a parser miss as an empty or safe result. |
+| Config change lacks approval or rollback | Do not set the write flag | Avoids an unreviewed device mutation or unrecoverable access loss. |
+
+## Worked Example
+
+For a one-device `show version` request, confirm the device appears in the
+reviewed inventory, load credentials from the configured secure source, set
+connection/read timeouts, and retain the raw result. If authentication fails,
+record that device as failed and do not expand the target list.
+
+## References
 
 - [`cisco-ios-patterns`](../cisco-ios-patterns/SKILL.md) — the manual
   show/config vocabulary this automation wraps.
@@ -214,3 +288,5 @@ dangerous-command and management-plane checks before setting
 - [`linux-secrets`](../../02-users-access-and-secrets/linux-secrets/SKILL.md) —
   where `NETMIKO_USERNAME`/`NETMIKO_PASSWORD`/`NETMIKO_ENABLE_SECRET` should
   come from on the control host, instead of hardcoding.
+
+<!-- dual-compat-end -->

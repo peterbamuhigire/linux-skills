@@ -1,6 +1,6 @@
 ---
 name: cisco-ios-patterns
-description: Use when reading, writing, or reviewing Cisco IOS / IOS-XE configuration, choosing read-only show commands for troubleshooting, or planning a change window on a router or switch. Covers config hierarchy, wildcard masks, ACL placement, interface hygiene, and before/after change verification. Not for Linux host networking — use linux-network-admin for that.
+description: Use when reviewing Cisco IOS/IOS-XE configuration for a named router or switch, choosing read-only show commands, or checking a scheduled device maintenance window. For Linux host networking use linux-network-admin.
 license: MIT
 metadata:
   portable: true
@@ -32,15 +32,16 @@ convention (it does not match the `linux-*` glob the invariant checks), which
 is deliberate: the directory name signals a non-Linux-distro scope rather than
 an oversight.
 
-## When to Use
+<!-- dual-compat-start -->
+## Use When
 
-- Reviewing IOS or IOS-XE configuration before a planned change.
+- Reviewing IOS or IOS-XE configuration for a named router or switch.
 - Choosing read-only `show` commands for troubleshooting a router or switch.
 - Checking ACL wildcard masks and interface direction.
 - Explaining global, interface, routing process, and line configuration modes.
-- Verifying that a change landed in running config and was saved intentionally.
+- Verifying that running-config reflects reviewed intent after checks pass.
 
-## When NOT to Use
+## Do Not Use When
 
 - Linux host networking (netplan, NetworkManager, `ip`/`ss`/`resolvectl`) —
   use [`linux-network-admin`](../../03-networking-and-dns/linux-network-admin/SKILL.md).
@@ -49,19 +50,32 @@ an oversight.
 - Pre-flight regex validation of a config snippet before it is pasted or
   pushed — use [`network-config-validation`](../network-config-validation/SKILL.md).
 
-## Operating Rules
+## Required Inputs
+
+| Artefact | Source | Required? | If absent |
+|---|---|---:|---|
+| Device family/model and IOS/IOS-XE version | Operator or supplied inventory | Yes for syntax-specific review | Keep advice generic and mark platform compatibility not assessed. |
+| Task and affected interface, ACL, or routing object | Change request | Yes | Ask for the intended outcome; do not infer the target. |
+| Relevant current configuration and planned commands | Operator-supplied excerpt | Required for change review | Limit output to a read-only checklist; do not approve a change. |
+| Rollback and out-of-band access details | Change owner | Required before any live change | Stop before mutation and identify the missing recovery condition. |
+
+## Workflow
 
 Treat IOS examples as patterns, not paste-ready production changes. Confirm
 the platform, interface names, current config, rollback path, and
 out-of-band access before making changes on a real device.
 
-Prefer this workflow:
+Use this ordered review:
 
 1. Capture current state with read-only commands.
 2. Review the exact candidate config.
 3. Confirm management access cannot be locked out.
 4. Apply the smallest change in a maintenance window.
 5. Re-read state, compare to the baseline, then save only after validation.
+
+Stop if the device model, affected object, change authority, or recovery path is
+unknown. Recover to read-only inspection and mark the unverified decision as
+not assessed; never guess a command to keep the change moving.
 
 ## Mode Reference
 
@@ -185,17 +199,70 @@ This before/after-evidence discipline is the same discipline
 applies to Netplan/NetworkManager changes on Linux hosts — capture state,
 apply the smallest change, re-verify, only then persist.
 
+## Quality Standards
+
+- Treat examples as review patterns, not paste-ready production configuration.
+- Check wildcard masks, ACL direction, management reachability, and the exact
+  affected interface or routing object.
+- Collect only the configuration sections needed for the decision and redact
+  secrets, customer names, and private topology from shared evidence.
+- Require a human network engineer to approve intent and syntax before a live
+  change; verify behavior before saving running configuration.
+
 ## Anti-Patterns
 
-- Applying a generated config without a device-specific diff.
-- Saving configuration before post-change checks pass.
-- Using a subnet mask where IOS expects a wildcard mask.
-- Applying an ACL to the wrong interface direction.
-- Troubleshooting by disabling ACLs, route policies, or authentication.
-- Pasting full configs into public tools without sanitizing secrets and
-  topology.
+- Applying a generated config without a device-specific diff. Fix: compare the exact candidate with the affected running-config section first.
+- Saving configuration before post-change checks pass. Fix: verify state and behavior, then save only after approval.
+- Using a subnet mask where IOS expects a wildcard mask. Fix: check the mask form against the specific command and intended range.
+- Applying an ACL to the wrong interface direction. Fix: identify ingress/egress direction and required management flows before review.
+- Troubleshooting by disabling ACLs, route policies, or authentication. Fix: inspect counters, logs, and route state using a planned test source.
+- Pasting full configs into public tools without sanitizing secrets and topology. Fix: share only the minimum redacted section needed for review.
 
-## See Also
+## Outputs
+
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Read-only diagnostic plan or change-review findings | Network operator | Each command targets the stated device object and avoids unnecessary full-config collection. |
+| Before/after verification checklist | Change owner | Checks match the change and include rollback and save criteria. |
+
+## Evidence Produced
+
+| Category | Artefact | Acceptance condition |
+|---|---|---|
+| Baseline | Relevant show output or redacted config excerpt | Device/model, collection time, and command scope are recorded. |
+| Change verification | Before/after commands and reviewed diff | The operator can compare state and behavior before saving. |
+| Recovery | Rollback command and access route | Recovery does not depend on the access path being changed. |
+
+## Capability Contract
+
+Read and inspect supplied configuration are required. This skill does not access
+devices or apply commands. A live operator must have explicit change authority,
+an approved window, and a tested recovery route before mutation.
+
+## Degraded Mode
+
+When the platform/version, relevant configuration, or access evidence is
+missing, return a narrow read-only checklist and mark syntax or behavior
+compatibility not assessed. Do not treat a command being accepted as proof that
+the intended behavior works.
+
+## Decision Rules
+
+| Choice | Action | Failure or risk avoided |
+|---|---|---|
+| Device model and current excerpt are known | Review only the affected syntax and state | Avoids applying generic advice to the wrong platform/object. |
+| ACL direction, wildcard, or required flows are unclear | Stop and request network-engineer review | Avoids blocking required or management traffic. |
+| Recovery and out-of-band access are unavailable | Keep work read-only and defer the change | Avoids locking out the operator during a network change. |
+| Behavior checks pass and the change owner approves | Save only under the approved procedure | Avoids persisting an unverified running configuration. |
+
+## Worked Example
+
+For an inbound `WEB-IN` ACL review, inspect the relevant interface and ACL
+sections, confirm the direction and wildcard form, and check the planned test
+source against the intended rule. If management access or rollback is unknown,
+stop at the review checklist; do not apply or save commands.
+
+## References
 
 - [`netmiko-ssh-automation`](../netmiko-ssh-automation/SKILL.md) — scripted,
   bounded SSH collection and guarded config changes against IOS devices.
@@ -207,3 +274,5 @@ apply the smallest change, re-verify, only then persist.
 - [`linux-troubleshooting`](../../09-troubleshooting-and-recovery/linux-troubleshooting/SKILL.md) —
   read-only OSI-layer diagnostic workflow, extended to cover router/switch
   evidence collection alongside host-level evidence.
+
+<!-- dual-compat-end -->
