@@ -294,12 +294,14 @@ intended remote-access policy and review the complete VTY configuration.
 This finding is limited to the supplied snippet; the rest of the device state
 is `NOT_ASSESSED`.
 
-Security basis (checked 2026-09-25): Cisco's [IOS XE Software Hardening
+Security basis (checked 2026-09-27): Cisco's [IOS XE Software Hardening
 Guide](https://sec.cloudapps.cisco.com/security/center/resources/IOS_XE_hardening)
 recommends SSH instead of clear-text protocols such as Telnet and describes
 vty/tty access controls, including `access-class` and `exec-timeout`. The dated
-portfolio record is `skills-web-dev/docs/source-registers/skills-engine-currentness-2026-09.json`
-(`cisco-ios-xe-hardening-2026-09-25`). Recheck vendor guidance and target-
+portfolio record is `chwezi-dev-engine/docs/source-registers/skills-engine-currentness-2026-09.json`
+(resolve the canonical engine checkout through the cross-engine router), source
+`cisco-ios-xe-hardening-2026-09-25`, claim
+`claim-cisco-ios-xe-ssh-vty-hardening-2026-09-25`. Recheck vendor guidance and target-
 platform support before applying it to a live device.
 
 ## Examples
