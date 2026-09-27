@@ -1,6 +1,6 @@
 ---
 name: network-config-validation
-description: Use when screening IOS-style candidate configuration for destructive commands, duplicate addresses, stale references, or management-plane exposure. For Linux host security reviews use linux-server-hardening.
+description: Use when statically preflighting router or switch configuration for dangerous commands, duplicate addresses, overlaps, stale references, or management-plane exposure. Not a full parser or push workflow; use linux-server-hardening for host configuration and cisco-ios-patterns for manual device review.
 license: MIT
 metadata:
   portable: true
@@ -56,10 +56,9 @@ reason as its sibling skills in this category.
 
 | Artefact | Source | Required? | If absent |
 |---|---|---:|---|
-| Exact candidate configuration and source | Change owner or generator | Yes | Stop; a partial snippet cannot establish whole-config references or overlap. |
-| Device family/model and intended change | Change request | Yes for syntax-specific review | Return only general screening limits and mark platform fit not assessed. |
-| Affected interfaces, ACLs, route-maps, and management paths | Current config and change owner | Required for reference checks | Mark the missing checks not assessed; do not infer definitions. |
-| Rollback and operator review path | Change record | Required before deployment | Keep output as pre-flight findings; do not approve or execute a push. |
+| Candidate router or switch configuration | Change author or automation output | yes | Stop; there is nothing to preflight. |
+| Target platform and intended change | Change request and operator | yes | Treat vendor-specific checks as `NOT_ASSESSED`. |
+| Reference definitions and management constraints | Reviewed baseline or change record | when relevant | Report unresolved references and request the missing context. |
 
 ## Workflow
 
@@ -75,17 +74,23 @@ Validate in this order:
 4. Stale references to ACLs, route-maps, prefix-lists, and interfaces.
 5. Operational hygiene such as NTP, timestamps, remote logging, and banners.
 
-Stop when the input is incomplete, syntax is unsupported, or a dangerous
-pattern is found. Recover by preserving the exact candidate and returning
-findings for network-engineer review; never apply a partial fix automatically.
+6. Separate hard findings from best-practice observations and record the
+   exact line or section for each.
+7. Return the candidate to a network engineer for syntax, intent, and rollback
+   review before any push.
+
+Stop when target syntax or change intent is unknown, or when a critical
+finding could affect management access. Recover by narrowing the assessment to
+checks supported by the supplied text and listing the gaps. Verify each
+finding against the candidate and its stated scope; a clean regex scan is not
+proof that the configuration is safe or valid.
 
 ## Quality Standards
 
-- Treat regex findings as screening evidence, not as a complete device parser.
-- Preserve line numbers and the exact matched command in every blocking finding.
-- Distinguish blocking risks from best-practice warnings outside the change scope.
-- Require human review of intent, platform syntax, and rollback before deployment.
-- Keep credentials and sensitive topology out of shared reports.
+- Keep the candidate configuration unchanged during review.
+- Report exact findings and distinguish blockers from hygiene suggestions.
+- State the platform, scope, parser limitations, and unresolved checks.
+- Require independent network-engineer review before deployment.
 
 ## Dangerous Command Detection
 
@@ -239,7 +244,65 @@ def check_missing_hygiene(config: str) -> list[str]:
     ]
 ```
 
+## Outputs
+
+| Artefact | Consumer | Acceptance condition |
+|---|---|---|
+| Preflight findings with line or section references | Network engineer | Dangerous patterns, overlaps, references, and management exposure are separated. |
+| Scope and limitation note | Change owner | Platform assumptions and non-parser limitations are explicit. |
+
+## Evidence Produced
+
+| Category | Artefact | Acceptance condition |
+|---|---|---|
+| Correctness | Candidate and check results | Each finding points to the supplied configuration and check performed. |
+| Release readiness | Reviewer and unresolved-gap record | A clean scan is not represented as device validation or approval. |
+
+## Capability Contract
+
+This skill is read-only. It may inspect supplied configuration or run an
+authorised local preflight script; it must not connect to, change, or save
+device configuration. Deployment requires a separate approved workflow.
+
+## Degraded Mode
+
+Without complete configuration, platform context, or reference definitions,
+report only supported static findings and mark omitted checks `NOT_ASSESSED`.
+Do not infer that a missing line or reference is safe.
+
+## Decision Rules
+
+| Condition | Action | Wrong-choice failure |
+|---|---|---|
+| Candidate and target scope are available | Run layered static checks and cite findings | Missing scope can make a pattern check misleading. |
+| A dangerous command or management exposure is found | Block the preflight and escalate for review | A risky change may be pushed without control. |
+| No pattern matches are found | Report only that configured checks found none | Regex checks cannot certify full syntax or behavior. |
+
 ## Worked Example
+
+Candidate snippet:
+
+```text
+line vty 0 4
+ transport input telnet
+```
+
+Preflight result: flag Telnet as a management-plane risk and note that this
+block has no visible inbound access-class or explicit exec-timeout. Do not
+rewrite or push the candidate. Ask the network engineer to confirm the
+intended remote-access policy and review the complete VTY configuration.
+This finding is limited to the supplied snippet; the rest of the device state
+is `NOT_ASSESSED`.
+
+Security basis (checked 2026-09-25): Cisco's [IOS XE Software Hardening
+Guide](https://sec.cloudapps.cisco.com/security/center/resources/IOS_XE_hardening)
+recommends SSH instead of clear-text protocols such as Telnet and describes
+vty/tty access controls, including `access-class` and `exec-timeout`. The dated
+portfolio record is `skills-web-dev/docs/source-registers/skills-engine-currentness-2026-09.json`
+(`cisco-ios-xe-hardening-2026-09-25`). Recheck vendor guidance and target-
+platform support before applying it to a live device.
+
+## Examples
 
 ### Change-Window Preflight
 
@@ -259,50 +322,14 @@ scope.
 
 ## Anti-Patterns
 
-- Treating regex validation as a device parser. Fix: label it as pre-flight evidence and require platform-aware human review.
-- Applying generated config without a dry-run diff. Fix: preserve and review the exact candidate diff before deployment.
-- Recommending SNMPv2 community strings as a monitoring requirement. Fix: report the observed pattern as a finding and request a security review.
-- Checking VTY blocks with regex that can accidentally span unrelated sections. Fix: parse each block boundary and retain the matching excerpt.
-- Testing firewall behavior by disabling ACLs instead of reading counters/logs. Fix: inspect counters and logs from an approved test source.
+- Treating regex as a device parser. Fix: state the parser limit and require vendor review.
+- Applying generated config without a diff. Fix: compare the exact candidate with the reviewed baseline.
+- Treating SNMPv2 community strings as a required control. Fix: flag exposed communities and review the intended secure management design.
+- Letting a VTY regex span unrelated sections. Fix: parse and report each bounded block separately.
+- Testing firewall behavior by disabling ACLs. Fix: use counters and an approved test source.
+- Calling a clean scan an approval. Fix: retain platform, intent, behavior, and rollback checks for the network engineer.
 
-## Outputs
-
-| Artefact | Consumer | Acceptance condition |
-|---|---|---|
-| Pre-flight findings | Network engineer or change owner | Each finding has a line, matched command, risk, and review action. |
-| Screening summary | Deployment reviewer | Blockers, out-of-scope warnings, and checks not assessed are distinct. |
-
-## Evidence Produced
-
-| Category | Artefact | Acceptance condition |
-|---|---|---|
-| Input | Candidate identifier and digest or exact source path | Reviewer can identify the precise configuration screened. |
-| Findings | Pattern, line number, and matched text | A reviewer can reproduce and challenge each match. |
-| Limits | Unsupported syntax and missing context list | No parser or missing-context gap is reported as a pass. |
-
-## Capability Contract
-
-Read and parse supplied configuration only. This skill does not connect to a
-device, fetch credentials, alter a firewall/ACL, or deploy configuration.
-Network access, mutation, and production changes require explicit operator
-authorization in a separate approved workflow.
-
-## Degraded Mode
-
-If the candidate is partial, device syntax is unknown, or references are
-missing, report only the checks completed and mark the remaining checks not
-assessed. Regex success is never a safety or deployment certification.
-
-## Decision Rules
-
-| Choice | Action | Failure or risk avoided |
-|---|---|---|
-| A destructive command matches | Block the candidate and cite the line | Avoids reload, erase, or routing removal without review. |
-| Management-plane restriction is absent or unclear | Escalate for network-engineer review | Avoids exposing device access or locking out administrators. |
-| Address overlap or stale reference is found | Return exact locations for correction and re-screening | Avoids conflicting addressing or dangling policy references. |
-| Only out-of-scope hygiene warnings remain | Label them as warnings and preserve the change owner decision | Avoids implying a full parser or widening the change scope. |
-
-## References
+## See Also
 
 - [`cisco-ios-patterns`](../cisco-ios-patterns/SKILL.md) — the config
   vocabulary and change-window discipline this skill validates against.
@@ -311,5 +338,9 @@ assessed. Regex success is never a safety or deployment certification.
 - [`linux-troubleshooting`](../../09-troubleshooting-and-recovery/linux-troubleshooting/SKILL.md) —
   read-only OSI-layer diagnosis when a config passes validation but the
   symptom persists.
+## References
 
+- [`cisco-ios-patterns`](../cisco-ios-patterns/SKILL.md) — device syntax and change-window review.
+- [`netmiko-ssh-automation`](../netmiko-ssh-automation/SKILL.md) — guarded device access.
+- [`linux-troubleshooting`](../../09-troubleshooting-and-recovery/linux-troubleshooting/SKILL.md) — host/network symptom diagnosis boundary.
 <!-- dual-compat-end -->

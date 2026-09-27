@@ -1,6 +1,6 @@
 ---
 name: cisco-ios-patterns
-description: Use when reviewing Cisco IOS/IOS-XE configuration for a named router or switch, choosing read-only show commands, or checking a scheduled device maintenance window. For Linux host networking use linux-network-admin.
+description: Use when reading or reviewing Cisco IOS/IOS-XE configuration, selecting read-only show commands, or planning and verifying bounded router or switch configuration work. Not for Linux host networking, bulk SSH automation, or config preflight parsing; route those to linux-network-admin, netmiko-ssh-automation, or network-config-validation.
 license: MIT
 metadata:
   portable: true
@@ -35,11 +35,11 @@ an oversight.
 <!-- dual-compat-start -->
 ## Use When
 
-- Reviewing IOS or IOS-XE configuration for a named router or switch.
+- Reviewing IOS or IOS-XE configuration before a planned maintenance window.
 - Choosing read-only `show` commands for troubleshooting a router or switch.
 - Checking ACL wildcard masks and interface direction.
 - Explaining global, interface, routing process, and line configuration modes.
-- Verifying that running-config reflects reviewed intent after checks pass.
+- Verifying that a change landed in running config and was saved intentionally.
 
 ## Do Not Use When
 
@@ -54,10 +54,9 @@ an oversight.
 
 | Artefact | Source | Required? | If absent |
 |---|---|---:|---|
-| Device family/model and IOS/IOS-XE version | Operator or supplied inventory | Yes for syntax-specific review | Keep advice generic and mark platform compatibility not assessed. |
-| Task and affected interface, ACL, or routing object | Change request | Yes | Ask for the intended outcome; do not infer the target. |
-| Relevant current configuration and planned commands | Operator-supplied excerpt | Required for change review | Limit output to a read-only checklist; do not approve a change. |
-| Rollback and out-of-band access details | Change owner | Required before any live change | Stop before mutation and identify the missing recovery condition. |
+| Device family, model, and software context | Operator or device inventory | yes | Stop before selecting commands or syntax; mark the target `NOT_ASSESSED`. |
+| Relevant configuration and observed state | Sanitised device output | yes | Restrict the response to read-only collection planning. |
+| Change request, rollback path, and maintenance window | Approved change record | for mutation | Do not recommend applying or saving a change. |
 
 ## Workflow
 
@@ -65,7 +64,7 @@ Treat IOS examples as patterns, not paste-ready production changes. Confirm
 the platform, interface names, current config, rollback path, and
 out-of-band access before making changes on a real device.
 
-Use this ordered review:
+Prefer this workflow:
 
 1. Capture current state with read-only commands.
 2. Review the exact candidate config.
@@ -73,9 +72,10 @@ Use this ordered review:
 4. Apply the smallest change in a maintenance window.
 5. Re-read state, compare to the baseline, then save only after validation.
 
-Stop if the device model, affected object, change authority, or recovery path is
-unknown. Recover to read-only inspection and mark the unverified decision as
-not assessed; never guess a command to keep the change moving.
+Stop if the target syntax, management path, or rollback is unknown. Recover by
+returning to read-only collection and obtaining the missing operator evidence.
+Verify each change with before/after device state and a behavior check that
+matches the change; save only after approval and successful verification.
 
 ## Mode Reference
 
@@ -201,68 +201,64 @@ apply the smallest change, re-verify, only then persist.
 
 ## Quality Standards
 
-- Treat examples as review patterns, not paste-ready production configuration.
-- Check wildcard masks, ACL direction, management reachability, and the exact
-  affected interface or routing object.
-- Collect only the configuration sections needed for the decision and redact
-  secrets, customer names, and private topology from shared evidence.
-- Require a human network engineer to approve intent and syntax before a live
-  change; verify behavior before saving running configuration.
+- Keep read-only diagnostics separate from configuration changes.
+- Match syntax to the confirmed device family and release context.
+- Capture a sanitised before-state, candidate diff, rollback, and after-state for a change.
+- Treat command acceptance as insufficient evidence that the intended behavior works.
 
 ## Anti-Patterns
 
-- Applying a generated config without a device-specific diff. Fix: compare the exact candidate with the affected running-config section first.
-- Saving configuration before post-change checks pass. Fix: verify state and behavior, then save only after approval.
-- Using a subnet mask where IOS expects a wildcard mask. Fix: check the mask form against the specific command and intended range.
-- Applying an ACL to the wrong interface direction. Fix: identify ingress/egress direction and required management flows before review.
-- Troubleshooting by disabling ACLs, route policies, or authentication. Fix: inspect counters, logs, and route state using a planned test source.
-- Pasting full configs into public tools without sanitizing secrets and topology. Fix: share only the minimum redacted section needed for review.
+- Applying generated config without a device-specific diff. Fix: compare the candidate with the confirmed running state.
+- Saving before post-change checks pass. Fix: verify behavior and approval before persisting startup configuration.
+- Using a subnet mask where IOS expects a wildcard mask. Fix: check each ACL mask against the intended address range.
+- Applying an ACL in the wrong interface direction. Fix: record ingress or egress intent before proposing the attachment.
+- Troubleshooting by disabling ACLs, route policies, or authentication. Fix: inspect counters, logs, and route state first.
+- Sharing an unsanitised configuration. Fix: redact credentials, customer names, and private topology before analysis.
 
 ## Outputs
 
 | Artefact | Consumer | Acceptance condition |
 |---|---|---|
-| Read-only diagnostic plan or change-review findings | Network operator | Each command targets the stated device object and avoids unnecessary full-config collection. |
-| Before/after verification checklist | Change owner | Checks match the change and include rollback and save criteria. |
+| Read-only command plan or bounded candidate review | Network operator | Target and purpose are explicit; sensitive output is minimised. |
+| Change verification checklist | Change owner | Before/after checks, rollback, approval, and save decision are recorded. |
 
 ## Evidence Produced
 
 | Category | Artefact | Acceptance condition |
 |---|---|---|
-| Baseline | Relevant show output or redacted config excerpt | Device/model, collection time, and command scope are recorded. |
-| Change verification | Before/after commands and reviewed diff | The operator can compare state and behavior before saving. |
-| Recovery | Rollback command and access route | Recovery does not depend on the access path being changed. |
+| Correctness | Sanitised device state and candidate diff | The reviewed commands match the target and requested change. |
+| Change safety | Rollback and post-change observations | Management reachability and intended behavior are checked before save. |
 
 ## Capability Contract
 
-Read and inspect supplied configuration are required. This skill does not access
-devices or apply commands. A live operator must have explicit change authority,
-an approved window, and a tested recovery route before mutation.
+Read and review are the default. Device access, configuration changes, saving
+state, and production testing require explicit operator authority and a valid
+change window. This skill does not execute commands or certify device behavior.
 
 ## Degraded Mode
 
-When the platform/version, relevant configuration, or access evidence is
-missing, return a narrow read-only checklist and mark syntax or behavior
-compatibility not assessed. Do not treat a command being accepted as proof that
-the intended behavior works.
+Without a target device, configuration, or rollback evidence, provide only a
+qualified read-only plan and mark device-specific validation `NOT_ASSESSED`.
+Do not turn illustrative IOS examples into production instructions.
 
 ## Decision Rules
 
-| Choice | Action | Failure or risk avoided |
+| Condition | Action | Wrong-choice failure |
 |---|---|---|
-| Device model and current excerpt are known | Review only the affected syntax and state | Avoids applying generic advice to the wrong platform/object. |
-| ACL direction, wildcard, or required flows are unclear | Stop and request network-engineer review | Avoids blocking required or management traffic. |
-| Recovery and out-of-band access are unavailable | Keep work read-only and defer the change | Avoids locking out the operator during a network change. |
-| Behavior checks pass and the change owner approves | Save only under the approved procedure | Avoids persisting an unverified running configuration. |
+| Target family and current state are known | Select read-only checks or review a bounded diff | Unmatched syntax can mislead or disrupt the device. |
+| Management access or rollback is unconfirmed | Stop before mutation and request evidence | A remote change can lock out the operator. |
+| Post-change behavior is not verified | Do not save the configuration | A syntactically accepted change may still break traffic. |
 
 ## Worked Example
 
-For an inbound `WEB-IN` ACL review, inspect the relevant interface and ACL
-sections, confirm the direction and wildcard form, and check the planned test
-source against the intended rule. If management access or rollback is unknown,
-stop at the review checklist; do not apply or save commands.
+For an approved interface-description change, first capture the interface's
+running configuration and operational state, review the exact description
+diff, and confirm console or out-of-band access. After the maintenance-window
+change, compare the interface configuration and link state, inspect relevant
+logs, and save only when the checks match the approved request. If the before
+state or rollback is missing, stop at the read-only review.
 
-## References
+## See Also
 
 - [`netmiko-ssh-automation`](../netmiko-ssh-automation/SKILL.md) — scripted,
   bounded SSH collection and guarded config changes against IOS devices.
@@ -274,5 +270,9 @@ stop at the review checklist; do not apply or save commands.
 - [`linux-troubleshooting`](../../09-troubleshooting-and-recovery/linux-troubleshooting/SKILL.md) —
   read-only OSI-layer diagnostic workflow, extended to cover router/switch
   evidence collection alongside host-level evidence.
+## References
 
+- [`linux-network-admin`](../../03-networking-and-dns/linux-network-admin/SKILL.md) — host networking boundary and before/after evidence pattern.
+- [`netmiko-ssh-automation`](../netmiko-ssh-automation/SKILL.md) — bounded automation handoff.
+- [`network-config-validation`](../network-config-validation/SKILL.md) — static preflight handoff.
 <!-- dual-compat-end -->

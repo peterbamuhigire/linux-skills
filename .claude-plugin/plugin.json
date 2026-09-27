@@ -1,4 +1,5 @@
 {
+  "name": "linux",
   "version": "1.0.0",
   "skills": [
     "./01-provisioning-and-bootstrap/linux-cloud-init/",
