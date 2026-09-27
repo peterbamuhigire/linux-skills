@@ -160,6 +160,18 @@ def report(args: argparse.Namespace) -> int:
                         any(not isinstance(note, str) or len(note) > 300 for note in item["limitations"])):
                         bad += 1
                         continue
+                    if (_SECRET.search(item["operation"]) or "\n" in item["operation"] or "\r" in item["operation"] or
+                        _SECRET.search(item["summary"]) or "\n" in item["summary"] or "\r" in item["summary"] or
+                        (item["change_ref"] is not None and (_SECRET.search(item["change_ref"]) or "\n" in item["change_ref"] or "\r" in item["change_ref"])) or
+                        any(_SECRET.search(note) or "\n" in note or "\r" in note for note in item["limitations"])):
+                        bad += 1
+                        continue
+                    try:
+                        for ref in item["evidence_refs"]:
+                            validate_ref(ref)
+                    except ValueError:
+                        bad += 1
+                        continue
                     stamp = dt.datetime.fromisoformat(item["timestamp_utc"].replace("Z", "+00:00"))
                     if stamp.tzinfo is None:
                         bad += 1
