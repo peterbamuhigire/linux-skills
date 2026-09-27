@@ -1,4 +1,6 @@
 import importlib.util
+import json
+import shutil
 from pathlib import Path
 
 import pytest
@@ -60,3 +62,20 @@ def test_medium_root_reasoning_effort_is_rejected_and_apply_preserves_other_sett
     after = POLICY.parse_config(config)
     assert after["model_reasoning_effort"] == "high"
     assert after["approval_policy"] == "never"
+
+
+def test_shipped_policy_rejects_forbidden_gpt56_model_contract(tmp_path: Path) -> None:
+    root = tmp_path / "engine"
+    shutil.copytree(ROOT / ".codex", root / ".codex")
+    path = root / ".codex" / "model-policy.json"
+    policy = json.loads(path.read_text(encoding="utf-8"))
+    policy["root_model"] = "gpt-5.6-luna"
+    policy["review_model"] = "gpt-5.6-luna"
+    policy["execution_model"] = "gpt-5.6-luna"
+    path.write_text(json.dumps(policy), encoding="utf-8")
+
+    with pytest.raises(
+        POLICY.PolicyError,
+        match="default model policy must pin root, review, and execution to gpt-6-luna",
+    ):
+        POLICY.load_policy(root)
