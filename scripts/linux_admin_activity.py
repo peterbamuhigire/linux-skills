@@ -194,7 +194,7 @@ def report(args: argparse.Namespace) -> int:
     lines += ["", "## Activity", "", "| UTC time | Engine | Type | Operation | Scope | Status | Changed | Summary | Change ref | Evidence refs | Limitations |", "|---|---|---|---|---|---|---:|---|---|---|---|"]
     for event in events:
         cells = [event.get("timestamp_utc", ""), event.get("engine", ""), event.get("activity_type", ""), event.get("operation", ""), event.get("target_scope", "unknown"), event.get("status", "unknown"), str(bool(event.get("changed"))), event.get("summary", ""), event.get("change_ref") or "", ", ".join(event.get("evidence_refs", [])), "; ".join(event.get("limitations", []))]
-        lines.append("| " + " | ".join(str(c).replace("|", "\\|").replace("\r", " ").replace("\n", " ") for c in cells) + " |")
+        lines.append("| " + " | ".join(str(c).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("|", "\\|").replace("\r", " ").replace("\n", " ") for c in cells) + " |")
     lines += ["", "This report summarizes engine activity records only. It does not prove that unrecorded host activity did not occur.", ""]
     text = "\n".join(lines)
     if args.output:
