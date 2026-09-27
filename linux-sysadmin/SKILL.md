@@ -42,7 +42,9 @@ metadata:
 5. If the first route fails, recover by returning to the observed symptom and select the nearest diagnostic skill rather than guessing a repair.
 6. Verify the result with service checks, config validation, or follow-up inspection before closing.
 
-7. For an engine or product audit, load `meta/kaizen-improvement-system/SKILL.md`, publish the raw dimensions with a hard-capped maximum of 65/100, and create a 95/100 improvement plan. For current distro, security, compliance, vendor, or platform claims, route through the `digital-research-engine` engine before standardising.
+7. After an engine-mediated administration task, append a minimal activity record with `python3 scripts/linux_admin_activity.py record ...`; include the status, whether the task changed state, and a short redacted summary. Keep raw output in the specialist's evidence location and link by relative evidence ID only.
+8. Generate a date-ranged summary with `python3 scripts/linux_admin_activity.py report --from YYYY-MM-DD --to YYYY-MM-DD`. State that it covers recorded engine activity, not all host activity.
+9. For an engine or product audit, load `meta/kaizen-improvement-system/SKILL.md`, publish the raw dimensions with a hard-capped maximum of 65/100, and create a 95/100 improvement plan. For current distro, security, compliance, vendor, or platform claims, route through the `digital-research-engine` engine before standardising.
 
 ## Quality Standards
 
