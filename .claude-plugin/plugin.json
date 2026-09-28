@@ -46,17 +46,14 @@
     "./16-network-equipment/cisco-ios-patterns/",
     "./16-network-equipment/netmiko-ssh-automation/",
     "./16-network-equipment/network-config-validation/",
-    "./linux-sysadmin/",
-    "./meta/kaizen-improvement-system/",
-    "./meta/skill-safety-audit/",
-    "./meta/skill-writing/"
+    "./linux-sysadmin/"
   ],
   "mcpServers": {},
   "userConfig": {
     "hooks_enabled": {
       "type": "boolean",
       "title": "Enable Chwezi hooks",
-      "description": "Run this engine's enforcement hooks (e.g. destructive-command gate, banned-font gate where applicable). Disable to install skills only, with no local automation.",
+      "description": "Run this engine's enforcement hooks (e.g. destructive-command gate, banned-font gate where applicable). Disable hook enforcement while keeping skills and agents available.",
       "default": true
     }
   }
