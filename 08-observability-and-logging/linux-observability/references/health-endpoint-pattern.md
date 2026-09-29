@@ -324,7 +324,7 @@ page in under 5 minutes without anyone SSHing anywhere.
 
 ## Sources
 
-- Brian Kemp, *Linux System Administration for the 2020s: The Modern
+- Kenneth Hitchcock, *Linux System Administration for the 2020s: The Modern
   Sysadmin Leaving Behind the Culture of Build and Maintain* —
   production readiness criteria (monitoring + logging + security as
   the minimum bar) and the philosophy that every service is part of

@@ -417,7 +417,7 @@ sudo systemd-analyze verify /etc/systemd/system/node_exporter.service
 
 ## Sources
 
-- Brian Kemp, *Linux System Administration for the 2020s: The Modern
+- Kenneth Hitchcock, *Linux System Administration for the 2020s: The Modern
   Sysadmin Leaving Behind the Culture of Build and Maintain* — Chapter
   "Monitoring" (Prometheus, exporters, Alertmanager, Grafana stack);
   Chapter 8 "Logging."

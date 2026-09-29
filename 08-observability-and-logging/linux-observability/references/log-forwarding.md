@@ -432,7 +432,7 @@ shipper's own status would not flag.
 
 ## Sources
 
-- Brian Kemp, *Linux System Administration for the 2020s: The Modern
+- Kenneth Hitchcock, *Linux System Administration for the 2020s: The Modern
   Sysadmin Leaving Behind the Culture of Build and Maintain* —
   Chapter 8 "Logging" (Rsyslog, Fluentd, central logging systems,
   sending logs to a central service, monitoring + logging as minimum
