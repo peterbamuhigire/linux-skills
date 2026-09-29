@@ -2,6 +2,7 @@ schema_version: "1.0"
 engine_id: linux-skills
 display_name: Linux Skills
 contract_version: "1.0"
+version: "1.1.0"
 router:
   path: AGENTS.md
 skills:
@@ -24,3 +25,18 @@ source_of_truth:
   router: AGENTS.md
   skills: '**/SKILL.md'
   references: references/**
+claude_only_block: |
+  - Claude Code reads this repo automatically at the start of every session; the `@AGENTS.md`
+    import above loads the full runner-neutral router.
+  - This repo IS the Claude Code skills directory. On a server it may be placed in the configured
+    Claude skill root so the skills load automatically.
+invariants:
+  - id: book-extraction-ban
+    phrase: "Book extractions, book summaries and chapter-by-chapter notes must never be stored in this"
+  - id: not-assessed
+    phrase: "Missing host, lab, source, live, or recovery evidence is `NOT ASSESSED`, never a pass."
+invariant_exemptions:
+  british-english: "No British English output rule exists in the linux router (AGENTS.md, former CLAUDE.md, README.md, rules/); adding one is new doctrine outside M10-02-T02 scope."
+plugin_exclusions:
+  - path: "meta/*"
+    reason: "engine-maintenance skills (kaizen-improvement-system, skill-safety-audit, skill-writing) used when editing this repository; the generator runs with --exclude meta so plugin users get only the sysadmin skills"

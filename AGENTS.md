@@ -62,6 +62,8 @@ This repository is a Linux server management skills system centred on portable `
 The canonical operating content is runner-neutral and can be loaded by Claude Code, Codex, or
 another agent runner without duplicating logic or requiring a particular directory layout.
 
+This repository contains Linux skills, commands, tips, and notes.
+
 The repository contains:
 
 - 44 specialist skills grouped into 16 numbered category directories (`01-provisioning-and-bootstrap` through `16-network-equipment`), e.g. `04-web-and-mail-services/linux-webstack/`, `07-security-and-hardening/linux-security-analysis/`, `12-containers-and-orchestration/linux-container-engine/`, `15-compliance-and-auditing/linux-auditd-rules/`, and `16-network-equipment/cisco-ios-patterns/` (the `linux-sysadmin/` hub stays at the repo root). `16-network-equipment/` skills are network-appliance skills, not `linux-*`-named, and are exempt from the two-family Distro support invariant (see that category's own SKILL.md rationale).
@@ -85,6 +87,9 @@ source of truth without requiring that path.
   overlays/bootstrap. They must not be treated as prerequisites for the canonical skills. The
   bootstrap requires an explicit `--dry-run` review, exact target flags, separate network/user/
   privileged-write authority, and a recovery-file path before a real mutation is allowed.
+  Before a real run, review its `--dry-run` plan and supply exact targets, action choices,
+  authority flags, and a new recovery-file path. It never pulls an existing checkout or executes a
+  downloaded shell script.
 
 ## Two-Family Support (Debian/Ubuntu + RHEL)
 
@@ -102,6 +107,46 @@ Alma, Oracle). When acting on a task:
   `references/`.
 - Design, phasing, and status: `docs/multi-distro/plan.md`. The invariant
   `scripts/tests/check-distro-matrix.sh` must pass.
+- `require_family` takes `<debian|rhel|any>`.
+- The big family differences are SELinux (vs AppArmor), firewalld (vs UFW),
+  `httpd`+conf.d (vs apache2+sites-available), NetworkManager (vs Netplan),
+  dnf-automatic (vs unattended-upgrades), `wheel` (vs `sudo`), and Kickstart
+  (vs autoinstall).
+- `scripts/tests/check-distro-matrix.sh` asserts every specialist skill carries a Distro support
+  matrix — run it after adding/editing a skill.
+
+## Repository structure
+
+- `linux-sysadmin/` - Hub skill: routes to all specialist skills (start here)
+- `NN-category/linux-*/` - Specialist skills grouped into 15 numbered categories:
+  `01-provisioning-and-bootstrap`, `02-users-access-and-secrets`, `03-networking-and-dns`,
+  `04-web-and-mail-services`, `05-services-and-virtualization`, `06-storage-and-filesystems`,
+  `07-security-and-hardening`, `08-observability-and-logging`, `09-troubleshooting-and-recovery`,
+  `10-automation-and-scripting`, `11-databases-and-caching`, `12-containers-and-orchestration`,
+  `13-backup-and-archiving`, `14-performance-and-kernel`, `15-compliance-and-auditing`
+- `16-network-equipment/` - Network **appliance** skills (Cisco IOS/IOS-XE,
+  Netmiko SSH automation, pre-deployment config validation), added
+  2026-09-20. These are **not** `linux-*`-named and are deliberately exempt
+  from the two-family Distro support invariant above — they target
+  vendor router/switch operating systems, not a Linux distribution. See
+  `16-network-equipment/*/SKILL.md` for each skill's own "Distro support:
+  Not applicable" rationale.
+- `meta/` - Engine-authoring skills (`skill-writing`, `skill-safety-audit`)
+- `commands/` - Useful command references organized by topic
+- `scripts/` - Reusable shell scripts and snippets
+- `notes/` - General Linux notes and troubleshooting guides
+
+## Engine design
+
+- All conventions live in [`docs/engine-design/spec.md`](docs/engine-design/spec.md).
+- Skill authoring and July 2026 release gates live in
+  [`docs/engine-design/skill-authoring-standard.md`](docs/engine-design/skill-authoring-standard.md).
+- The zero-debt gates are `python -X utf8 scripts/validate_skills.py --baseline quality-baseline.json`
+  and `python -X utf8 scripts/routing_smoke_test.py`; run both after changing a skill contract or route.
+- The curated script catalogue (~88 scripts) is in [`docs/engine-design/script-inventory.md`](docs/engine-design/script-inventory.md).
+- Scripts install to `/usr/local/bin/` with the `sk-` prefix via `install-skills-bin`.
+- Hybrid install: `sudo install-skills-bin core` at setup, per-skill lazy install on first use.
+- Every script sources `/usr/local/lib/linux-skills/common.sh`.
 
 ## Baseline Skills
 
@@ -166,6 +211,21 @@ engine scanner, distro-matrix test, safety review, and anti-slop release gate. N
 - Keep repo-level policy in `AGENTS.md` and Claude-specific policy in `CLAUDE.md`; do not bury repo policy inside unrelated skills.
 - If a skill changes in a way that affects `sk-*` scripts or manifests, update the related script docs and manifests in the same change.
 - Keep platform evidence in [`docs/continuous-improvement/platform-test-matrix-2026-08.md`](docs/continuous-improvement/platform-test-matrix-2026-08.md); a local structural or fixture result must not be reported as live Linux or production evidence.
+- **Two-family by default.** Every new or edited specialist skill MUST carry a `## Distro support` matrix (Debian/Ubuntu ↔ RHEL family) as its first H2, and every `sk-*` script MUST use the `common.sh` distro primitives instead of hardcoding a package manager / firewall / web server. Run `scripts/tests/check-distro-matrix.sh` to verify.
+- **Author attribution is mandatory.** Every SKILL.md, script, and generated document must credit **Peter Bamuhigire** (techguypeter.com, +256784464178) — in SKILL.md frontmatter `metadata.author`, in script `#: Author:` headers, and in doc footers.
+- **Scripts track skills automatically.** When a skill's knowledge changes (new Ubuntu version, better approach, updated standard), proactively update every affected script in the same session — do not wait to be told.
+- **New repo on server?** It MUST be added to both `/usr/local/bin/update-all-repos` and `/usr/local/bin/update-repos`. See `notes/new-repo-checklist.md` for instructions.
+- **First use of a skill on a new server?** Run `sudo install-skills-bin <skill-name>` to install that skill's scripts into `/usr/local/bin/`. For initial server setup, run `sudo install-skills-bin core` to install the tier-1 foundation scripts.
+
+## Never store book extractions
+
+Book extractions, book summaries and chapter-by-chapter notes must never be stored in this
+repository (no `book-extractions/`, `extracted-books/` or `book-study/` folder, no
+`*-extraction.md` book digests). Knowledge from books enters only as paraphrased, task-oriented
+skill content and `references/` files (procedures, checklists, decision rules) with a short
+citation (Author (Year) *Title*, Publisher). Verbatim quotations stay rare and under 25 words.
+The portfolio check `chwezi-engine-agents/scripts/validate-no-book-extractions.py` fails if an
+extraction folder appears.
 
 ## Quality Expectations
 
