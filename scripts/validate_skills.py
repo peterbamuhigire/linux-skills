@@ -12,6 +12,21 @@ from pathlib import Path
 import yaml
 
 
+# Portable-link rule: CI checks out one repository, so a link that is host-absolute
+# (C:/..., /C:/..., file:) or that climbs out of the repository to a sibling engine
+# resolves only on the author's machine. Such links count as broken locally too, so a
+# local pass predicts the CI result; link to other engines by their GitHub URL instead.
+HOST_ABSOLUTE_LINK = re.compile(r"^(?:file:|/?[A-Za-z]:[\\/])", re.I)
+
+
+def portable_link_target(base: Path, root: Path, target: str) -> Path | None:
+    """Resolve a local link target, or return None when it is not portable."""
+    if HOST_ABSOLUTE_LINK.match(target):
+        return None
+    resolved = (base / target).resolve()
+    return resolved if resolved.is_relative_to(root.resolve()) else None
+
+
 ALLOWED_KEYS = {"name", "description", "license", "allowed-tools", "metadata"}
 COMPATIBILITY = ["claude-code", "codex"]
 REQUIRED_HEADINGS = (
@@ -110,9 +125,13 @@ def validate_links(root: Path, path: Path, raw: str, findings: list[dict]) -> No
     rel = path.relative_to(root)
     for target in LINK_RE.findall(raw):
         clean = target.split("#", 1)[0].strip()
+        if HOST_ABSOLUTE_LINK.match(clean):
+            record(findings, "broken-link", rel, target)
+            continue
         if not clean or "://" in clean or clean.startswith(("mailto:", "#")):
             continue
-        if not (path.parent / clean).resolve().exists():
+        resolved = portable_link_target(path.parent, root, clean)
+        if resolved is None or not resolved.exists():
             record(findings, "broken-link", rel, target)
 
 
