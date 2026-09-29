@@ -18,7 +18,7 @@ cd linux-skills
 .\install.ps1 -scope project      # Windows PowerShell
 ```
 
-## Skills
+## Capabilities
 
 The table reflects the 48 active `SKILL.md` files in the current tree: 16 numbered operations categories, the `linux-sysadmin` hub, and three meta skills.
 

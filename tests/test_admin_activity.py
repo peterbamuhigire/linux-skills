@@ -9,6 +9,11 @@ from pathlib import Path
 import pytest
 
 
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="linux_admin_activity.py imports fcntl for file locking; fcntl exists only on POSIX hosts",
+)
+
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "linux_admin_activity.py"
 
 
