@@ -1,95 +1,285 @@
 #!/usr/bin/env python3
 """
-Quick validation script for skills - minimal version
+Repository-grade validator for portable skills.
 """
 
-import sys
-import os
+from __future__ import annotations
+
 import re
-import yaml
+import sys
 from pathlib import Path
 
-def validate_skill(skill_path):
-    """Basic validation of a skill"""
-    skill_path = Path(skill_path)
+import yaml
 
-    # Check SKILL.md exists
-    skill_md = skill_path / 'SKILL.md'
-    if not skill_md.exists():
-        return False, "SKILL.md not found"
 
-    # Read and validate frontmatter
-    content = skill_md.read_text()
-    if not content.startswith('---'):
-        return False, "No YAML frontmatter found"
+def _find_repo_root() -> Path:
+    """Return the engine root that holds this skill, whatever its depth.
 
-    # Extract frontmatter
-    match = re.match(r'^---\n(.*?)\n---', content, re.DOTALL)
+    Engine copies of this script are byte-identical mirrors of the canonical
+    chwezi-dev-engine file, so the root is found by walking up to the first
+    directory with a ``.git`` entry or an ``AGENTS.md`` router instead of a
+    fixed ``parents[n]`` depth.
+    """
+    here = Path(__file__).resolve()
+    for parent in here.parents[1:]:
+        if (parent / ".git").exists() or (parent / "AGENTS.md").is_file():
+            return parent
+    return here.parents[min(4, len(here.parents) - 1)]
+
+
+REPO_ROOT = _find_repo_root()
+ALLOWED_FRONTMATTER_KEYS = {"name", "description", "license", "allowed-tools", "metadata"}
+REQUIRED_SECTIONS = [
+    "Use When",
+    "Do Not Use When",
+    "Required Inputs",
+    "Workflow",
+    "Quality Standards",
+    "Anti-Patterns",
+    "Outputs",
+    "References",
+]
+MAX_MARKDOWN_LINES = 500
+DUAL_COMPAT_START = "<!-- dual-compat-start -->"
+DUAL_COMPAT_END = "<!-- dual-compat-end -->"
+NONPORTABLE_SNIPPETS = {
+    ".github/copilot-instructions.md": "Do not reference unavailable repo-local Copilot instructions.",
+    "chat.customAgentInSubagent.enabled": "Do not require VS Code-specific settings in portable skills.",
+    "latest VS Code Insiders build": "Do not require a specific editor build in portable skills.",
+}
+
+
+def read_utf8(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"{path.name} is not valid UTF-8: {exc}") from exc
+
+
+def parse_frontmatter(content: str) -> tuple[dict, str]:
+    if not content.startswith("---"):
+        raise ValueError("No YAML frontmatter found")
+
+    match = re.match(r"^---\n(.*?)\n---\n?", content, re.DOTALL)
     if not match:
-        return False, "Invalid frontmatter format"
+        raise ValueError("Invalid frontmatter format")
 
     frontmatter_text = match.group(1)
-
-    # Parse YAML frontmatter
     try:
         frontmatter = yaml.safe_load(frontmatter_text)
-        if not isinstance(frontmatter, dict):
-            return False, "Frontmatter must be a YAML dictionary"
-    except yaml.YAMLError as e:
-        return False, f"Invalid YAML in frontmatter: {e}"
+    except yaml.YAMLError as exc:
+        raise ValueError(f"Invalid YAML in frontmatter: {exc}") from exc
 
-    # Define allowed properties
-    ALLOWED_PROPERTIES = {'name', 'description', 'license', 'allowed-tools', 'metadata'}
+    if not isinstance(frontmatter, dict):
+        raise ValueError("Frontmatter must be a YAML dictionary")
 
-    # Check for unexpected properties (excluding nested keys under metadata)
-    unexpected_keys = set(frontmatter.keys()) - ALLOWED_PROPERTIES
-    if unexpected_keys:
-        return False, (
-            f"Unexpected key(s) in SKILL.md frontmatter: {', '.join(sorted(unexpected_keys))}. "
-            f"Allowed properties are: {', '.join(sorted(ALLOWED_PROPERTIES))}"
+    body = content[match.end() :]
+    return frontmatter, body
+
+
+def line_count(text: str) -> int:
+    return len(text.splitlines())
+
+
+def iter_markdown_links(text: str) -> list[str]:
+    return re.findall(r"\[[^\]]+\]\(([^)]+)\)", text)
+
+
+def is_external_link(target: str) -> bool:
+    return (
+        "://" in target
+        or target.startswith("mailto:")
+        or target.startswith("#")
+    )
+
+
+def strip_anchor(target: str) -> str:
+    return target.split("#", 1)[0].strip()
+
+
+def validate_frontmatter(frontmatter: dict, skill_dir: Path, errors: list[str]) -> None:
+    unexpected = set(frontmatter.keys()) - ALLOWED_FRONTMATTER_KEYS
+    if unexpected:
+        errors.append(
+            "Unexpected key(s) in SKILL.md frontmatter: "
+            + ", ".join(sorted(unexpected))
         )
 
-    # Check required fields
-    if 'name' not in frontmatter:
-        return False, "Missing 'name' in frontmatter"
-    if 'description' not in frontmatter:
-        return False, "Missing 'description' in frontmatter"
+    name = frontmatter.get("name")
+    if name is None:
+        errors.append("Missing `name` in frontmatter.")
+    elif not isinstance(name, str):
+        errors.append(f"`name` must be a string, got {type(name).__name__}.")
+    else:
+        stripped = name.strip()
+        if stripped != skill_dir.name:
+            errors.append(f"`name` must match the directory name `{skill_dir.name}`.")
+        if not re.fullmatch(r"[a-z0-9-]+", stripped or ""):
+            errors.append("`name` must use hyphen-case.")
+        if stripped.startswith("-") or stripped.endswith("-") or "--" in stripped:
+            errors.append("`name` cannot start/end with `-` or contain `--`.")
+        if len(stripped) > 64:
+            errors.append("`name` exceeds 64 characters.")
 
-    # Extract name for validation
-    name = frontmatter.get('name', '')
-    if not isinstance(name, str):
-        return False, f"Name must be a string, got {type(name).__name__}"
-    name = name.strip()
-    if name:
-        # Check naming convention (hyphen-case: lowercase with hyphens)
-        if not re.match(r'^[a-z0-9-]+$', name):
-            return False, f"Name '{name}' should be hyphen-case (lowercase letters, digits, and hyphens only)"
-        if name.startswith('-') or name.endswith('-') or '--' in name:
-            return False, f"Name '{name}' cannot start/end with hyphen or contain consecutive hyphens"
-        # Check name length (max 64 characters per spec)
-        if len(name) > 64:
-            return False, f"Name is too long ({len(name)} characters). Maximum is 64 characters."
+    description = frontmatter.get("description")
+    if description is None:
+        errors.append("Missing `description` in frontmatter.")
+    elif not isinstance(description, str):
+        errors.append(f"`description` must be a string, got {type(description).__name__}.")
+    else:
+        stripped = description.strip()
+        if not stripped:
+            errors.append("`description` must not be empty.")
+        if "<" in stripped or ">" in stripped:
+            errors.append("`description` cannot contain angle brackets.")
+        if len(stripped) > 350:
+            errors.append("`description` exceeds the repository limit of 350 characters.")
+        if not stripped.lower().startswith("use when"):
+            errors.append("`description` must start with 'Use when'.")
 
-    # Extract and validate description
-    description = frontmatter.get('description', '')
-    if not isinstance(description, str):
-        return False, f"Description must be a string, got {type(description).__name__}"
-    description = description.strip()
-    if description:
-        # Check for angle brackets
-        if '<' in description or '>' in description:
-            return False, "Description cannot contain angle brackets (< or >)"
-        # Check description length (max 1024 characters per spec)
-        if len(description) > 1024:
-            return False, f"Description is too long ({len(description)} characters). Maximum is 1024 characters."
+    metadata = frontmatter.get("metadata")
+    if not isinstance(metadata, dict):
+        errors.append("`metadata` must exist and be a mapping for portable skills.")
+        return
 
-    return True, "Skill is valid!"
+    if metadata.get("portable") is not True:
+        errors.append("`metadata.portable` must be `true`.")
+
+    compatible = metadata.get("compatible_with")
+    if not (
+        isinstance(compatible, list)
+        and all(isinstance(item, str) and item.strip() for item in compatible)
+        and len(compatible) == len(set(compatible))
+        and {"claude-code", "codex"} <= set(compatible)
+    ):
+        errors.append("`metadata.compatible_with` must list unique runtime names including 'claude-code' and 'codex'.")
+
+    invocation = metadata.get("invocation", "implicit")
+    if invocation not in {"implicit", "explicit", "both"}:
+        errors.append("`metadata.invocation` must be one of: implicit, explicit, both.")
+
+    if invocation == "explicit":
+        description = str(frontmatter.get("description", "")).lower()
+        if "explicit" not in description and "direct user" not in description:
+            errors.append("Explicit-invocation skills must state the direct/explicit user trigger in `description`.")
+
+
+def validate_portable_sections(frontmatter: dict, body: str, errors: list[str]) -> None:
+    if DUAL_COMPAT_START not in body or DUAL_COMPAT_END not in body:
+        errors.append("Portable contract markers are missing.")
+        return
+
+    if not re.search(
+        rf"{re.escape(DUAL_COMPAT_START)}.*?{re.escape(DUAL_COMPAT_END)}",
+        body,
+        re.DOTALL,
+    ):
+        errors.append("Portable contract markers are malformed.")
+        return
+    metadata = frontmatter.get("metadata")
+    metadata = metadata if isinstance(metadata, dict) else {}
+    groups = {
+        "Use When": (["Use When"], "use_when"),
+        "Do Not Use When": (["Do Not Use When", "Degraded mode"], "do_not_use_when"),
+        "Required Inputs": (["Required Inputs", "Inputs"], "required_inputs"),
+        "Workflow": (["Workflow", "Operating contract", "Decision rules"], "workflow"),
+        "Quality Standards": (["Quality Standards", "Capability contract", "Capability and permission boundaries", "Non-negotiables"], "quality_standards"),
+        "Anti-Patterns": (["Anti-Patterns", "Domain anti-patterns"], "anti_patterns"),
+        "Outputs": (["Outputs"], "outputs"),
+        "References": (["References", "Read next", "Companion Skills", "Companion skills"], "references"),
+    }
+    for section, (aliases, metadata_key) in groups.items():
+        heading_exists = any(
+            re.search(rf"^##\s+{re.escape(alias)}\s*$", body, re.MULTILINE | re.IGNORECASE)
+            for alias in aliases
+        )
+        if not heading_exists and not metadata.get(metadata_key):
+            errors.append(f"Portable contract element missing: `{section}`.")
+
+
+def validate_markdown_file(path: Path, errors: list[str]) -> None:
+    text = read_utf8(path)
+    count = line_count(text)
+    if path.name == "SKILL.md" and count > MAX_MARKDOWN_LINES:
+        errors.append(
+            f"{path.relative_to(REPO_ROOT)} exceeds {MAX_MARKDOWN_LINES} lines ({count})."
+        )
+
+    if "\ufffd" in text:
+        errors.append(
+            f"{path.relative_to(REPO_ROOT)} contains replacement characters."
+        )
+
+
+def validate_local_links(skill_dir: Path, skill_md: Path, body: str, errors: list[str]) -> None:
+    for target in iter_markdown_links(body):
+        clean = strip_anchor(target)
+        if not clean or is_external_link(clean):
+            continue
+
+        resolved = (skill_md.parent / clean).resolve()
+        try:
+            resolved.relative_to(REPO_ROOT.resolve())
+        except ValueError:
+            if not resolved.exists():
+                errors.append(f"External local link does not exist: `{target}`.")
+            continue
+
+        if not resolved.exists():
+            errors.append(f"Broken local link: `{target}`.")
+
+    for snippet, reason in NONPORTABLE_SNIPPETS.items():
+        if snippet in body:
+            errors.append(f"Nonportable content `{snippet}` found. {reason}")
+
+
+def validate_skill(skill_path: Path) -> tuple[bool, list[str]]:
+    errors: list[str] = []
+    skill_path = skill_path.resolve()
+    skill_md = skill_path / "SKILL.md"
+
+    if not skill_md.exists():
+        return False, ["SKILL.md not found."]
+
+    try:
+        raw = read_utf8(skill_md)
+    except ValueError as exc:
+        return False, [str(exc)]
+
+    try:
+        frontmatter, body = parse_frontmatter(raw)
+    except ValueError as exc:
+        return False, [str(exc)]
+
+    validate_frontmatter(frontmatter, skill_path, errors)
+    validate_portable_sections(frontmatter, body, errors)
+    validate_local_links(skill_path, skill_md, body, errors)
+
+    for md_file in sorted(skill_path.rglob("*.md")):
+        try:
+            validate_markdown_file(md_file, errors)
+        except ValueError as exc:
+            errors.append(str(exc))
+
+    return not errors, errors
+
+
+def main() -> int:
+    if len(sys.argv) != 2:
+        print("Usage: python -X utf8 quick_validate.py <skill_directory>")
+        return 1
+
+    skill_dir = Path(sys.argv[1])
+    valid, errors = validate_skill(skill_dir)
+    if valid:
+        print("Skill is valid.")
+        return 0
+
+    print("Skill validation failed:")
+    for error in errors:
+        print(f"- {error}")
+    return 1
+
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python quick_validate.py <skill_directory>")
-        sys.exit(1)
-    
-    valid, message = validate_skill(sys.argv[1])
-    print(message)
-    sys.exit(0 if valid else 1)
+    raise SystemExit(main())

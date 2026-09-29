@@ -1,6 +1,6 @@
 ---
 name: skill-writing
-description: Use when creating or upgrading a portable Linux operations skill in this engine; distinguishes authoring contracts from executing `linux-sysadmin` workflows and from the read-only `skill-safety-audit` review gate.
+description: Use when creating or upgrading a portable Linux operations skill in this engine under the canonical chwezi-dev-engine skill-writing standard; distinguishes authoring contracts from executing `linux-sysadmin` workflows and from the read-only `skill-safety-audit` review gate.
 license: Complete terms in LICENSE.txt
 metadata:
   author: Peter Bamuhigire
@@ -11,100 +11,62 @@ metadata:
     - claude-code
     - codex
 ---
-
 # Skill Writing
 
-Create compact, executable Linux skill contracts that route cleanly and remain useful without optional scripts.
-
+Pointer stub. The canonical standard is `chwezi-dev-engine/skills/sdlc-meta/skill-writing` ([canonical on GitHub](https://github.com/peterbamuhigire/chwezi-dev-engine/blob/main/skills/sdlc-meta/skill-writing/SKILL.md); local path `C:\wamp64\www\chwezi-dev-engine\skills\sdlc-meta\skill-writing\SKILL.md`). Load it first; this file keeps a portable minimum and this engine's delta.
 <!-- dual-compat-start -->
 ## Use When
-
-- Creating a specialist Linux skill or changing an existing skill's trigger, contract, or resources.
-- Extracting an entrypoint over 500 lines into directly linked references.
-- Adding routing fixtures, acceptance evidence, or a safe degraded mode to a skill.
-
+- Creating a specialist Linux skill or changing an existing skill's trigger, contract, references or routing fixtures.
 ## Do Not Use When
-
-- Executing a Linux administration task; route through `linux-sysadmin` or the matching specialist.
-- Reviewing an already written skill for unsafe instructions only; use `skill-safety-audit`.
-- Changing repository-wide policy without also updating the shared authoring standard and gates.
-
+- Execute Linux administration through `linux-sysadmin`; use `skill-safety-audit` for a read-only review of unsafe instructions.
 ## Required Inputs
-
-| Artefact | Source | Required? | If absent |
+| Artefact | Source/provider | Required? | If absent |
 |---|---|---:|---|
-| Reusable problem and candidate trigger prompts | Request or issue | yes | Stop; a skill without real prompts cannot be routed or evaluated. |
-| Neighbour skill descriptions | Active filesystem catalogue | yes | Discover active `SKILL.md` files before drafting. |
-| Domain procedures and safety limits | Existing skill, references, and engine policy | yes | Return a gap list; do not invent operating doctrine. |
-| Runner capabilities | Task environment | conditional | Specify capability-based fallbacks without naming a runner tool. |
-
+| Reusable problem, trigger prompts and neighbour descriptions | Requester and live catalogue | Yes | Stop; search the catalogue before drafting. |
+| Canonical skill-writing standard | chwezi-dev-engine checkout or GitHub | Yes | Apply the portable minimum and mark canonical-only checks `NOT ASSESSED`. |
 ## Workflow
-
-1. Discover the active catalogue and decide whether an existing skill owns the reusable problem.
-2. Define positive, negative, neighbour-collision, limited-capability, and failure-path prompts.
-3. Draft the input, output, evidence, capability, degraded-mode, decision, recovery, and acceptance contracts before expanding procedures.
-4. Preserve the `## Distro support` matrix as the first H2 for every specialist skill; route family differences through `common.sh` primitives in `sk-*` guidance.
-5. Keep the entrypoint at or below 500 lines. Extract depth to `references/`, link it directly, and add a parent link to each extracted reference.
-6. Run the local validator, routing smoke test, canonical quick validator, canonical engine scanner, link checks, and distro-matrix test.
-7. Stop release on any structural or routing finding. Recover by fixing the named contract or by narrowing the trigger; never lower the zero-debt baseline.
-
-## Quality Standards
-
-- Keep domain decisions, stop conditions, recovery steps, and observable acceptance in the entrypoint.
-- Use only `name`, `description`, `license`, `allowed-tools`, and `metadata` frontmatter keys.
-- Preserve manual Linux commands as the baseline; scripts are optional accelerators.
-- Use British English and evidence-backed examples; qualify anything not executed or observed.
-
-## Anti-Patterns
-
-- Copying a generic contract into every skill. Fix: name the actual server evidence, failure, and operator decision.
-- Describing only a positive trigger. Fix: distinguish the closest neighbour in `Do Not Use When` and routing fixtures.
-- Claiming a check passed when execution was unavailable. Fix: mark it `not assessed` and return the narrowest useful result.
-- Granting mutation rights to an audit skill. Fix: default audit, analysis, critique, and planning to read-only.
-- Keeping a 600-line command catalogue in `SKILL.md`. Fix: extract it to a linked reference that points back to the parent.
-- Naming a runner-specific tool in the portable procedure. Fix: state the required read, search, edit, execute, network, or delegation capability.
-
+1. Read the canonical standard, then this engine's delta; inspect the closest neighbours.
+2. Write the input, output, evidence, capability, degraded-mode and decision contracts before the procedure.
+3. Run `python -X utf8 scripts/validate_skills.py --baseline quality-baseline.json` and `python -X utf8 scripts/routing_smoke_test.py` (Linux-native tests run on Linux), then `python -X utf8 meta/skill-writing/scripts/quick_validate.py <skill-dir>`.
+4. Stop on any finding or routing collision; recover by fixing the named contract and rerun, never by weakening the gate.
 ## Outputs
-
 | Artefact | Consumer | Acceptance condition |
 |---|---|---|
-| Normalised `SKILL.md` | Linux operator and routing hub | Local and canonical validators report no finding; entrypoint is at most 500 lines. |
-| Directly linked resources | Skill user | Each link resolves and every extracted reference links back to its parent. |
-| Routing fixtures | Release gate | Expected skill ranks in the top three and negative routes do not select it. |
-
+| Skill directory and routing fixtures | Maintainer and router | Validators pass and the expected skill ranks in the top three. |
 ## Evidence Produced
-
-| Category | Artefact | Acceptance condition |
-|---|---|---|
-| Correctness | Validator and quick-validation output | Every changed skill passes. |
-| Routing | Positive, negative, collision, degraded, and failure fixtures | No failed fixture at the documented top-three threshold. |
-| Safety | Skill safety review | No unexplained installer, credential request, privilege escalation, or hidden mutation. |
-
+| Evidence | Artefact and format | Consumer | Acceptance condition |
+|---|---|---|---|
+| Validation and routing record | Command output | Release owner | Zero findings; unrun checks marked `NOT ASSESSED`. |
 <!-- dual-compat-end -->
-
+## Quality Standards
+- Portable minimum, applied even when the canonical is unreachable: frontmatter uses only approved keys and `name` matches the folder.
+- The description starts `Use when`, stays within 350 characters and names a neighbour, with no workflow steps.
+- `SKILL.md` stays within 500 lines; deep detail sits in references one level deep, linked directly.
+- Every new or changed skill gets positive, negative and collision routing fixtures.
+- Bundled scripts run through their interpreter, for example `python -X utf8 scripts/<name>.py`.
+- No book extractions or copied third-party text; paraphrase and attribute.
+- British English, the imperative mood, and `NOT ASSESSED` for any check not run.
+## Engine-Local Delta
+- Keep `## Distro support` as the first H2 of every specialist skill; route family differences through `common.sh` primitives in `sk-*` guidance; manual commands stay the baseline and scripts are optional.
+- Never mutate a server while writing a skill; keep the author metadata keys; follow the [local authoring standard](../../docs/engine-design/skill-authoring-standard.md) and [skill template](../../templates/skill-template.md).
 ## Capability Contract
-
-Read and search are required. Editing is permitted only for an authorised authoring task. Execute repository validators only within the task boundary; network and delegation are optional. Never mutate a server while writing a skill.
-
+Read and search are required. Editing files and running validators need explicit permission for the authoring task; publishing, deletion and release changes need separate authorisation.
 ## Degraded Mode
-
-If editing is unavailable, return a file-specific patch plan. If execution is unavailable, mark every validator and routing check `not assessed`. If domain evidence is missing, preserve the existing procedure and report the missing decision instead of fabricating it.
-
+If the canonical standard is unavailable, apply the portable minimum, return the narrowest qualified result, and mark each canonical-only check `NOT ASSESSED`; never report it as passed.
 ## Decision Rules
-
-| Choice | Action | Failure or risk avoided |
+| Condition | Action | Failure or risk avoided |
 |---|---|---|
-| Existing skill has the same trigger and output | Normalise that skill | Duplicate routes and drift |
-| Stable procedure has a distinct trigger and consumer | Create one skill | Overloaded neighbour entrypoint |
-| Detail is needed only after routing | Put it in `references/` | Context waste and line-limit failure |
-| Instruction is runner-specific | Put it in an adapter or repository policy | Non-portable skill body |
-
+| An existing skill owns the trigger and output | Normalise it in place; put branch-only detail in a linked reference | Duplicate routes and oversized entrypoints |
+## Anti-Patterns
+- Copying the canonical body into this engine. Fix: link the canonical and keep only the delta here.
+- Writing only positive triggers. Fix: name the neighbour and add a collision fixture.
+- Treating an unrun validator as a pass. Fix: record `NOT ASSESSED` with the reason.
+- Granting edit rights to a review procedure. Fix: default review and audit to read-only.
+- Weakening a baseline to clear a finding. Fix: repair the named contract instead.
 ## Worked Example
-
-Prompt: "Add guidance for diagnosing slow PostgreSQL queries." Inspect `linux-postgresql` and `linux-perf-profiling`; route database query and configuration diagnosis to the former, host-wide bottleneck attribution to the latter, and add a collision fixture that keeps both in the top three for the ambiguous prompt.
-
+For slow PostgreSQL queries, inspect `linux-postgresql` and `linux-perf-profiling`; route query diagnosis to the former and host-wide attribution to the latter, and add a collision fixture for the ambiguous prompt.
 ## References
-
-- [Local skill authoring standard](../../docs/engine-design/skill-authoring-standard.md)
+- [Canonical skill-writing standard](https://github.com/peterbamuhigire/chwezi-dev-engine/blob/main/skills/sdlc-meta/skill-writing/SKILL.md)
+- [Local authoring standard](../../docs/engine-design/skill-authoring-standard.md)
 - [Skill template](../../templates/skill-template.md)
-- [Engine specification](../../docs/engine-design/spec.md)
+- [Skill safety audit](../skill-safety-audit/SKILL.md)
