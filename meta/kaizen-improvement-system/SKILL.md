@@ -121,6 +121,12 @@ uncertainty, and review date for current distro, package, protocol, security,
 vendor, command, and lifecycle claims; quarantine unsupported claims as
 `NOT_ASSESSED`. Apply the [portfolio Kaizen currentness gate](https://github.com/peterbamuhigire/digital-research-skills/blob/main/docs/continuous-improvement/kaizen-currentness-gate.md).
 
+Include claims using superlatives such as “largest”, “first”, “only”, “most
+severe”, and emergency severity scores in the currentness preflight. Verify
+severity and scores against the issuing authority; support historical
+comparisons with a defined comparison set and dated evidence. If either is
+missing, narrow the claim and record it as unsupported instead of repeating it.
+
 ## References
 
 - [Local adoption plan](../../docs/continuous-improvement/kaizen-adoption-2026-08.md)

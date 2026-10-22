@@ -30,7 +30,7 @@ site. Full detail: [`references/httpd-reference.md`](references/httpd-reference.
 | Apache logs | `/var/log/apache2/` | `/var/log/httpd/` |
 | PHP-FPM service / pool | `php8.x-fpm` / `/etc/php/8.x/fpm/pool.d/` | `php-fpm` / `/etc/php-fpm.d/` |
 | PHP-FPM socket | `/run/php/php8.x-fpm.sock` | `/run/php-fpm/www.sock` |
-| Newer PHP | Ondřej PPA | Remi repo / `dnf module` |
+| Newer PHP | Prefer the release's signed archive; assess a third-party source before enabling | Prefer supported vendor/module streams; assess Remi before enabling |
 | MAC on web content | none | **SELinux**: `httpd_sys_content_t`, `httpd_can_network_connect` |
 
 In `sk-*` scripts use `svc_name apache`, `web_conf_dir apache`, and
@@ -95,6 +95,7 @@ In `sk-*` scripts use `svc_name apache`, `web_conf_dir apache`, and
 - [`references/config-patterns.md`](references/config-patterns.md)
 - [`references/php-fpm-tuning.md`](references/php-fpm-tuning.md)
 - [`references/httpd-reference.md`](references/httpd-reference.md) — Apache httpd + conf.d model + SELinux (RHEL family)
+- [`references/php-security-and-runtime-upgrades.md`](references/php-security-and-runtime-upgrades.md) — security patching, serving-runtime verification, and staged PHP minor upgrades
 
 ## Evidence Produced
 

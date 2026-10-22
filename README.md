@@ -54,7 +54,7 @@ The engine has 48 active `SKILL.md` files: 44 specialists in 16 numbered categor
 | | `linux-network-admin` | Diagnoses and configures interfaces, routes, client DNS, VLANs and time sync (Netplan, NetworkManager). |
 | **04 Web and mail services (3)** | `linux-mail-server` | Operates Postfix, Exim and Dovecot, mail queues, TLS and SPF/DKIM/DMARC. |
 | | `linux-site-deployment` | Releases one site from a pinned revision with vhost cutover, rollback and external verification. |
-| | `linux-webstack` | Installs, tunes and diagnoses the shared Nginx, Apache/httpd, PHP-FPM and Node.js stack. |
+| | `linux-webstack` | Installs, tunes and diagnoses Nginx, Apache/httpd, PHP-FPM and Node.js, including PHP security patching and staged branch upgrades. |
 | **05 Services and virtualisation (2)** | `linux-service-management` | Operates systemd units, timers, targets, journals, restart policy and cgroup limits. |
 | | `linux-virtualization` | Runs KVM/libvirt VMs and LXD system containers: lifecycle, snapshots, storage, networking. |
 | **06 Storage and filesystems (1)** | `linux-disk-storage` | Diagnoses disk and inode pressure, cleans up measurably, manages swap and NFS/CIFS mounts. |

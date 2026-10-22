@@ -109,6 +109,7 @@ surface is the same for everything here).
 - [`references/snap-reference.md`](references/snap-reference.md)
 - [`references/unattended-upgrades-reference.md`](references/unattended-upgrades-reference.md)
 - [`references/dnf-reference.md`](references/dnf-reference.md)
+- For PHP security updates and branch migrations, use [`linux-webstack/references/php-security-and-runtime-upgrades.md`](../../04-web-and-mail-services/linux-webstack/references/php-security-and-runtime-upgrades.md) alongside the package-family procedure here.
 
 ## Evidence Produced
 
