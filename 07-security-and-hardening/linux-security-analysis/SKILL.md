@@ -137,8 +137,9 @@ Levels: **CRITICAL** | **HIGH** | **MEDIUM** | **LOW** | **INFO** | **PASS**
 ## Quick Start
 
 ```bash
-# Optional: run the existing audit script first for a fast PASS/WARN/FAIL overview:
-sudo bash ~/.claude/skills/scripts/server-audit.sh
+# Optional: run the audit script first for a fast PASS/WARN/FAIL overview
+# (install once with: sudo install-skills-bin linux-security-analysis):
+sudo sk-audit
 
 # Then work through the 10 layers for the full deep analysis:
 less ~/.claude/skills/linux-security-analysis/references/audit-layers.md

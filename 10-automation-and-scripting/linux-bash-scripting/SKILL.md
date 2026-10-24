@@ -103,6 +103,7 @@ For every mutating `sk-*` script, apply the safe reversible operations standard:
 - Using `set -e`. Fix: handle expected failures and preserve `set -uo pipefail`.
 - Writing important files with direct redirection. Fix: back up and use atomic writes.
 - Claiming family portability after one-family testing. Fix: test both or mark one unassessed.
+- Handing the user a script by a long, scratch, or skill-directory path. Fix: install it as `sk-*` or copy it to `~/<name>.sh` (see "Handing a script to a user").
 
 ## Outputs
 
@@ -333,6 +334,34 @@ available shell and engine validators before merging.
     `/var/log/linux-skills/<script>.log` regardless of `--log`.
 15. **Every script passes `shellcheck` with zero warnings.** Run
     `shellcheck <script>` and `bash -n <script>` before committing.
+
+---
+
+## Handing a script to a user
+
+Applies whenever the user, not Claude, is asked to run a script, typically
+because it needs root or a password Claude cannot supply. The command the user
+types must be one line and as short as the path allows.
+
+1. **Installed `sk-*` command first.** Check `command -v sk-foo`. If absent, give
+   `sudo install-skills-bin <skill-name>` once; the user then runs `sudo sk-foo`.
+   A bare name on `PATH` is the shortest possible path.
+2. **One-off collector.** Draft it in the session scratch area, validate it
+   (`bash -n`, and for a read-only script a grep for mutating verbs), then copy
+   it to `~/<short-name>.sh`. The user runs `sudo bash ~/<short-name>.sh`. Never
+   hand over the scratch, temp, or skill-directory path.
+3. **No required path arguments.** Default the output to
+   `$(dirname "$(readlink -f "$0")")/<short-name>.out`, mode 600, owned by
+   `$SUDO_USER`. Redact password hashes and secrets in that output.
+4. **One line, nothing to mangle.** No pipes, `&&` chains, heredocs, or wrapped
+   paths. In Claude Code, tell the user to type `! ` first and to copy only the
+   line inside the code block, not the fences.
+5. **Root scripts carry a fingerprint and a cleanup line.** Print the first 16
+   characters of `sha256sum ~/<short-name>.sh` so the user can confirm the file
+   was not altered after validation, and give
+   `rm ~/<short-name>.sh ~/<short-name>.out` for afterwards.
+
+Machine-run commands (cloud-init `runcmd`, cron, systemd units) are exempt.
 
 ---
 

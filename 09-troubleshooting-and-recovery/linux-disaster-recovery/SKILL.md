@@ -219,8 +219,8 @@ sudo systemctl stop <service>
 # 4. Restart all services
 sudo systemctl start nginx mysql php8.3-fpm apache2
 
-# 5. Re-run security audit
-sudo bash ~/.claude/skills/scripts/server-audit.sh
+# 5. Re-run security audit (install once with: sudo install-skills-bin linux-security-analysis)
+sudo sk-audit
 
 # 6. Clean up
 rm -rf ~/restore/

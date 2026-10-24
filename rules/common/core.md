@@ -50,3 +50,20 @@ against the *wrong* target.
 content is already covered. That judgment holds for the mechanical part;
 this rule imports only the Freeze Mode scoping discipline, which that pass
 did not evaluate separately.
+
+## A script handed to a user starts with the shortest possible command
+
+A script the user is asked to run is launched by one line with the shortest path
+that resolves: a bare `sk-*` name on `PATH` (installed with `install-skills-bin`),
+or `~/<name>.sh` for a one-off. Never hand over a path through a skill directory,
+a scratch or temp directory, or any location that exists for one session only,
+and never require an output-path argument; default the output next to the
+script. Long paths wrap in terminals, pick up stray newlines when copied, and in
+this engine have already pointed at a script that did not exist
+(`~/.claude/skills/scripts/server-audit.sh`). Commands run by a machine, such as
+cloud-init `runcmd`, cron, or a systemd unit, are exempt.
+
+*Added 2026-10-24 on Peter's instruction. Already assumed in two places:*
+`AGENTS.md` (scripts install to `/usr/local/bin/` as `sk-*`) and
+`linux-security-analysis` (the `sudo sk-audit` fast path). *Full procedure:*
+`linux-bash-scripting`, section "Handing a script to a user".

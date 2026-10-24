@@ -218,6 +218,7 @@ engine scanner, distro-matrix test, safety review, and anti-slop release gate. N
 - **Scripts track skills automatically.** When a skill's knowledge changes (new Ubuntu version, better approach, updated standard), proactively update every affected script in the same session — do not wait to be told.
 - **New repo on server?** It MUST be added to both `/usr/local/bin/update-all-repos` and `/usr/local/bin/update-repos`. See `notes/new-repo-checklist.md` for instructions.
 - **First use of a skill on a new server?** Run `sudo install-skills-bin <skill-name>` to install that skill's scripts into `/usr/local/bin/`. For initial server setup, run `sudo install-skills-bin core` to install the tier-1 foundation scripts.
+- **Scripts the user must run use the shortest possible path.** One line: a bare `sk-*` name on `PATH`, or `~/<name>.sh` for a one-off. Never a skill-directory, scratch, or temp path, and no required output-path argument. See `rules/common/core.md` and `linux-bash-scripting` ("Handing a script to a user").
 
 ## Never store book extractions
 

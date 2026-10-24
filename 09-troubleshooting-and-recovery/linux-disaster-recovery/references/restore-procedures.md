@@ -478,7 +478,7 @@ The server is destroyed. You have only the backups.
     ```
 11. **Register each restored repo in `update-all-repos`**.
 12. **Point DNS at the new IP** (or update load balancer).
-13. **Run `sk-audit`** (or `sudo bash ~/.claude/skills/scripts/server-audit.sh`).
+13. **Run `sudo sk-audit`** (install once with `sudo install-skills-bin linux-security-analysis`).
 14. **Document the incident** in the backup strategy file.
 
 Budget: 2-4 hours for a single-server web stack, assuming backups are

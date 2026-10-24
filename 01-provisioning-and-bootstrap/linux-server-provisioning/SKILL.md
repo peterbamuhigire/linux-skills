@@ -175,8 +175,8 @@ ss -tlnp | grep apache
 # After MySQL install — bind to localhost:
 grep bind-address /etc/mysql/mysql.conf.d/mysqld.cnf
 
-# Final check:
-sudo bash ~/.claude/skills/scripts/server-audit.sh
+# Final check (install once with: sudo install-skills-bin linux-security-analysis):
+sudo sk-audit
 ```
 
 ---

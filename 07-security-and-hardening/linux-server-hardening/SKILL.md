@@ -153,7 +153,8 @@ off headless servers unless a real desktop app requirement exists; use
 ## Step 1: Run The Audit
 
 ```bash
-sudo bash ~/.claude/skills/scripts/server-audit.sh
+# Install once with: sudo install-skills-bin linux-security-analysis
+sudo sk-audit
 ```
 
 Fix FAIL items first, then WARN. Use `references/hardening-checklist.md`
@@ -218,7 +219,7 @@ for the complete commands for each area.
 ## Verify After Hardening
 
 ```bash
-sudo bash ~/.claude/skills/scripts/server-audit.sh
+sudo sk-audit
 # All previous FAIL items should now be PASS
 ```
 
