@@ -5,7 +5,7 @@
 A script the user is asked to run is now launched by one line with the shortest path that resolves: a bare `sk-*` name on `PATH`, or `~/<name>.sh` for a one-off. Skill-directory, scratch and temp paths are no longer handed to users, and no script may require an output-path argument.
 
 - New always-on rule in [`rules/common/core.md`](../../rules/common/core.md) and a matching bullet in `AGENTS.md` Working Rules.
-- New section "Handing a script to a user" and one anti-pattern in [`linux-bash-scripting`](../../10-automation-and-scripting/linux-bash-scripting/SKILL.md): installed `sk-*` first, one-off collectors copied to `~/<name>.sh`, default output next to the script (mode 600, owned by `$SUDO_USER`), one line with no wrapped path, a short checksum and a cleanup line for root scripts.
+- New section "Handing a script to a user" and one anti-pattern in [`linux-bash-scripting`](../../10-automation-and-scripting/linux-bash-scripting/SKILL.md): installed `sk-*` first, one-off collectors copied to `~/<name>.sh`, default output next to the script (mode 600, owned by `$SUDO_USER`) with a terminal line before and after so a file-only script never looks like it did nothing, one line with no wrapped path, a short checksum and a cleanup line for root scripts.
 - Replaced `sudo bash ~/.claude/skills/scripts/server-audit.sh` with `sudo sk-audit` in `linux-security-analysis`, `linux-server-provisioning`, `linux-server-hardening` (two places), `linux-disaster-recovery` and its `restore-procedures.md` reference.
 
 ## Why

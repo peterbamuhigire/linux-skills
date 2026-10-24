@@ -352,7 +352,10 @@ types must be one line and as short as the path allows.
    hand over the scratch, temp, or skill-directory path.
 3. **No required path arguments.** Default the output to
    `$(dirname "$(readlink -f "$0")")/<short-name>.out`, mode 600, owned by
-   `$SUDO_USER`. Redact password hashes and secrets in that output.
+   `$SUDO_USER`. Redact password hashes and secrets in that output. Because the
+   output goes to a file, print one line to the terminal before redirecting
+   (`writing to <file>`) and one when finished; a script that stays silent looks
+   like one that failed.
 4. **One line, nothing to mangle.** No pipes, `&&` chains, heredocs, or wrapped
    paths. In Claude Code, tell the user to type `! ` first and to copy only the
    line inside the code block, not the fences.
