@@ -149,6 +149,15 @@ class MarketplaceCheckerTests(unittest.TestCase):
             self.assertGreater(stats["checkout_entries"], baseline["package_files"])
             self.assertTrue(any("checkout entry count" in issue for issue in issues))
 
+    def test_caller_cannot_raise_hard_file_ceiling(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self.make_fixture(root)
+            for invalid_limit in (-1, CHECKER.MAX_PACKAGE_FILES + 1):
+                with self.subTest(file_cap=invalid_limit):
+                    issues, _ = CHECKER.audit_repository(root, file_cap=invalid_limit)
+                    self.assertTrue(any("hard ceiling" in issue for issue in issues))
+
     def test_malformed_manifest_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

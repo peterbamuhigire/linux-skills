@@ -178,8 +178,11 @@ def audit_repository(root_arg: Path, *, file_cap: int = MAX_PACKAGE_FILES) -> tu
     except OSError as exc:
         return [f"file inventory failed closed: {exc}"], {"package_files": 0, "checkout_entries": 0}
     stats = {"package_files": package_files, "checkout_entries": checkout_entries}
-    if file_cap < 0:
-        issues.append(f"configured file cap must be non-negative, got {file_cap}")
+    if not 0 <= file_cap <= MAX_PACKAGE_FILES:
+        issues.append(
+            f"configured file cap must be between 0 and the hard ceiling "
+            f"{MAX_PACKAGE_FILES}, got {file_cap}"
+        )
     if package_files > file_cap:
         issues.append(f"package file count {package_files} exceeds configured cap {file_cap}")
     if checkout_entries > file_cap:
