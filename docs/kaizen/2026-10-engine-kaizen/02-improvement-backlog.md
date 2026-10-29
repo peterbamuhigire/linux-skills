@@ -48,3 +48,9 @@ Author: Peter Bamuhigire, techguypeter.com, +256784464178.
 ## K07 scope addition requested during execution
 
 Peter added Claude/Codex marketplace optimisation and an entire-engine 5,000-file ceiling. This stays within K07 packaging/documentation ownership rather than creating an eleventh item. Acceptance: manifest parity and path safety, both package and checkout-inclusive ceilings, native Claude validation, explicit live/public-listing limitations, and safety gates on exposed legacy command references. Rollback is the K07 commit; no marketplace submission or remote registration was performed.
+
+## Portfolio refresh supplement — 29 October 2026
+
+See [the bounded R1 refresh](portfolio-refresh.md) for the stricter file-cap
+regression, native local marketplace proof and the resolved development source
+register lookup. Original operational evidence and raw scores are preserved.

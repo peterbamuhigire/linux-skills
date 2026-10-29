@@ -42,3 +42,9 @@ Author: Peter Bamuhigire, techguypeter.com, +256784464178.
 ## Hosted release checks
 
 GitHub Actions completed successfully for released code revision `751d10b5304cb79af578a490771e6b91ce16664d` on2026-10-29: [Skill quality](https://github.com/peterbamuhigire/linux-skills/actions/runs/40815304825), [Bash suites including Fedora](https://github.com/peterbamuhigire/linux-skills/actions/runs/40815304843), and [source-ingestion guardrail](https://github.com/peterbamuhigire/linux-skills/actions/runs/40815304824). This supersedes the earlier hosted-CI NOT_ASSESSED entry for that exact revision. The following evidence-only commit does not alter executable code.
+
+## Portfolio refresh supplement — 29 October 2026
+
+See [the bounded R1 refresh](portfolio-refresh.md) for the stricter file-cap
+regression, native local marketplace proof and the resolved development source
+register lookup. Original operational evidence and raw scores are preserved.

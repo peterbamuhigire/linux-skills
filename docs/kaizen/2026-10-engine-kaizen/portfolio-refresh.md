@@ -33,6 +33,23 @@ registered validators pass. Risk is limited to callers that previously raised
 the limit; rollback is the isolated R1 commit, without deleting user files.
 No numerical score contribution is claimed for this small gate correction.
 
+## R1 result
+
+Kept commit: `57bd07d fix(linux): R1 reject file limits above hard ceiling`.
+No changes were reverted. All three registered validators pass after R1. The Python suite reports
+74 passed, one skipped and ten subtests passed; the new regression tests reject
+both negative and inflated caps. The unchanged operational task artefacts and
+previous MySQL/web recovery evidence remain the applicable practitioner proof;
+this packaging change does not alter their procedures or claim a new lab run.
+The final hygiene regression check passes: no new machine-specific links,
+dangling paths/anchors, duplicate contracts or expired source records. Routing
+remains 67/80 at rank one and 80/80 at rank three; all 41 distro matrices pass.
+The final pre-report inventory is 369 package files and 712 checkout entries;
+Git object entries can grow when this report is committed, so the release gate
+recounts the actual checkout.
+The native installation observations are retained in
+[native-plugin-evidence.json](native-plugin-evidence.json).
+
 ## Native runtime observation
 
 Offline disposable Debian containers mounted the repository read-only and the

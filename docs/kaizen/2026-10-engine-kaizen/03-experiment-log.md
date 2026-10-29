@@ -20,3 +20,9 @@ No whole experiment was reverted. Failed intermediate implementations and enviro
 See [validation](04-validation-record.md) for commands and [final report](05-final-report.md) for the commit ledger and limitations. No source claim's verification date was refreshed without retrieval.
 
 Author: Peter Bamuhigire, techguypeter.com, +256784464178.
+
+## Portfolio refresh supplement — 29 October 2026
+
+See [the bounded R1 refresh](portfolio-refresh.md) for the stricter file-cap
+regression, native local marketplace proof and the resolved development source
+register lookup. Original operational evidence and raw scores are preserved.

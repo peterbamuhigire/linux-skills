@@ -14,7 +14,7 @@ Public-upload support is not claimed. OpenAI's manifest field table documents a 
 
 The Codex manifest deliberately has no MCP declaration because this engine package declares no MCP server. It does not copy Claude's `userConfig`; OpenAI's Claude-plugin import guide says Claude `userConfig` is not executed by OpenAI plugins. The Codex hook reference is for the local compatibility package. OpenAI's public plugin guidance says packages with lifecycle hooks are not eligible for the public plugin directory; this work does not claim or attempt public submission. ([OpenAI Claude-plugin import guide](https://developers.openai.com/plugins/guides/submit-claude-plugin); [OpenAI hook/package guidance](https://developers.openai.com/plugins/build/plugins))
 
-The existing Claude marketplace entry remains the repo-root plugin source. Anthropic documents `.claude-plugin/marketplace.json` with a root-relative source and a plugin entry whose name matches its manifest. OpenAI documents that its desktop client also reads a legacy-compatible `.claude-plugin/marketplace.json` location; support in a live client has not been tested here. ([Claude marketplace guide](https://code.claude.com/docs/en/plugin-marketplaces); [OpenAI local marketplace formats](https://developers.openai.com/plugins/build/plugins))
+The existing Claude marketplace entry remains the repo-root plugin source. Anthropic documents `.claude-plugin/marketplace.json` with a root-relative source and a plugin entry whose name matches its manifest. OpenAI documents that its desktop client also reads a legacy-compatible `.claude-plugin/marketplace.json` location; local CLI installation and discovery have now been tested as recorded below. ([Claude marketplace guide](https://code.claude.com/docs/en/plugin-marketplaces); [OpenAI local marketplace formats](https://developers.openai.com/plugins/build/plugins))
 
 ## Checks
 
@@ -28,7 +28,24 @@ node scripts/generate-plugin-manifest.js --engine . --root . --exclude 'docs,scr
 
 The validator checks JSON shape, Claude marketplace/manifest identity and version alignment, Claude/Codex skill-set parity, on-disk skill coverage, normalized relative paths, traversal and symlink rejection, Codex listing fields, declared hook-file integrity, and the file cap. It fails closed when inventory cannot complete. Both counts have the `5000` cap: package-source file entries exclude `.git` and common ephemeral cache directories, while checkout file-like entries include `.git` and caches. A file-like entry is a regular file or a symlinked directory entry; directories are not counted. Counts use the working tree, including newly added files not yet staged, and the checker prints both totals separately.
 
-These checks are structural. They do not prove that a Claude Code or Codex client loads the package, test hook behavior in either client, or certify public-marketplace acceptance. No client installation, marketplace registration, external submission, or API-backed test was performed.
+These validator checks are structural. Separate offline native CLI tests now
+prove local installation and discovery: Codex 0.165.0 exposes all 45 declared
+skill paths; Claude 2.1.312 reports those skills plus two legacy commands. See
+[the portfolio refresh](kaizen/2026-10-engine-kaizen/portfolio-refresh.md) for
+scope and evidence. Hook execution and public marketplace acceptance remain
+NOT_ASSESSED; no API-backed model test or public submission was performed.
+
+For an existing checkout, run these commands from its root in the runtime
+whose user installation you intend to change:
+
+```sh
+codex plugin marketplace add . --json
+codex plugin add linux@chwezi-linux --json
+codex plugin list --json
+```
+
+The file ceiling is hard: callers may use a smaller limit for testing, but the
+validator rejects a configured limit above 5,000.
 
 ## Current source notes
 

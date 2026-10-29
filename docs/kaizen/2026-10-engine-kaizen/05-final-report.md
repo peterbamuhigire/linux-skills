@@ -64,3 +64,9 @@ Final documentation/evidence is committed separately after this ledger; its comm
 Same-parser hygiene comparison: missing local paths7→5; missing anchors10→10; absolute machine-specific inline links0→0; duplicate canonical heading occurrences20→20 (ten affected skills); expired structured source rows10→10. No new finding identities. Baseline parser classification is documented in the refined JSON, with the original frozen JSON retained separately.
 
 Release `751d10b` was fast-forwarded and pushed to `main`; all three [hosted workflows](04-validation-record.md#hosted-release-checks) passed. Final inventory at release:367package files and695checkout entries including Git/cache files, both below5,000. The file ceiling is enforced in CI and locally.
+
+## Portfolio refresh supplement — 29 October 2026
+
+See [the bounded R1 refresh](portfolio-refresh.md) for the stricter file-cap
+regression, native local marketplace proof and the resolved development source
+register lookup. Original operational evidence and raw scores are preserved.

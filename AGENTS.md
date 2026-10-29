@@ -157,6 +157,7 @@ this cycle's user-requested 45/100 initial cap and 95/100 target. Preserve raw
 scores and explicit unassessed checks; never promote a target to an achieved
 score. Use the [security triage runbook](docs/security/current-vulnerability-triage.md)
 for current advisory matching and the dated source register for its limitations.
+The [portfolio refresh](docs/kaizen/2026-10-engine-kaizen/portfolio-refresh.md) records native plugin discovery and the hard file-cap regression.
 The historical 88-script inventory is a roadmap; installed availability comes
 from `scripts/install-skills-bin --list` and current skill manifests.
 

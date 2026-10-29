@@ -84,3 +84,9 @@ Normal repository tools and existing task workers are not treated as a model
 benchmark. Missing operational/model evidence remains NOT_ASSESSED.
 
 Author: Peter Bamuhigire, techguypeter.com, +256784464178.
+
+## Portfolio refresh supplement — 29 October 2026
+
+See [the bounded R1 refresh](portfolio-refresh.md) for the stricter file-cap
+regression, native local marketplace proof and the resolved development source
+register lookup. Original operational evidence and raw scores are preserved.

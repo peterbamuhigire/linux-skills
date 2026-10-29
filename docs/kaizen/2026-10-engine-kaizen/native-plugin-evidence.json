@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-29",
+  "tested_tree": "fd0a5ea468b4c21792ab27277e74bd387a3860da",
+  "environment": "disposable Debian container, network disabled, repository mounted read-only, no host credentials or configuration",
+  "codex": {
+    "version": "0.165.0",
+    "marketplace": "chwezi-linux",
+    "plugin": "linux",
+    "installed": true,
+    "enabled": true,
+    "declared_skills": 45,
+    "model_visible_skill_paths": 45,
+    "missing_paths": [],
+    "method": "offline debug prompt-input; resolve skill-root aliases and compare exact SKILL.md path suffixes"
+  },
+  "claude": {
+    "version": "2.1.312",
+    "installed": true,
+    "inventory_skill_components": 47,
+    "declared_skills": 45,
+    "legacy_commands": [
+      "rclone",
+      "redis"
+    ],
+    "unset_user_config_options": 1
+  },
+  "model_calls": 0,
+  "hook_execution": "NOT_ASSESSED",
+  "public_directory_acceptance": "NOT_ASSESSED"
+}

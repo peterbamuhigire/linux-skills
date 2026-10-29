@@ -24,3 +24,9 @@ No sibling checkout was edited and no relative Markdown link into another engine
 Small next experiment: run the existing502 fixture under a disposable RHEL VM with real systemd and enforcing SELinux, deliberately deny upstream connection, prove diagnosis from logs/audit records, apply one bounded policy correction, then restore and verify the original state. No public endpoint or production credentials needed.
 
 Author: Peter Bamuhigire, techguypeter.com, +256784464178.
+
+## Portfolio refresh supplement — 29 October 2026
+
+See [the bounded R1 refresh](portfolio-refresh.md) for the stricter file-cap
+regression, native local marketplace proof and the resolved development source
+register lookup. Original operational evidence and raw scores are preserved.
