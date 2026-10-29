@@ -87,6 +87,8 @@ When privileges, logs, tools, or probes are unavailable, finish the narrow obser
 
 ## Quality standards
 
+- Treat `sk-audit` as preliminary posture evidence, not certification that vulnerabilities are absent. Match installed packages to current vendor advisories; effective SSH defaults do not assess every Match context or service override. Cached package metadata does not establish patch currency.
+
 - Evidence must be concrete, reproducible, and severity-ranked.
 - Keep audit and remediation separate.
 - Cover every layer even if an early layer already exposes serious issues.
@@ -117,6 +119,7 @@ On a public RHEL web host, record `getenforce` returning `Permissive` alongside 
 ## References
 
 - [`references/audit-layers.md`](references/audit-layers.md)
+- [`../../docs/security/current-vulnerability-triage.md`](../../docs/security/current-vulnerability-triage.md) — source-led package/CVE triage; consult when a finding or pending security update needs applicability and remediation verification.
 - [`../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md`](../../07-security-and-hardening/linux-server-hardening/references/selinux-reference.md) — SELinux audit checks (RHEL family)
 
 **This skill is self-contained.** The 10 audit layers below work on a stock

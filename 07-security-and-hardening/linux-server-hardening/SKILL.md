@@ -127,6 +127,7 @@ identity, staff, incident, and recovery risk, load
 ## References
 
 - [`references/hardening-checklist.md`](references/hardening-checklist.md)
+- [`../../docs/security/current-vulnerability-triage.md`](../../docs/security/current-vulnerability-triage.md) — verify applicability, vendor fix status, deployment, recovery and closure for security updates before changing a host.
 - [`references/sysctl-reference.md`](references/sysctl-reference.md)
 - [`references/selinux-reference.md`](references/selinux-reference.md)
 - [`../../01-provisioning-and-bootstrap/linux-package-management/SKILL.md`](../../01-provisioning-and-bootstrap/linux-package-management/SKILL.md) — package hygiene, Flatpak/snap, and workstation AppImage runtime support.

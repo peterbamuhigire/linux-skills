@@ -8,6 +8,22 @@ ACME CAs. On Ubuntu/Debian it is the shortest path from "I have a domain" to
 installation, challenge types, issuance, renewal, wildcards, debugging, and
 the rate limits you will hit if you script it carelessly.
 
+## Certificate lifetime and renewal currentness
+
+Verified 2026-10-29 against [Let's Encrypt's transition plan](https://letsencrypt.org/2025/12/02/from-90-to-45/).
+Lifetime is profile-specific: the opt-in tlsserver profile moved to 45 days on
+13 May 2026; the default Classic profile's published plan changes to 64 days
+on 10 February 2027 and 45 days on 16 February 2028. Those future dates are a
+plan, not proof of a host's current certificate or renewal behaviour. Recheck
+the source before each transition and record the selected ACME profile and
+actual certificate notBefore/notAfter values.
+
+Treat the historical 90-day/30-day examples below as examples only. Use the
+installed client's supported renewal logic and staging/dry-run verification;
+do not hard-code a universal 30-day window. Monitor actual expiry and renewal
+failures independently. Host account/profile and timer behaviour are NOT_ASSESSED
+until observed. Review date: 2026-11-12, or before the next deployment.
+
 ## Table of contents
 
 - [Installation — apt vs snap](#installation--apt-vs-snap)

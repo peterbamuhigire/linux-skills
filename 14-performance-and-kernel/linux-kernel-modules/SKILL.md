@@ -166,6 +166,9 @@ Before blacklisting a conflicting NIC driver, map the interface to its bound mod
 
 ## References
 
+- [Current vulnerability triage and dated watchlist](../../docs/security/current-vulnerability-triage.md): match vendor package, release and exposure before choosing a remediation.
+
+
 - [`references/module-management.md`](references/module-management.md) — deep
   reference: inspect/load/unload, load-on-boot, options/parameters, blacklisting
   (`blacklist` vs `install <mod> /bin/true`), and the per-family initramfs

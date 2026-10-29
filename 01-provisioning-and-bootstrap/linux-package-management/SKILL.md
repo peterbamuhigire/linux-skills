@@ -105,6 +105,9 @@ surface is the same for everything here).
 
 ## References
 
+- [Current vulnerability triage and dated watchlist](../../docs/security/current-vulnerability-triage.md): match vendor package, release and exposure before choosing a remediation.
+
+
 - [`references/apt-reference.md`](references/apt-reference.md)
 - [`references/snap-reference.md`](references/snap-reference.md)
 - [`references/unattended-upgrades-reference.md`](references/unattended-upgrades-reference.md)

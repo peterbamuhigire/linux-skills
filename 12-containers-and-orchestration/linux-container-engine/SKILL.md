@@ -145,6 +145,9 @@ On a multi-tenant RHEL host, select rootless Podman, verify subordinate IDs and 
 
 ## References
 
+- [Current vulnerability triage and dated watchlist](../../docs/security/current-vulnerability-triage.md): match vendor package, release and exposure before choosing a remediation.
+
+
 - [`references/container-engine-reference.md`](references/container-engine-reference.md) — full Docker + Podman install, daemon config, networks, volumes, security, rootless.
 
 **This skill is self-contained.** Every command below is a standard engine tool
