@@ -85,6 +85,20 @@ def audit_workflow(source: str) -> list[str]:
     return issues
 
 
+def audit_action_pins(source: str) -> list[str]:
+    """Require immutable full-length SHAs for external workflow actions."""
+
+    issues: list[str] = []
+    for line_number, line in enumerate(source.splitlines(), start=1):
+        uses_prefix = r"^\s*(?:-\s*)?uses:\s*"
+        if re.match(uses_prefix, line) and not re.match(
+            r"^\s*(?:-\s*)?uses:\s*[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}(?:\s+#\s+v\S+)?\s*$",
+            line,
+        ):
+            issues.append(f"line {line_number}: action must use a full commit SHA")
+    return issues
+
+
 class BootstrapSafetyStaticTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -141,6 +155,18 @@ class BootstrapSafetyStaticTests(unittest.TestCase):
         mutated = self.workflow.replace("runs-on: ubuntu-24.04", "runs-on: ubuntu-latest", 1)
         findings = audit_workflow(mutated)
         self.assertTrue(any("minor-pinned" in finding for finding in findings))
+
+    def test_all_workflow_actions_are_pinned_to_full_shas(self):
+        workflows = sorted((ROOT / ".github" / "workflows").glob("*.yml"))
+        self.assertTrue(workflows)
+        for workflow in workflows:
+            with self.subTest(workflow=workflow.name):
+                self.assertEqual(audit_action_pins(workflow.read_text(encoding="utf-8")), [])
+
+    def test_mutable_action_tag_is_rejected(self):
+        findings = audit_action_pins("      - uses: actions/checkout@v4\n")
+        self.assertEqual(len(findings), 1)
+        self.assertIn("full commit SHA", findings[0])
 
 
 if __name__ == "__main__":
