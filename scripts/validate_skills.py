@@ -233,24 +233,28 @@ def main() -> int:
         if count > 1:
             record(findings, "duplicate-description", Path("."), f"{count} skills: {description[:100]}")
     template_files = [path for path in templates(root) if path.is_file()]
-    counts = dict(sorted(Counter(item["code"] for item in findings).items()))
     payload = {
         "active_skill_count": len(files),
         "template_count": len(template_files),
         "fully_compliant": len(files) - len({item["path"] for item in findings if item["path"].endswith("SKILL.md")}),
-        "failure_counts": counts,
         "findings": findings,
     }
+    baseline_match = True
     if args.baseline:
         baseline = json.loads(args.baseline.read_text(encoding="utf-8"))
         if len(files) != baseline["expected_active_skill_count"]:
             record(findings, "active-count", Path("."), f"{len(files)} != {baseline['expected_active_skill_count']}")
+            baseline_match = False
         if len(template_files) != baseline["expected_template_count"]:
             record(findings, "template-count", Path("."), f"{len(template_files)} != {baseline['expected_template_count']}")
-        if counts != baseline.get("failure_counts", {}):
-            payload["baseline_match"] = False
-        else:
-            payload["baseline_match"] = True
+            baseline_match = False
+        if Counter(item["code"] for item in findings) != Counter(baseline.get("failure_counts", {})):
+            baseline_match = False
+    counts = dict(sorted(Counter(item["code"] for item in findings).items()))
+    payload["failure_counts"] = counts
+    payload["findings"] = findings
+    if args.baseline:
+        payload["baseline_match"] = baseline_match
     if args.json:
         print(json.dumps(payload, indent=2))
     else:
@@ -259,7 +263,7 @@ def main() -> int:
         print(f"failure counts: {json.dumps(counts, sort_keys=True)}")
         for item in findings:
             print(f"- {item['path']}: {item['code']}: {item['detail']}")
-    return 1 if findings or payload.get("baseline_match") is False else 0
+    return 1 if findings or not baseline_match else 0
 
 
 if __name__ == "__main__":

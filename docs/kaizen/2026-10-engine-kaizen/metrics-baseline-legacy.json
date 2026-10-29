@@ -1,0 +1,663 @@
+{
+  "baseline_commit": "2ce755a7731e3061296de68747d8d36fea4286a9",
+  "snapshot": "/tmp/linux-kaizen-checks/baseline",
+  "as_of": "2026-10-29",
+  "scope": {
+    "skills": "48 SKILL.md files in pristine HEAD",
+    "routing": "existing deterministic router, existing routing fixtures; expected target hit measured separately at rank 1 and rank 3",
+    "negative_fixtures": "kind=negative; expected is owned skill; forbidden-list absence checked at top 3",
+    "worked_examples": "content from Worked Example heading to next H2; blank-line-separated paragraphs and nonblank lines",
+    "duplicate_contract_headings": "repeated canonical H2 headings within one skill, case-insensitive",
+    "links": "local Markdown inline-link targets only; external URL reachability and reference-style links not assessed",
+    "expired_sources": "docs Markdown rows with explicit `review by YYYY-MM-DD` before 2026-10-29; advisory due dates excluded"
+  },
+  "skill_count": 48,
+  "routing": {
+    "fixture_count": 30,
+    "fixture_kinds": {
+      "collision": 5,
+      "failure-path": 5,
+      "limited-capability": 3,
+      "negative": 6,
+      "positive": 11
+    },
+    "expected_hit_at_1": {
+      "passed": 25,
+      "total": 30,
+      "precision": 0.8333333333333334
+    },
+    "expected_hit_at_3": {
+      "passed": 30,
+      "total": 30,
+      "precision": 1.0
+    },
+    "owned_negatives": {
+      "fixtures": 6,
+      "expected_hit_at_1": 5,
+      "expected_hit_at_3": 6,
+      "forbidden_absent_at_3": 6
+    },
+    "per_skill_coverage": {
+      "positive_fixtures": 11,
+      "owned_negative_fixtures": 6,
+      "skills_total": 48,
+      "skills_meeting_3_positive_and_2_owned_negative": 0,
+      "shortfalls": {
+        "cisco-ios-patterns": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "kaizen-improvement-system": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-access-control": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-archive-integrity": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-auditd-rules": {
+          "positive": 1,
+          "owned_negative": 0
+        },
+        "linux-bash-scripting": {
+          "positive": 0,
+          "owned_negative": 1
+        },
+        "linux-benchmark-scanning": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-cloud-init": {
+          "positive": 1,
+          "owned_negative": 0
+        },
+        "linux-config-management": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-container-deployment": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-container-engine": {
+          "positive": 0,
+          "owned_negative": 1
+        },
+        "linux-disaster-recovery": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-disk-storage": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-dns-server": {
+          "positive": 1,
+          "owned_negative": 0
+        },
+        "linux-file-integrity": {
+          "positive": 1,
+          "owned_negative": 0
+        },
+        "linux-filesystem-snapshots": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-firewall-ssl": {
+          "positive": 0,
+          "owned_negative": 1
+        },
+        "linux-image-hygiene": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-inmemory-stores": {
+          "positive": 1,
+          "owned_negative": 0
+        },
+        "linux-intrusion-detection": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-kernel-modules": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-log-management": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-mail-server": {
+          "positive": 1,
+          "owned_negative": 0
+        },
+        "linux-mysql-mariadb": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-network-admin": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-ngo-cyber-resilience": {
+          "positive": 1,
+          "owned_negative": 0
+        },
+        "linux-observability": {
+          "positive": 1,
+          "owned_negative": 0
+        },
+        "linux-package-management": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-perf-profiling": {
+          "positive": 1,
+          "owned_negative": 0
+        },
+        "linux-postgresql": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-repo-sync": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-rsync-sync": {
+          "positive": 1,
+          "owned_negative": 0
+        },
+        "linux-secrets": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-security-analysis": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-server-hardening": {
+          "positive": 0,
+          "owned_negative": 1
+        },
+        "linux-server-provisioning": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-service-management": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-site-deployment": {
+          "positive": 1,
+          "owned_negative": 0
+        },
+        "linux-sysadmin": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-sysctl-tuning": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-system-monitoring": {
+          "positive": 0,
+          "owned_negative": 1
+        },
+        "linux-troubleshooting": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-virtualization": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "linux-webstack": {
+          "positive": 0,
+          "owned_negative": 1
+        },
+        "netmiko-ssh-automation": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "network-config-validation": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "skill-safety-audit": {
+          "positive": 0,
+          "owned_negative": 0
+        },
+        "skill-writing": {
+          "positive": 0,
+          "owned_negative": 0
+        }
+      }
+    }
+  },
+  "worked_examples": {
+    "present": 48,
+    "missing": 0,
+    "paragraphs_total": 153,
+    "nonblank_lines_total": 331,
+    "median_paragraphs": 2.0,
+    "median_nonblank_lines": 4.5,
+    "records": [
+      {
+        "file": "01-provisioning-and-bootstrap/linux-cloud-init/SKILL.md",
+        "paragraphs": 8,
+        "nonblank_lines": 23
+      },
+      {
+        "file": "01-provisioning-and-bootstrap/linux-config-management/SKILL.md",
+        "paragraphs": 8,
+        "nonblank_lines": 19
+      },
+      {
+        "file": "01-provisioning-and-bootstrap/linux-package-management/SKILL.md",
+        "paragraphs": 8,
+        "nonblank_lines": 18
+      },
+      {
+        "file": "01-provisioning-and-bootstrap/linux-server-provisioning/SKILL.md",
+        "paragraphs": 6,
+        "nonblank_lines": 12
+      },
+      {
+        "file": "02-users-access-and-secrets/linux-access-control/SKILL.md",
+        "paragraphs": 3,
+        "nonblank_lines": 7
+      },
+      {
+        "file": "02-users-access-and-secrets/linux-secrets/SKILL.md",
+        "paragraphs": 8,
+        "nonblank_lines": 17
+      },
+      {
+        "file": "03-networking-and-dns/linux-dns-server/SKILL.md",
+        "paragraphs": 8,
+        "nonblank_lines": 18
+      },
+      {
+        "file": "03-networking-and-dns/linux-network-admin/SKILL.md",
+        "paragraphs": 8,
+        "nonblank_lines": 22
+      },
+      {
+        "file": "04-web-and-mail-services/linux-mail-server/SKILL.md",
+        "paragraphs": 8,
+        "nonblank_lines": 19
+      },
+      {
+        "file": "04-web-and-mail-services/linux-site-deployment/SKILL.md",
+        "paragraphs": 6,
+        "nonblank_lines": 14
+      },
+      {
+        "file": "04-web-and-mail-services/linux-webstack/SKILL.md",
+        "paragraphs": 5,
+        "nonblank_lines": 15
+      },
+      {
+        "file": "05-services-and-virtualization/linux-service-management/SKILL.md",
+        "paragraphs": 3,
+        "nonblank_lines": 7
+      },
+      {
+        "file": "05-services-and-virtualization/linux-virtualization/SKILL.md",
+        "paragraphs": 8,
+        "nonblank_lines": 20
+      },
+      {
+        "file": "06-storage-and-filesystems/linux-disk-storage/SKILL.md",
+        "paragraphs": 2,
+        "nonblank_lines": 2
+      },
+      {
+        "file": "07-security-and-hardening/linux-firewall-ssl/SKILL.md",
+        "paragraphs": 2,
+        "nonblank_lines": 2
+      },
+      {
+        "file": "07-security-and-hardening/linux-intrusion-detection/SKILL.md",
+        "paragraphs": 2,
+        "nonblank_lines": 2
+      },
+      {
+        "file": "07-security-and-hardening/linux-ngo-cyber-resilience/SKILL.md",
+        "paragraphs": 1,
+        "nonblank_lines": 6
+      },
+      {
+        "file": "07-security-and-hardening/linux-security-analysis/SKILL.md",
+        "paragraphs": 2,
+        "nonblank_lines": 2
+      },
+      {
+        "file": "07-security-and-hardening/linux-server-hardening/SKILL.md",
+        "paragraphs": 2,
+        "nonblank_lines": 2
+      },
+      {
+        "file": "08-observability-and-logging/linux-log-management/SKILL.md",
+        "paragraphs": 2,
+        "nonblank_lines": 2
+      },
+      {
+        "file": "08-observability-and-logging/linux-observability/SKILL.md",
+        "paragraphs": 2,
+        "nonblank_lines": 2
+      },
+      {
+        "file": "08-observability-and-logging/linux-system-monitoring/SKILL.md",
+        "paragraphs": 2,
+        "nonblank_lines": 2
+      },
+      {
+        "file": "09-troubleshooting-and-recovery/linux-disaster-recovery/SKILL.md",
+        "paragraphs": 2,
+        "nonblank_lines": 2
+      },
+      {
+        "file": "09-troubleshooting-and-recovery/linux-troubleshooting/SKILL.md",
+        "paragraphs": 2,
+        "nonblank_lines": 2
+      },
+      {
+        "file": "10-automation-and-scripting/linux-bash-scripting/SKILL.md",
+        "paragraphs": 2,
+        "nonblank_lines": 2
+      },
+      {
+        "file": "10-automation-and-scripting/linux-repo-sync/SKILL.md",
+        "paragraphs": 2,
+        "nonblank_lines": 2
+      },
+      {
+        "file": "11-databases-and-caching/linux-inmemory-stores/SKILL.md",
+        "paragraphs": 1,
+        "nonblank_lines": 1
+      },
+      {
+        "file": "11-databases-and-caching/linux-mysql-mariadb/SKILL.md",
+        "paragraphs": 1,
+        "nonblank_lines": 1
+      },
+      {
+        "file": "11-databases-and-caching/linux-postgresql/SKILL.md",
+        "paragraphs": 1,
+        "nonblank_lines": 1
+      },
+      {
+        "file": "12-containers-and-orchestration/linux-container-deployment/SKILL.md",
+        "paragraphs": 3,
+        "nonblank_lines": 5
+      },
+      {
+        "file": "12-containers-and-orchestration/linux-container-engine/SKILL.md",
+        "paragraphs": 3,
+        "nonblank_lines": 5
+      },
+      {
+        "file": "12-containers-and-orchestration/linux-image-hygiene/SKILL.md",
+        "paragraphs": 3,
+        "nonblank_lines": 5
+      },
+      {
+        "file": "13-backup-and-archiving/linux-archive-integrity/SKILL.md",
+        "paragraphs": 3,
+        "nonblank_lines": 5
+      },
+      {
+        "file": "13-backup-and-archiving/linux-filesystem-snapshots/SKILL.md",
+        "paragraphs": 3,
+        "nonblank_lines": 5
+      },
+      {
+        "file": "13-backup-and-archiving/linux-rsync-sync/SKILL.md",
+        "paragraphs": 3,
+        "nonblank_lines": 5
+      },
+      {
+        "file": "14-performance-and-kernel/linux-kernel-modules/SKILL.md",
+        "paragraphs": 3,
+        "nonblank_lines": 7
+      },
+      {
+        "file": "14-performance-and-kernel/linux-perf-profiling/SKILL.md",
+        "paragraphs": 2,
+        "nonblank_lines": 4
+      },
+      {
+        "file": "14-performance-and-kernel/linux-sysctl-tuning/SKILL.md",
+        "paragraphs": 2,
+        "nonblank_lines": 4
+      },
+      {
+        "file": "15-compliance-and-auditing/linux-auditd-rules/SKILL.md",
+        "paragraphs": 1,
+        "nonblank_lines": 2
+      },
+      {
+        "file": "15-compliance-and-auditing/linux-benchmark-scanning/SKILL.md",
+        "paragraphs": 1,
+        "nonblank_lines": 2
+      },
+      {
+        "file": "15-compliance-and-auditing/linux-file-integrity/SKILL.md",
+        "paragraphs": 1,
+        "nonblank_lines": 2
+      },
+      {
+        "file": "16-network-equipment/cisco-ios-patterns/SKILL.md",
+        "paragraphs": 1,
+        "nonblank_lines": 6
+      },
+      {
+        "file": "16-network-equipment/netmiko-ssh-automation/SKILL.md",
+        "paragraphs": 1,
+        "nonblank_lines": 6
+      },
+      {
+        "file": "16-network-equipment/network-config-validation/SKILL.md",
+        "paragraphs": 4,
+        "nonblank_lines": 20
+      },
+      {
+        "file": "linux-sysadmin/SKILL.md",
+        "paragraphs": 1,
+        "nonblank_lines": 1
+      },
+      {
+        "file": "meta/kaizen-improvement-system/SKILL.md",
+        "paragraphs": 1,
+        "nonblank_lines": 1
+      },
+      {
+        "file": "meta/skill-safety-audit/SKILL.md",
+        "paragraphs": 1,
+        "nonblank_lines": 1
+      },
+      {
+        "file": "meta/skill-writing/SKILL.md",
+        "paragraphs": 1,
+        "nonblank_lines": 1
+      }
+    ]
+  },
+  "duplicate_contract_headings": {
+    "skills_with_duplicates": 10,
+    "total_duplicate_heading_types": 10,
+    "records": [
+      {
+        "file": "01-provisioning-and-bootstrap/linux-cloud-init/SKILL.md",
+        "headings": {
+          "references": 2
+        }
+      },
+      {
+        "file": "01-provisioning-and-bootstrap/linux-config-management/SKILL.md",
+        "headings": {
+          "references": 2
+        }
+      },
+      {
+        "file": "01-provisioning-and-bootstrap/linux-package-management/SKILL.md",
+        "headings": {
+          "references": 2
+        }
+      },
+      {
+        "file": "02-users-access-and-secrets/linux-secrets/SKILL.md",
+        "headings": {
+          "references": 2
+        }
+      },
+      {
+        "file": "03-networking-and-dns/linux-dns-server/SKILL.md",
+        "headings": {
+          "references": 2
+        }
+      },
+      {
+        "file": "03-networking-and-dns/linux-network-admin/SKILL.md",
+        "headings": {
+          "references": 2
+        }
+      },
+      {
+        "file": "04-web-and-mail-services/linux-mail-server/SKILL.md",
+        "headings": {
+          "references": 2
+        }
+      },
+      {
+        "file": "05-services-and-virtualization/linux-virtualization/SKILL.md",
+        "headings": {
+          "references": 2
+        }
+      },
+      {
+        "file": "08-observability-and-logging/linux-observability/SKILL.md",
+        "headings": {
+          "references": 2
+        }
+      },
+      {
+        "file": "10-automation-and-scripting/linux-bash-scripting/SKILL.md",
+        "headings": {
+          "references": 2
+        }
+      }
+    ]
+  },
+  "links": {
+    "scope": "Markdown inline links in .md files; external targets and reference-style links excluded",
+    "machine_specific_absolute_count": 0,
+    "machine_specific_absolute": [],
+    "broken_local_target_count": 8,
+    "broken_local_targets": [
+      {
+        "file": "templates/skill-template.md",
+        "line": 94,
+        "target": "references/domain-reference.md"
+      },
+      {
+        "file": "docs/continuous-improvement/kaizen-wave-2-2026-08-11.md",
+        "line": 51,
+        "target": "../../../KAIZEN-WAVE-1-REPORT.md"
+      },
+      {
+        "file": "docs/continuous-improvement/kaizen-wave-2-2026-08-11.md",
+        "line": 54,
+        "target": "../../../KAIZEN-INITIAL-ASSESSMENT.md"
+      },
+      {
+        "file": "docs/continuous-improvement/kaizen-wave-1-2026-08-11.md",
+        "line": 19,
+        "target": "../../../KAIZEN-INITIAL-ASSESSMENT.md"
+      },
+      {
+        "file": "docs/continuous-improvement/kaizen-wave-1-2026-08-11.md",
+        "line": 35,
+        "target": "../../../KAIZEN-INITIAL-ASSESSMENT.md"
+      },
+      {
+        "file": "docs/continuous-improvement/kaizen-wave-1-2026-08-11.md",
+        "line": 83,
+        "target": "../../../KAIZEN-INITIAL-ASSESSMENT.md"
+      },
+      {
+        "file": "docs/analysis/risks.md",
+        "line": 35,
+        "target": "../../linux-bash-scripting/references/common-sh-contract.md"
+      },
+      {
+        "file": "docs/analysis/build-order.md",
+        "line": 63,
+        "target": "../../linux-bash-scripting/references/common-sh-contract.md"
+      }
+    ],
+    "external_reachability": "NOT_ASSESSED"
+  },
+  "expired_source_reviews": {
+    "scope": "explicit `review by YYYY-MM-DD` records in docs/**/*.md; excludes due dates and access dates",
+    "as_of": "2026-10-29",
+    "count": 10,
+    "records": [
+      {
+        "file": "docs/continuous-improvement/skills-kaizen/P03-linux-web-service-preservation.md",
+        "line": 44,
+        "review_by": "2026-10-03"
+      },
+      {
+        "file": "docs/continuous-improvement/skills-kaizen/P03-linux-web-service-preservation.md",
+        "line": 45,
+        "review_by": "2026-10-26"
+      },
+      {
+        "file": "docs/continuous-improvement/skills-kaizen/P03-linux-web-service-preservation.md",
+        "line": 46,
+        "review_by": "2026-10-03"
+      },
+      {
+        "file": "docs/continuous-improvement/skills-kaizen/P03-linux-web-service-preservation.md",
+        "line": 47,
+        "review_by": "2026-10-03"
+      },
+      {
+        "file": "docs/continuous-improvement/skills-kaizen/P03-linux-web-service-preservation.md",
+        "line": 48,
+        "review_by": "2026-10-03"
+      },
+      {
+        "file": "docs/continuous-improvement/skills-kaizen/P03-linux-web-service-preservation.md",
+        "line": 49,
+        "review_by": "2026-10-03"
+      },
+      {
+        "file": "docs/continuous-improvement/skills-kaizen/P03-linux-web-service-preservation.md",
+        "line": 50,
+        "review_by": "2026-10-26"
+      },
+      {
+        "file": "docs/continuous-improvement/skills-kaizen/P03-linux-web-service-preservation.md",
+        "line": 51,
+        "review_by": "2026-10-03"
+      },
+      {
+        "file": "docs/continuous-improvement/skills-kaizen/P03-linux-web-service-preservation.md",
+        "line": 52,
+        "review_by": "2026-10-26"
+      },
+      {
+        "file": "docs/continuous-improvement/skills-kaizen/P03-linux-web-service-preservation.md",
+        "line": 53,
+        "review_by": "2026-10-26"
+      }
+    ]
+  }
+}
