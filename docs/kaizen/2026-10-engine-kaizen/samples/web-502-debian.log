@@ -1,0 +1,25 @@
+debconf: delaying package configuration, since apt-utils is not installed
+PHP 8.2.35 (fpm-fcgi) (built: Oct 21 2026 06:29:51)
+nginx version: nginx/1.22.1
+nginx: the configuration file /tmp/tmp.ErzPQ6s0su/nginx.conf syntax is ok
+nginx: configuration file /tmp/tmp.ErzPQ6s0su/nginx.conf test is successful
+PASS HTTP 200
+PASS HTTP 502
+Observed failing hop:
+2026/10/29 03:37:33 [error] 9741#9741: *3 connect() failed (111: Connection refused) while connecting to upstream, client: 127.0.0.1, server: , request: "GET / HTTP/1.1", upstream: "fastcgi://127.0.0.1:19001", host: "127.0.0.1:18080"
+Configured and new listener:
+      fastcgi_pass 127.0.0.1:19001;
+listen = 127.0.0.1:19002
+nginx: the configuration file /tmp/tmp.ErzPQ6s0su/nginx.conf syntax is ok
+nginx: configuration file /tmp/tmp.ErzPQ6s0su/nginx.conf test is successful
+2026/10/29 03:37:33 [notice] 9756#9756: signal process started
+PASS HTTP 200
+nginx: the configuration file /tmp/tmp.ErzPQ6s0su/nginx.conf syntax is ok
+nginx: configuration file /tmp/tmp.ErzPQ6s0su/nginx.conf test is successful
+PASS HTTP 200
+PASS invalid configuration rejected before reload
+nginx: the configuration file /tmp/tmp.ErzPQ6s0su/nginx.conf syntax is ok
+nginx: configuration file /tmp/tmp.ErzPQ6s0su/nginx.conf test is successful
+2026/10/29 03:37:33 [notice] 9773#9773: signal process started
+PASS HTTP 200
+PASS actual upstream rollback and response-body verification

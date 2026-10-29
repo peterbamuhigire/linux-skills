@@ -91,6 +91,9 @@ In `sk-*` scripts use `svc_name apache`, `web_conf_dir apache`, and
 
 ## References
 
+- [Current vulnerability triage and dated watchlist](../../docs/security/current-vulnerability-triage.md): match vendor package, release and exposure before choosing a remediation.
+
+
 - [`references/nginx-directives.md`](references/nginx-directives.md)
 - [`references/config-patterns.md`](references/config-patterns.md)
 - [`references/php-fpm-tuning.md`](references/php-fpm-tuning.md)
@@ -158,13 +161,12 @@ sudo tail -f /var/log/nginx/access.log
 
 ### Debug 502 Bad Gateway
 
-```bash
-sudo tail -20 /var/log/nginx/error.log           # what upstream is failing?
-sudo systemctl status php8.3-fpm                 # PHP-FPM sites
-sudo systemctl status apache2                    # Apache-proxied sites
-ls -la /run/php/php8.3-fpm.sock                  # FPM socket present?
-sudo systemctl restart php8.3-fpm                # fix
-```
+Follow the [PHP-upgrade diagnosis and rollback tree](references/php-upgrade-502.md).
+Capture the failing request and Nginx error, discover the effective upstream
+and installed FPM pool, then distinguish a missing listener, permissions/MAC,
+timeout or application failure. Do not restart a hard-coded PHP version as a
+first fix. Validate the selected configuration, verify the response body and
+retain a compatible runtime/pool/vhost rollback.
 
 Config patterns and templates: `references/config-patterns.md`
 

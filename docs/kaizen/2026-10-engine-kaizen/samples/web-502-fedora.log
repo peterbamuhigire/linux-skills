@@ -1,0 +1,234 @@
+Updating and loading repositories:
+ Fedora 44 openh264 (From Cisco) - x86_ 100% |   1.0 KiB/s |   5.3 KiB |  00m05s
+ Fedora 44 - x86_64                     100% |   3.4 MiB/s |  37.6 MiB |  00m11s
+ Fedora 44 - x86_64 - Updates           100% | 547.5 KiB/s |  12.6 MiB |  00m24s
+Repositories loaded.
+Package "curl-8.18.0-14.fc44.x86_64" is already installed.
+
+Total size of inbound packages is 24 MiB. Need to download 24 MiB.
+After this operation, 89 MiB extra will be used (install 89 MiB, remove 0 B).
+[ 1/43] nginx-filesystem-2:1.30.6-2.fc4 100% |  20.2 KiB/s |  13.6 KiB |  00m01s
+[ 2/43] nginx-2:1.30.6-2.fc44.x86_64    100% |  45.1 KiB/s |  36.6 KiB |  00m01s
+[ 3/43] nginx-mimetypes-0:2.1.54-10.fc4 100% |  23.6 KiB/s |  21.4 KiB |  00m01s
+[ 4/43] gperftools-libs-0:2.18.1-1.fc44 100% | 247.5 KiB/s | 316.6 KiB |  00m01s
+[ 5/43] nginx-core-2:1.30.6-2.fc44.x86_ 100% | 274.2 KiB/s | 739.0 KiB |  00m03s
+[ 6/43] httpd-filesystem-0:2.4.69-1.fc4 100% |  46.5 KiB/s |  11.6 KiB |  00m00s
+[ 7/43] php-common-0:8.5.12-1.fc44.x86_ 100% | 530.4 KiB/s | 842.7 KiB |  00m02s
+[ 8/43] php-fpm-0:8.5.12-1.fc44.x86_64  100% | 769.9 KiB/s |   3.1 MiB |  00m04s
+[ 9/43] systemd-shared-0:259.10-1.fc44. 100% | 743.1 KiB/s |   2.0 MiB |  00m03s
+[10/43] uriparser-0:1.0.2-1.fc44.x86_64 100% | 144.1 KiB/s |  74.9 KiB |  00m01s
+[11/43] libunwind-0:1.8.3-4.fc44.x86_64 100% | 152.2 KiB/s |  79.6 KiB |  00m01s
+[12/43] cryptsetup-libs-0:2.8.8-1.fc44. 100% | 495.9 KiB/s | 629.3 KiB |  00m01s
+[13/43] device-mapper-libs-0:1.02.212-2 100% |  56.8 KiB/s | 186.6 KiB |  00m03s
+[14/43] device-mapper-0:1.02.212-2.fc44 100% |  37.5 KiB/s | 141.1 KiB |  00m04s
+[15/43] libfdisk-0:2.41.6-1.fc44.x86_64 100% | 124.3 KiB/s | 168.8 KiB |  00m01s
+[16/43] fedora-logos-httpd-0:42.0.1-3.f 100% |  77.4 KiB/s |  14.9 KiB |  00m00s
+[17/43] logrotate-0:3.22.0-5.fc44.x86_6 100% | 107.5 KiB/s |  77.1 KiB |  00m01s
+[18/43] libseccomp-0:2.6.1-2.fc44.x86_6 100% |  57.3 KiB/s |  76.0 KiB |  00m01s
+[19/43] libxkbcommon-0:1.13.1-2.fc44.x8 100% | 147.3 KiB/s | 185.8 KiB |  00m01s
+[20/43] systemd-0:259.10-1.fc44.x86_64  100% | 399.0 KiB/s |   4.3 MiB |  00m11s
+[21/43] kmod-libs-0:34.2-4.fc44.x86_64  100% |  35.8 KiB/s |  70.4 KiB |  00m02s
+[22/43] qrencode-libs-0:4.1.1-12.fc44.x 100% |  65.3 KiB/s |  64.1 KiB |  00m01s
+[23/43] xkeyboard-config-0:2.47-1.fc44. 100% | 243.7 KiB/s |   1.0 MiB |  00m04s
+[24/43] diffutils-0:3.12-5.fc44.x86_64  100% | 134.2 KiB/s | 395.3 KiB |  00m03s
+[25/43] dbus-1:1.16.2-1.fc44.x86_64     100% |  41.7 KiB/s |   7.5 KiB |  00m00s
+[26/43] dbus-broker-0:37-8.fc44.x86_64  100% | 333.6 KiB/s | 178.8 KiB |  00m01s
+[27/43] dbus-common-1:1.16.2-1.fc44.noa 100% |  39.5 KiB/s |  14.2 KiB |  00m00s
+[28/43] libbpf-2:1.6.3-2.fc44.x86_64    100% |  99.4 KiB/s | 199.3 KiB |  00m02s
+[29/43] systemd-pam-0:259.10-1.fc44.x86 100% | 287.3 KiB/s | 440.4 KiB |  00m02s
+[30/43] systemd-resolved-0:259.10-1.fc4 100% |  99.7 KiB/s | 286.5 KiB |  00m03s
+[31/43] systemd-networkd-0:259.10-1.fc4 100% | 254.3 KiB/s | 798.4 KiB |  00m03s
+[32/43] expat-0:2.9.0-1.fc44.x86_64     100% | 264.1 KiB/s | 136.0 KiB |  00m01s
+[33/43] fonts-filesystem-1:5.0.0-2.fc44 100% |   9.6 KiB/s |   8.9 KiB |  00m01s
+[34/43] julietaula-montserrat-fonts-1:9 100% | 927.5 KiB/s |   1.6 MiB |  00m02s
+[35/43] kmod-0:34.2-4.fc44.x86_64       100% | 152.4 KiB/s | 136.1 KiB |  00m01s
+[36/43] kbd-legacy-0:2.9.0-4.fc44.noarc 100% | 279.7 KiB/s | 581.3 KiB |  00m02s
+[37/43] kbd-0:2.9.0-4.fc44.x86_64       100% | 160.9 KiB/s | 389.0 KiB |  00m02s
+[38/43] pkgconf-pkg-config-0:2.5.1-1.fc 100% |  52.3 KiB/s |   9.5 KiB |  00m00s
+[39/43] pkgconf-0:2.5.1-1.fc44.x86_64   100% | 134.1 KiB/s |  48.7 KiB |  00m00s
+[40/43] systemd-udev-0:259.10-1.fc44.x8 100% | 702.3 KiB/s |   2.7 MiB |  00m04s
+[41/43] pkgconf-m4-0:2.5.1-1.fc44.noarc 100% |  72.8 KiB/s |  13.8 KiB |  00m00s
+[42/43] libpkgconf-0:2.5.1-1.fc44.x86_6 100% | 129.7 KiB/s |  42.7 KiB |  00m00s
+[43/43] kbd-misc-0:2.9.0-4.fc44.noarch  100% | 662.1 KiB/s |   1.7 MiB |  00m03s
+--------------------------------------------------------------------------------
+[43/43] Total                           100% | 903.8 KiB/s |  23.6 MiB |  00m27s
+Running transaction
+[ 1/45] Verify package files            100% | 203.0   B/s |  43.0   B |  00m00s
+[ 2/45] Prepare transaction             100% | 623.0   B/s |  43.0   B |  00m00s
+[ 3/45] Installing systemd-shared-0:259 100% |  97.4 MiB/s |   5.5 MiB |  00m00s
+>>> Running sysusers scriptlet: nginx-filesystem-2:1.30.6-2.fc44.noarch
+>>> Finished sysusers scriptlet: nginx-filesystem-2:1.30.6-2.fc44.noarch
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'nginx' with GID 999.
+>>> Creating user 'nginx' (Nginx web server) with UID 999 and GID 999.
+>>> 
+[ 4/45] Installing nginx-filesystem-2:1 100% | 728.5 KiB/s |   1.5 KiB |  00m00s
+[ 5/45] Installing libfdisk-0:2.41.6-1. 100% |  95.1 MiB/s | 389.4 KiB |  00m00s
+[ 6/45] Installing nginx-mimetypes-0:2. 100% |  46.3 MiB/s |  47.4 KiB |  00m00s
+[ 7/45] Installing libpkgconf-0:2.5.1-1 100% |  44.6 MiB/s |  91.3 KiB |  00m00s
+[ 8/45] Installing pkgconf-0:2.5.1-1.fc 100% |   5.5 MiB/s |  95.2 KiB |  00m00s
+[ 9/45] Installing pkgconf-m4-0:2.5.1-1 100% |  14.4 MiB/s |  14.7 KiB |  00m00s
+[10/45] Installing pkgconf-pkg-config-0 100% | 118.2 KiB/s |   1.8 KiB |  00m00s
+[11/45] Installing kmod-0:34.2-4.fc44.x 100% |  11.9 MiB/s | 256.9 KiB |  00m00s
+[12/45] Installing kbd-misc-0:2.9.0-4.f 100% |  34.7 MiB/s |   2.5 MiB |  00m00s
+[13/45] Installing kbd-legacy-0:2.9.0-4 100% |  22.1 MiB/s | 610.1 KiB |  00m00s
+[14/45] Installing kbd-0:2.9.0-4.fc44.x 100% |  50.7 MiB/s |   1.5 MiB |  00m00s
+[15/45] Installing expat-0:2.9.0-1.fc44 100% |  20.2 MiB/s | 351.7 KiB |  00m00s
+[16/45] Installing fonts-filesystem-1:5 100% |  51.3 KiB/s | 788.0   B |  00m00s
+>>> Running sysusers scriptlet: dbus-common-1:1.16.2-1.fc44.noarch
+>>> Finished sysusers scriptlet: dbus-common-1:1.16.2-1.fc44.noarch
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'dbus' with GID 81.
+>>> Creating user 'dbus' (System Message Bus) with UID 81 and GID 81.
+>>> 
+[17/45] Installing dbus-common-1:1.16.2 100% | 542.0 KiB/s |  13.6 KiB |  00m00s
+>>> Running sysusers scriptlet: dbus-broker-0:37-8.fc44.x86_64
+>>> Finished sysusers scriptlet: dbus-broker-0:37-8.fc44.x86_64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> 
+[18/45] Installing dbus-broker-0:37-8.f 100% |  10.0 MiB/s | 397.5 KiB |  00m00s
+[19/45] Installing libbpf-2:1.6.3-2.fc4 100% |  72.2 MiB/s | 443.5 KiB |  00m00s
+[20/45] Installing kmod-libs-0:34.2-4.f 100% |  27.4 MiB/s | 140.1 KiB |  00m00s
+[21/45] Installing xkeyboard-config-0:2 100% | 101.0 MiB/s |   6.5 MiB |  00m00s
+[22/45] Installing fedora-logos-httpd-0 100% |   6.4 MiB/s |  13.1 KiB |  00m00s
+[23/45] Installing libseccomp-0:2.6.1-2 100% |   4.9 MiB/s | 224.0 KiB |  00m00s
+>>> Running sysusers scriptlet: systemd-0:259.10-1.fc44.x86_64
+>>> Finished sysusers scriptlet: systemd-0:259.10-1.fc44.x86_64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'empower' with GID 998.
+>>> 
+>>> Running sysusers scriptlet: systemd-0:259.10-1.fc44.x86_64
+>>> Finished sysusers scriptlet: systemd-0:259.10-1.fc44.x86_64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'systemd-journal' with GID 190.
+>>> 
+>>> Running sysusers scriptlet: systemd-0:259.10-1.fc44.x86_64
+>>> Finished sysusers scriptlet: systemd-0:259.10-1.fc44.x86_64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'systemd-oom' with GID 997.
+>>> Creating user 'systemd-oom' (systemd Userspace OOM Killer) with UID 997 and GID 997.
+>>> 
+[24/45] Installing systemd-0:259.10-1.f 100% |  47.3 MiB/s |  13.1 MiB |  00m00s
+>>> Running %post scriptlet: systemd-0:259.10-1.fc44.x86_64
+>>> Finished %post scriptlet: systemd-0:259.10-1.fc44.x86_64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> 
+[25/45] Installing device-mapper-0:1.02 100% |  18.0 MiB/s | 350.3 KiB |  00m00s
+[26/45] Installing device-mapper-libs-0 100% | 105.3 MiB/s | 431.3 KiB |  00m00s
+[27/45] Installing cryptsetup-libs-0:2. 100% | 331.2 MiB/s |   3.0 MiB |  00m00s
+[28/45] Installing libunwind-0:1.8.3-4. 100% |  64.2 MiB/s | 197.3 KiB |  00m00s
+[29/45] Installing gperftools-libs-0:2. 100% | 141.6 MiB/s |   1.3 MiB |  00m00s
+[30/45] Installing nginx-core-2:1.30.6- 100% |  72.6 MiB/s |   2.0 MiB |  00m00s
+[31/45] Installing uriparser-0:1.0.2-1. 100% |   4.4 MiB/s | 190.6 KiB |  00m00s
+>>> Running sysusers scriptlet: httpd-filesystem-0:2.4.69-1.fc44.noarch
+>>> Finished sysusers scriptlet: httpd-filesystem-0:2.4.69-1.fc44.noarch
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'apache' with GID 48.
+>>> Creating user 'apache' (Apache) with UID 48 and GID 48.
+>>> 
+[32/45] Installing httpd-filesystem-0:2 100% |   1.1 MiB/s |   2.2 KiB |  00m00s
+[33/45] Installing php-common-0:8.5.12- 100% | 253.8 MiB/s |  11.4 MiB |  00m00s
+[34/45] Installing php-fpm-0:8.5.12-1.f 100% | 143.9 MiB/s |  12.9 MiB |  00m00s
+[35/45] Installing nginx-2:1.30.6-2.fc4 100% |   1.8 MiB/s | 126.5 KiB |  00m00s
+>>> Running sysusers scriptlet: systemd-udev-0:259.10-1.fc44.x86_64
+>>> Finished sysusers scriptlet: systemd-udev-0:259.10-1.fc44.x86_64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'systemd-coredump' with GID 996.
+>>> Creating user 'systemd-coredump' (systemd Core Dumper) with UID 996 and GID 996.
+>>> 
+>>> Running sysusers scriptlet: systemd-udev-0:259.10-1.fc44.x86_64
+>>> Finished sysusers scriptlet: systemd-udev-0:259.10-1.fc44.x86_64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'systemd-timesync' with GID 995.
+>>> Creating user 'systemd-timesync' (systemd Time Synchronization) with UID 995 and GID 995.
+>>> 
+[36/45] Installing systemd-udev-0:259.1 100% |  14.9 MiB/s |  13.2 MiB |  00m01s
+>>> Running %post scriptlet: systemd-udev-0:259.10-1.fc44.x86_64
+>>> Finished %post scriptlet: systemd-udev-0:259.10-1.fc44.x86_64
+>>> Scriptlet output:
+>>> Failed to preset unit: Unit systemd-tmpfiles-clear.service does not exist
+>>> Created symlink '/etc/systemd/system/multi-user.target.wants/remote-cryptsetup.target' → '/usr/lib/systemd/system/remote-cryptsetup.target'.
+>>> Created symlink '/etc/systemd/system/multi-user.target.wants/remote-veritysetup.target' → '/usr/lib/systemd/system/remote-veritysetup.target'.
+>>> Created symlink '/etc/systemd/system/systemd-homed.service.wants/systemd-homed-activate.service' → '/usr/lib/systemd/system/systemd-homed-activate.service'.
+>>> Created symlink '/etc/systemd/system/dbus-org.freedesktop.home1.service' → '/usr/lib/systemd/system/systemd-homed.service'.
+>>> Created symlink '/etc/systemd/system/multi-user.target.wants/systemd-homed.service' → '/usr/lib/systemd/system/systemd-homed.service'.
+>>> Created symlink '/etc/systemd/system/sysinit.target.wants/systemd-network-generator.service' → '/usr/lib/systemd/system/systemd-network-generator.service'.
+>>> Created symlink '/etc/systemd/system/dbus-org.freedesktop.oom1.service' → '/usr/lib/systemd/system/systemd-oomd.service'.
+>>> Created symlink '/etc/systemd/system/multi-user.target.wants/systemd-oomd.service' → '/usr/lib/systemd/system/systemd-oomd.service'.
+>>> Created symlink '/etc/systemd/system/sockets.target.wants/systemd-oomd.socket' → '/usr/lib/systemd/system/systemd-oomd.socket'.
+>>> Created symlink '/etc/systemd/system/sysinit.target.wants/systemd-pstore.service' → '/usr/lib/systemd/system/systemd-pstore.service'.
+>>> 
+[37/45] Installing logrotate-0:3.22.0-5 100% |   2.6 MiB/s | 155.4 KiB |  00m00s
+>>> Running %post scriptlet: logrotate-0:3.22.0-5.fc44.x86_64
+>>> Finished %post scriptlet: logrotate-0:3.22.0-5.fc44.x86_64
+>>> Scriptlet output:
+>>> Created symlink '/etc/systemd/system/timers.target.wants/logrotate.timer' → '/usr/lib/systemd/system/logrotate.timer'.
+>>> 
+>>> Running sysusers scriptlet: systemd-networkd-0:259.10-1.fc44.x86_64
+>>> Finished sysusers scriptlet: systemd-networkd-0:259.10-1.fc44.x86_64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'systemd-network' with GID 192.
+>>> Creating user 'systemd-network' (systemd Network Management) with UID 192 and GID 192.
+>>> 
+[38/45] Installing systemd-networkd-0:2 100% |  31.7 MiB/s |   2.3 MiB |  00m00s
+>>> Running sysusers scriptlet: systemd-resolved-0:259.10-1.fc44.x86_64
+>>> Finished sysusers scriptlet: systemd-resolved-0:259.10-1.fc44.x86_64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> Creating group 'systemd-resolve' with GID 193.
+>>> Creating user 'systemd-resolve' (systemd Resolver) with UID 193 and GID 193.
+>>> 
+[39/45] Installing systemd-resolved-0:2 100% |  14.3 MiB/s | 659.7 KiB |  00m00s
+>>> Running %post scriptlet: systemd-resolved-0:259.10-1.fc44.x86_64
+>>> Finished %post scriptlet: systemd-resolved-0:259.10-1.fc44.x86_64
+>>> Scriptlet output:
+>>> Created symlink '/etc/systemd/system/dbus-org.freedesktop.resolve1.service' → '/usr/lib/systemd/system/systemd-resolved.service'.
+>>> Created symlink '/etc/systemd/system/sysinit.target.wants/systemd-resolved.service' → '/usr/lib/systemd/system/systemd-resolved.service'.
+>>> Created symlink '/etc/systemd/system/sockets.target.wants/systemd-resolved-varlink.socket' → '/usr/lib/systemd/system/systemd-resolved-varlink.socket'.
+>>> Created symlink '/etc/systemd/system/sockets.target.wants/systemd-resolved-monitor.socket' → '/usr/lib/systemd/system/systemd-resolved-monitor.socket'.
+>>> 
+[40/45] Installing systemd-pam-0:259.10 100% | 122.2 MiB/s |   1.2 MiB |  00m00s
+[41/45] Installing libxkbcommon-0:1.13. 100% |  84.7 MiB/s | 433.9 KiB |  00m00s
+[42/45] Installing dbus-1:1.16.2-1.fc44 100% |   0.0   B/s | 124.0   B |  00m00s
+[43/45] Installing julietaula-montserra 100% | 135.7 MiB/s |   5.6 MiB |  00m00s
+[44/45] Installing qrencode-libs-0:4.1. 100% |  81.3 MiB/s | 166.5 KiB |  00m00s
+[45/45] Installing diffutils-0:3.12-5.f 100% |   1.4 MiB/s |   1.6 MiB |  00m01s
+>>> Running %triggerin scriptlet: systemd-0:259.10-1.fc44.x86_64
+>>> Finished %triggerin scriptlet: systemd-0:259.10-1.fc44.x86_64
+>>> Scriptlet output:
+>>> Failed to connect to audit log, ignoring: Invalid argument
+>>> 
+Complete!
+PHP 8.5.12 (fpm-fcgi) (built: Oct 19 2026 17:02:46) (NTS gcc x86_64)
+nginx version: nginx/1.30.6
+nginx: the configuration file /tmp/tmp.LnQ2YS0jnU/nginx.conf syntax is ok
+nginx: configuration file /tmp/tmp.LnQ2YS0jnU/nginx.conf test is successful
+PASS HTTP 200
+PASS HTTP 502
+Observed failing hop:
+2026/10/29 03:40:21 [error] 122#122: *3 connect() failed (111: Connection refused) while connecting to upstream, client: 127.0.0.1, server: , request: "GET / HTTP/1.1", upstream: "fastcgi://127.0.0.1:19001", host: "127.0.0.1:18080"
+Configured and new listener:
+      fastcgi_pass 127.0.0.1:19001;
+listen = 127.0.0.1:19002
+nginx: the configuration file /tmp/tmp.LnQ2YS0jnU/nginx.conf syntax is ok
+nginx: configuration file /tmp/tmp.LnQ2YS0jnU/nginx.conf test is successful
+PASS HTTP 200
+nginx: the configuration file /tmp/tmp.LnQ2YS0jnU/nginx.conf syntax is ok
+nginx: configuration file /tmp/tmp.LnQ2YS0jnU/nginx.conf test is successful
+PASS HTTP 200
+PASS invalid configuration rejected before reload
+nginx: the configuration file /tmp/tmp.LnQ2YS0jnU/nginx.conf syntax is ok
+nginx: configuration file /tmp/tmp.LnQ2YS0jnU/nginx.conf test is successful
+PASS HTTP 200
+PASS actual upstream rollback and response-body verification

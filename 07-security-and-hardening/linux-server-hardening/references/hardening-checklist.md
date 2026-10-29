@@ -2,8 +2,11 @@
 
 **Author:** Peter Bamuhigire · [techguypeter.com](https://techguypeter.com) · +256 784 464 178
 
-The end-to-end hardening reference for a fresh Ubuntu/Debian server
-(22.04 or 24.04) running Nginx + PHP-FPM + MySQL/MariaDB + Redis. Every
+A hardening reference with Ubuntu 22.04/24.04 examples for Nginx, PHP-FPM,
+MySQL/MariaDB and optional Redis. These are Ubuntu release examples, not Debian
+version numbers. Resolve the actual distro release and package/service names
+before applying a command. For the paired Debian/RHEL plan and missing-input
+gates, see [the practitioner baseline](../../../docs/kaizen/2026-10-engine-kaizen/samples/hardened-baseline.md). Every
 section follows the same shape: back up the current config, apply the
 change, test, and show the rollback. Paste-ready. Do one area at a time
 on a live server, verify, then move to the next — never batch all of them
