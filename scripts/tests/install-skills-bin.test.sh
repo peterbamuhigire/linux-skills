@@ -107,6 +107,50 @@ else
 fi
 
 # -----------------------------------------------------------------------------
+# Test 3d: installer fails closed when cmp (from diffutils) is unavailable
+# -----------------------------------------------------------------------------
+NO_CMP_PATH="$TEST_ROOT/no-cmp-path"
+mkdir -p "$NO_CMP_PATH"
+for command_path in /usr/bin/*; do
+    command_name="${command_path##*/}"
+    [[ "$command_name" == "cmp" ]] && continue
+    [[ -e "$command_path" || -L "$command_path" ]] || continue
+    ln -s "$command_path" "$NO_CMP_PATH/$command_name" 2>/dev/null || true
+done
+
+if PATH="$NO_CMP_PATH" "$FIXTURE/scripts/install-skills-bin" --help >/dev/null 2>&1; then
+    pass_t "--help works when cmp is unavailable"
+else
+    fail_t "--help failed when cmp is unavailable"
+fi
+
+if PATH="$NO_CMP_PATH" "$FIXTURE/scripts/install-skills-bin" --list >/dev/null 2>&1; then
+    pass_t "--list works when cmp is unavailable"
+else
+    fail_t "--list failed when cmp is unavailable"
+fi
+
+NO_CMP_BIN="$TEST_ROOT/no-cmp-bin"
+NO_CMP_LIB="$TEST_ROOT/no-cmp-lib"
+mkdir -p "$NO_CMP_BIN" "$NO_CMP_LIB"
+no_cmp_output=$(PATH="$NO_CMP_PATH" SKILLS_INSTALL_BIN_DIR="$NO_CMP_BIN" \
+    SKILLS_INSTALL_LIB_DIR="$NO_CMP_LIB" \
+    "$FIXTURE/scripts/install-skills-bin" linux-fixture 2>&1)
+no_cmp_result=$?
+if (( no_cmp_result == 5 )) && printf '%s\n' "$no_cmp_output" | grep -q 'cmp (provided by diffutils)' && \
+        printf '%s\n' "$no_cmp_output" | grep -q 'install diffutils'; then
+    pass_t "missing cmp reports diffutils remediation and exits 5"
+else
+    fail_t "missing cmp did not produce an actionable dependency failure (exit $no_cmp_result): $no_cmp_output"
+fi
+
+if [[ ! -e "$NO_CMP_LIB/common.sh" ]] && [[ -z "$(find "$NO_CMP_BIN" -mindepth 1 -print -quit)" ]]; then
+    pass_t "missing cmp is detected before install destinations are mutated"
+else
+    fail_t "missing cmp was detected after install destinations were mutated"
+fi
+
+# -----------------------------------------------------------------------------
 # Test 4: --dry-run core doesn't actually install anything
 # -----------------------------------------------------------------------------
 dry_run_output=$(scripts/install-skills-bin core --dry-run 2>&1)

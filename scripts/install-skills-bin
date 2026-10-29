@@ -12,6 +12,8 @@
 
 set -uo pipefail
 
+# Read indirectly by common.sh flag parser.
+# shellcheck disable=SC2034
 SCRIPT_VERSION="0.1.0"
 
 # =============================================================================
@@ -44,7 +46,6 @@ source "$SK_LIB"
 INSTALL_BIN_DIR="${SKILLS_INSTALL_BIN_DIR:-/usr/local/bin}"
 INSTALL_LIB_DIR="${SKILLS_INSTALL_LIB_DIR:-/usr/local/lib/linux-skills}"
 FORCE=0
-SKILL_NAME=""
 COMMAND=""
 
 # =============================================================================
@@ -423,6 +424,26 @@ update_skills() {
     (( install_failed == 0 ))
 }
 
+# ----------------------------------------------------------------------------
+# Validate dependencies used by the installation path before any destination
+# directory or file can be changed. cmp comes from diffutils and is required
+# to distinguish an unchanged installed file from a different one.
+# ----------------------------------------------------------------------------
+require_install_dependencies() {
+    if command -v cmp >/dev/null 2>&1; then
+        return 0
+    fi
+
+    fail "missing required command: cmp (provided by diffutils)"
+    detect_distro
+    case "$SK_DISTRO_FAMILY" in
+        debian) info "install with: sudo apt-get install diffutils" ;;
+        rhel)   info "install with: sudo ${SK_PKG:-dnf} install diffutils" ;;
+        *)      info "install diffutils with your distribution's package manager" ;;
+    esac
+    die "dependency missing: cmp is required before installation can proceed" 5
+}
+
 # =============================================================================
 # 4. Flag parsing
 # =============================================================================
@@ -455,6 +476,12 @@ REMAINING_ARGS=("${REMAINING_ARGS[@]:1}")
 case "$COMMAND" in
     --list)      : ;;
     *)           require_root ;;
+esac
+
+# Help exits during standard flag parsing and --list/--uninstall do not compare
+# file contents. Check cmp for every command that can install or update files.
+case "$COMMAND" in
+    core|all|--update|linux-*) require_install_dependencies ;;
 esac
 
 # =============================================================================
