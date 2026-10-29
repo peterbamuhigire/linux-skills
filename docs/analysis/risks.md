@@ -32,7 +32,7 @@ mitigation.
 **Likelihood:** M. **Impact:** H.
 
 **Risk:** The `common.sh` contract at
-[`common-sh-contract.md`](../../linux-bash-scripting/references/common-sh-contract.md)
+[`common-sh-contract.md`](../../10-automation-and-scripting/linux-bash-scripting/references/common-sh-contract.md)
 specifies ~25 functions with specific signatures. When we actually start
 writing scripts, some will feel clunky — the `select_one` menu may
 return awkwardly, `parse_standard_flags` may be hard to extend for

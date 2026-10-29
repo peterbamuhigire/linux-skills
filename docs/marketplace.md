@@ -36,3 +36,5 @@ These checks are structural. They do not prove that a Claude Code or Codex clien
 - Claude Code Docs, “Plugins,” “Create a marketplace,” “Create a Claude Code plugin,” and “Plugin manifest reference”; accessed 2026-10-29: [overview](https://code.claude.com/docs/en/plugins), [marketplace](https://code.claude.com/docs/en/plugin-marketplaces), [create](https://code.claude.com/docs/en/plugins/create), [manifest](https://code.claude.com/docs/en/plugins/manifest-reference).
 
 Author: Peter Bamuhigire — [techguypeter.com](https://techguypeter.com) — +256 784 464178.
+
+Native `claude plugin validate .` passed on 2026-10-29 with two warnings: root `CLAUDE.md` is not loaded as plugin project context, and the plugin has no icon. Skills remain self-contained; the warning does not establish that a live client loaded them. Full output is retained in the Kaizen samples.

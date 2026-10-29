@@ -1,0 +1,90 @@
+{
+  "assessment_date": "2026-10-29",
+  "author": "Peter Bamuhigire",
+  "author_url": "https://techguypeter.com",
+  "author_contact": "+256784464178",
+  "baseline_commit": "2ce755a7731e3061296de68747d8d36fea4286a9",
+  "scope": "Final repository and disposable-fixture evidence; not production assurance. Supersedes the earlier interim manifest.",
+  "file_sha256": {
+    "scripts/check_marketplace.py": "6f77cf8817f933a2e1f8e70edd8c60a6321006b252c6c86db38f8acda824366c",
+    "scripts/install-skills-bin": "c3db92f64948bc5baa8287eb1227463e8215a9e922654ee9ccc1b49243544aa2",
+    "scripts/kaizen_metrics.py": "24b19e5718fb67f9940f709c3fa0a3fa1289e8b3150430f53da61799c8c08474",
+    "scripts/lib/common.sh": "31231a072e444450c58dc89af1ba8282ae1ccba6d37e0fb9771fa3bd042d2267",
+    "scripts/sk-audit.sh": "96b7fc7ff82226a2b46d5b39a978a14862405026fa4ff40d097866c2a3369af5",
+    "scripts/sk-mysql-backup.sh": "fbb274fbd0bd90d5bab5033391a5459fddd500eda822b1b0efbd48e65f1eaf4c",
+    "scripts/tests/check-distro-matrix.sh": "d0a3c7a4240299f10822fc9ef7402122f11b2604d034a9c669581b83e47e51ab",
+    "scripts/tests/common-sh.test.sh": "16f676e1154b39eeb9dff6f96b6597856e26df5634cc972f96b54b3dc9c06ad1",
+    "scripts/tests/install-skills-bin.test.sh": "124349b5d20526532a5c9382feee5b977180ed2618cbfb0c76b9a4921483e7c4",
+    "scripts/validate_skills.py": "22b50ef988d6ef4a3b0a6bac18c48053c1fcb59dd92140e80cbcb8b7b8dc5a1a",
+    "tests/labs/web_502.sh": "d9bd433d6b4702ca9f4a2f62461547af7f9bf780836c078638af6f26df9a9249",
+    "tests/test_audit_ssh.py": "2858fe912f7850a013fb7f95590b64abcc166efd970619781e4eee086ac1afdf",
+    "tests/test_marketplace.py": "8f2e9488c75d82807535efcafe186251c9b07e143b054b053a392591b2f617e4",
+    "tests/test_mysql_backup.py": "e1e86bce82ad9ce39aadd8d5d5d01d6bf27add906e722593c98b1c3640072f4f",
+    "tests/test_validate_skills.py": "128a186f020719d8e93d9df54430fbca21339297d328cb241e3364f984ddcab9"
+  },
+  "results": {
+    "python": {
+      "passed": 73,
+      "skipped": 1,
+      "subtests_passed": 8,
+      "skip_reason": "MySQL lab opt-in; separately passed"
+    },
+    "contracts": {
+      "active": 48,
+      "template": 1,
+      "compliant": 48
+    },
+    "routing": {
+      "passed_top3": 80,
+      "total": 80,
+      "top1": 67
+    },
+    "distro_matrix": {
+      "passed": 41,
+      "failed": 0
+    },
+    "shell_syntax": {
+      "files": 36,
+      "failed": 0
+    },
+    "common_debian": {
+      "passed": 29,
+      "failed": 0
+    },
+    "common_fedora": {
+      "passed": 29,
+      "failed": 0
+    },
+    "installer_debian": {
+      "passed": 21,
+      "failed": 0
+    },
+    "installer_fedora_with_diffutils": {
+      "passed": 21,
+      "failed": 0
+    },
+    "shellcheck_changed_shell_files": {
+      "version": "0.9.0",
+      "files": 8,
+      "exit_code": 0
+    },
+    "mysql_actual_restore": {
+      "passed": 1,
+      "version": "8.4.13",
+      "elapsed_ms": 803,
+      "scope": "synthetic second-instance restore; local storage"
+    },
+    "web_upstream_rollback": {
+      "debian_exit": 0,
+      "fedora_exit": 0,
+      "scope": "process fixture; not actual PHP package upgrade"
+    }
+  },
+  "not_assessed": [
+    "all operational scripts success/failure/recovery",
+    "custom ACL/xattr/SELinux preservation",
+    "production vulnerability applicability",
+    "controlled comparative model benchmark",
+    "GitHub-hosted CI execution"
+  ]
+}

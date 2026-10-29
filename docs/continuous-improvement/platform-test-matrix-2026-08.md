@@ -59,3 +59,40 @@ the source for explicit authority and exact-target gates, reject curl-piped
 shell installation and implicit existing-checkout pulls, and confirm that its
 dry-run branch precedes host actions. Bash syntax and runtime behaviour remain
 `NOT ASSESSED` on this Windows host.
+
+## 2026-10-29 Linux re-assessment
+
+This dated addendum supersedes the Windows-only runtime limitations above for
+these specific tests. It does not rewrite the historical Windows evidence.
+Host: Fedora Linux 44; rootless Podman. The repository was mounted read-only
+with SELinux mount labelling disabled for the test container only. No host
+service, package or firewall mutation occurred.
+
+| Check | Debian bookworm container | Fedora 44 container | Limit |
+|---|---|---|---|
+| `common-sh.test.sh` | 29 pass / 0 fail | 29 pass / 0 fail | Shell primitives/fixtures, not every operational script |
+| `install-skills-bin.test.sh` | 21 pass / 0 fail | 21 pass / 0 fail after container-only diffutils install | Root inside disposable container; all installer targets temporary |
+| Missing-cmp path | Pass | Pass | Exit 5 before destination mutation; help/list remain usable |
+| ShellCheck 0.9.0 | Pass for common.sh, sk-audit.sh, installer and both changed shell suites | Not separately run | Eight changed files including backup, distro gate and web fixture; not an engine-wide lint pass |
+| Python suite on Fedora host | Not run in this container | 73 tests and eight subtests pass on host; one opt-in lab skipped | Temporary venv; host/service effects stubbed |
+| Native service/reboot/SELinux/ACL integration | `NOT_ASSESSED` | `NOT_ASSESSED` | Containers share the host kernel and do not prove boot or MAC behaviour |
+| Production operations | `NOT_ASSESSED` | `NOT_ASSESSED` | No production target was supplied |
+
+Image identities inspected during this run:
+
+- Debian: `docker.io/library/debian@sha256:a0039cc6bb3eb2215aabcd3437cce8808a3858d86bf483eee2ee14fe4d2551c2`.
+- Fedora: `quay.io/fedora/fedora@sha256:474e0ab5a1e59c215e59f281b1fe49f2866ec20f773533f5cca851cc830c5c2b`.
+
+The Debian container installed ShellCheck from its configured distro repository;
+the Fedora container installed diffutils. Images identify the base, not a
+fully reproducible dependency snapshot. The Fedora base without diffutils
+first failed idempotency; the dependency gate was then fixed and negative/normal
+paths retested. No failure was suppressed to obtain these totals.
+
+The Bash workflow now includes a digest-pinned Fedora fixture job alongside
+Ubuntu. Local execution is recorded here; a GitHub-hosted workflow result is
+not implied. See the [audit](kaizen-2026-10-29.md) for scope, commands and open gates.
+
+Author: Peter Bamuhigire, techguypeter.com, +256784464178.
+
+The completed [Portfolio cycle](../kaizen/2026-10-engine-kaizen/05-final-report.md) adds an actual MySQL second-instance restore and dual-family PHP/Nginx upstream rollback. These disposable tests do not close full production hardening evidence.

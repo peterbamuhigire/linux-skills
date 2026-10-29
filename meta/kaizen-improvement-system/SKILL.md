@@ -88,6 +88,13 @@ If evidence is incomplete, the target is unassessed, or distro execution is unav
 
 Preserve two-family support, idempotence, least privilege, explicit confirmation, backups, rollback, verification, evidence traceability, and review dates. Never turn a historical book or vendor example into a current command without verification.
 
+## User-specific audit cap
+
+A user may require a lower initial publication cap. Record both the raw score
+and `min(raw_score, requested_cap)`; retain the normal 65 ceiling when no lower
+cap is requested. Re-measure against the same explicit criteria. The 95 target
+is not evidence of achievement; publish remaining blockers when it is unmet.
+
 ## Mandatory 65-to-95 gate
 
 The first pass is an initial analysis: calculate raw findings, publish only

@@ -3,6 +3,16 @@
 Version 1.0 — 2026-04-10
 **Author:** Peter Bamuhigire · [techguypeter.com](https://techguypeter.com) · +256 784 464 178
 
+## Shipped versus planned inventory
+
+The table below is the historical **planned** catalogue, not a claim that all
+88 commands ship. For current availability use `scripts/install-skills-bin --list`;
+its skill manifests resolve real source paths. The 2026-10-29 disposable core
+install placed 13 commands; the README's 26 `sk-*` sources include optional
+skill-local tools. The [Kaizen evidence](../continuous-improvement/kaizen-2026-10-29.md)
+records validation scope and untested workflows. `sk-audit` 0.3.1 uses effective
+SSH defaults, exact firewall status and qualified cached-update results.
+
 The curated catalogue of every script this engine will ship. **88 scripts**
 grouped into 3 priority tiers and 12 themes. Ranked by importance: tier 1 is
 the minimum viable toolkit, tier 3 is specialized.

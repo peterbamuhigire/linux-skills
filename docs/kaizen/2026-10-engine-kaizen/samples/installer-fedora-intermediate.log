@@ -1,0 +1,73 @@
+Updating and loading repositories:
+ Fedora 44 openh264 (From Cisco) - x86_ 100% | 737.0   B/s |   5.3 KiB |  00m07s
+ Fedora 44 - x86_64 - Updates           100% |   1.4 MiB/s |  12.3 MiB |  00m09s
+ Fedora 44 - x86_64                     100% |   2.7 MiB/s |  36.4 MiB |  00m14s
+Repositories loaded.
+Total size of inbound packages is 395 KiB. Need to download 395 KiB.
+After this operation, 2 MiB extra will be used (install 2 MiB, remove 0 B).
+[1/1] diffutils-0:3.12-5.fc44.x86_64    100% | 241.9 KiB/s | 395.3 KiB |  00m02s
+--------------------------------------------------------------------------------
+[1/1] Total                             100% | 241.5 KiB/s | 395.3 KiB |  00m02s
+Running transaction
+[1/3] Verify package files              100% | 333.0   B/s |   1.0   B |  00m00s
+[2/3] Prepare transaction               100% |  26.0   B/s |   1.0   B |  00m00s
+[3/3] Installing diffutils-0:3.12-5.fc4 100% |  47.6 MiB/s |   1.6 MiB |  00m00s
+Complete!
+  [PASS] pass/warn/fail increment counters
+  [PASS] parse_standard_flags sets globals
+  [PASS] parse_standard_flags preserves unknown args
+  [PASS] --quiet + --verbose rejected
+  [PASS] safe_tempfile created /tmp/test4.3dv9k0VE
+  [PASS] safe_tempfile registered /tmp/test4.3dv9k0VE despite command-substitution subshell
+  [PASS] cleanup registry preserves paths containing newlines
+  [PASS] cleanup removes newline-containing temporary paths
+  [PASS] _sk_remove_registered removed /tmp/test4.3dv9k0VE
+  [PASS] private registry ignores a planted predictable-registry symlink
+  [PASS] cleanup registry is stored in a mode-700 private directory
+  [PASS] common.sh aborts if it cannot create the private cleanup registry
+  [PASS] atomic_write replaced content
+  [PASS] atomic_write preserved mode 600
+  [PASS] atomic_write uses a unique temp and ignores a planted .new symlink
+  [PASS] atomic_write rejects symlink targets without changing referents
+  [PASS] atomic_write preserves target when metadata lookup fails
+  [PASS] atomic_write skips redundant chown for an already matching owner
+  [PASS] backup_file created a backup at /tmp/tmp.bvSoiVljpd.bak-20261029-031905
+  [PASS] detect_distro: rhel family -> dnf (fedora)
+  [PASS] family classifier maps Fedora/Rocky->rhel, Ubuntu/PureOS->debian
+  [PASS] require_family any accepts a supported distro
+  [PASS] require_family rejects the wrong family
+  [PASS] svc_name maps apache->httpd and passes nginx through
+  [PASS] require_debian alias rejects a non-Debian host
+  [FAIL] missing required command(s): this-command-does-not-exist-abc
+  [INFO] install with: sudo dnf install this-command-does-not-exist-abc
+  [PASS] require_cmd detects missing command
+  [PASS] require_flag enforces decision flags under --yes
+
+--- common.sh test summary ---
+  passed: 27
+  failed: 0
+  [PASS] install-skills-bin --help exits 0
+  [PASS] install-skills-bin --list works
+  [PASS] all current manifest sources are available
+  [PASS] --list resolves engine-root script sources
+  [PASS] --list resolves skill-local script sources
+  [PASS] --list identifies missing manifest sources
+  [PASS] missing manifest sources are excluded from installed totals
+  [PASS] dry-run resolves skill-local script source
+  [PASS] --help works when cmp is unavailable
+  [PASS] --list works when cmp is unavailable
+  [PASS] missing cmp reports diffutils remediation and exits 5
+  [PASS] missing cmp is detected before install destinations are mutated
+  [PASS] core --dry-run reaches its truthful source summary (exit 0)
+  [PASS] --dry-run installed nothing
+  [PASS] core install succeeds when all required sources are available
+  [PASS] install placed 13 sk-* binaries in the temporary destination
+  [PASS] common.sh installed to temporary lib dir
+  [PASS] second install reports unchanged
+  [PASS] per-skill install (linux-webstack) works
+  [PASS] uninstall exits 0
+  [PASS] uninstall removed skill scripts
+
+--- install-skills-bin test summary ---
+  passed: 21
+  failed: 0

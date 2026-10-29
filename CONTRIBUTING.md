@@ -19,6 +19,8 @@ Changes must preserve the two-family Linux contract and the zero-debt July 2026 
 python -X utf8 scripts/validate_skills.py --baseline quality-baseline.json
 python -X utf8 scripts/routing_smoke_test.py
 bash scripts/tests/check-distro-matrix.sh
+python -m pytest -q
+bash scripts/tests/common-sh.test.sh
 git diff --check
 ```
 
@@ -29,3 +31,23 @@ The baseline is a zero-debt assertion, not a suppression list. Do not add failur
 ## Release evidence
 
 Before committing, record the active and template counts, validator and routing results, distro test result, canonical scanner result, canonical quick-validation result, safety status, anti-slop result, and any deliberately unassessed live-system check. Review the staged diff and stage only intended files.
+
+## Security regression evidence
+
+Run installer tests only in a disposable container/VM as root inside that
+fixture; the suite installs under temporary destinations. Include `diffutils`.
+Run both Debian-family and RHEL-family images and retain image identities,
+exit states and failed-path results. Do not treat an image lacking dependencies
+as a successful idempotency test. ShellCheck changed shell files and run
+`bash -n` across shell sources before release.
+
+Read the [current security runbook](docs/security/current-vulnerability-triage.md)
+when changing security advice. Keep source access failures and superseding
+verification visible. Do not claim host patch status from an upstream version,
+a cached package query, or a successful repository test.
+
+For this cycle, see the [29 October audit](docs/kaizen/2026-10-engine-kaizen/05-final-report.md).
+Historical audit scores remain historical; a requested lower initial cap does
+not authorise inventing a raw score or reporting an unachieved target.
+
+Marketplace changes must pass `python scripts/check_marketplace.py` and the manifest generator check in CI. Keep Claude and Codex skill paths aligned without duplicating skills. The package and full checkout file ceilings are 5,000; live client loading and public listing acceptance require separate evidence. See [packaging](docs/marketplace.md).

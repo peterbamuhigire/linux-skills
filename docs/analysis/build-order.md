@@ -60,7 +60,7 @@ tier-1 script can be written.
 
 **Deliverable:** `scripts/lib/common.sh`, ~500–700 lines, implementing
 every function in the contract at
-[`linux-bash-scripting/references/common-sh-contract.md`](../../linux-bash-scripting/references/common-sh-contract.md).
+[`linux-bash-scripting/references/common-sh-contract.md`](../../10-automation-and-scripting/linux-bash-scripting/references/common-sh-contract.md).
 
 **Order of implementation within the file:**
 

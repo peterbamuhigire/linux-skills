@@ -44,3 +44,7 @@ to [06-next-cycle.md](06-next-cycle.md). No open historical P0 was found; the tw
 new critical findings are selected here and cannot be closed by scoring alone.
 
 Author: Peter Bamuhigire, techguypeter.com, +256784464178.
+
+## K07 scope addition requested during execution
+
+Peter added Claude/Codex marketplace optimisation and an entire-engine 5,000-file ceiling. This stays within K07 packaging/documentation ownership rather than creating an eleventh item. Acceptance: manifest parity and path safety, both package and checkout-inclusive ceilings, native Claude validation, explicit live/public-listing limitations, and safety gates on exposed legacy command references. Rollback is the K07 commit; no marketplace submission or remote registration was performed.

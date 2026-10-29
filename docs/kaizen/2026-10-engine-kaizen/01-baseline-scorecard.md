@@ -53,3 +53,9 @@ The baseline counts are never replaced by final counts. WSL absence from the
 older audit is not a failure of native Linux checks in this cycle.
 
 Author: Peter Bamuhigire, techguypeter.com, +256784464178.
+
+## Arithmetic correction — final review, 29 October 2026
+
+The ten frozen row scores sum to 505, so the raw mean is **50.5**, not 56.5 as originally transcribed above. The row scores and original statement are preserved for auditability. Correct Standard cap is 50.5; the requested published cap remains 45. Final comparisons use 50.5. This is an arithmetic correction, not a rescore.
+
+The original frozen machine-readable measurement is preserved byte-for-byte in [metrics-baseline-legacy.json](metrics-baseline-legacy.json). The refined [metrics-baseline.json](metrics-baseline.json) reruns the improved parser on the same pristine commit and carries provenance: seven missing paths and ten missing anchors replace the old aggregate eight-target classification. Final comparisons use the same refined parser on both trees.

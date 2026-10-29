@@ -43,7 +43,7 @@ operates within.
 
 Every Kaizen audit, skill edit, reference update, validator change, and
 standardisation decision MUST begin with the Digital Research Engine at
-`C:\wamp64\www\digital-research-engine`. Read its `source-evaluation` and
+`digital-research-engine (resolve through the device catalogue)`. Read its `source-evaluation` and
 `source-verification` skills and the currentness gate reference
 `docs/continuous-improvement/kaizen-currentness-gate.md`.
 
@@ -56,7 +56,7 @@ primary sources; quarantine stale/ambiguous/unsupported claims and mark them
 
 The shared control plane is adapted to operational safety in
 [`docs/control-plane-adoption.md`](docs/control-plane-adoption.md); the central
-registry is `C:\wamp64\www\chwezi-dev-engine\docs\engine-control-plane.json`.
+registry is `chwezi-dev-engine/docs/engine-control-plane.json (resolve through the device catalogue)`.
 
 ## Purpose
 
@@ -150,6 +150,16 @@ Alma, Oracle). When acting on a task:
 - Hybrid install: `sudo install-skills-bin core` at setup, per-skill lazy install on first use.
 - Every script sources `/usr/local/lib/linux-skills/common.sh`.
 
+## Current Kaizen evidence
+
+The [2026-10-29 audit](docs/kaizen/2026-10-engine-kaizen/05-final-report.md) records
+this cycle's user-requested 45/100 initial cap and 95/100 target. Preserve raw
+scores and explicit unassessed checks; never promote a target to an achieved
+score. Use the [security triage runbook](docs/security/current-vulnerability-triage.md)
+for current advisory matching and the dated source register for its limitations.
+The historical 88-script inventory is a roadmap; installed availability comes
+from `scripts/install-skills-bin --list` and current skill manifests.
+
 ## Baseline Skills
 
 Kaizen is mandatory for the engine and every operational product. Load `meta/kaizen-improvement-system/SKILL.md` for audits and improvement planning; cap published audits at 65/100 and target 95/100 with dual-distro, safety, rollback, recovery, and reviewer evidence.
@@ -161,7 +171,7 @@ Start from these skills unless the task is already narrowly scoped:
 - `skill-writing`: meta-skill for creating or upgrading portable skills
 - `skill-safety-audit`: review gate for new or imported skill content
 
-For current or uncertain distro, security, compliance, vendor, platform, legal, or safety claims, route to `C:\wamp64\www\digital-research-engine` and load its source-evaluation and source-verification skills before standardising a command or policy. This Linux engine is an operational consumer of that research engine, not a substitute for current-source verification.
+For current or uncertain distro, security, compliance, vendor, platform, legal, or safety claims, route to `digital-research-engine (resolve through the device catalogue)` and load its source-evaluation and source-verification skills before standardising a command or policy. This Linux engine is an operational consumer of that research engine, not a substitute for current-source verification.
 
 ## Routing
 
@@ -180,7 +190,7 @@ Use `linux-sysadmin` as the default entry point for server work, then route quic
 - Compliance and auditing: `linux-auditd-rules`, `linux-file-integrity`, `linux-benchmark-scanning`
 - Incident and recovery: `linux-troubleshooting`, `linux-disaster-recovery`
 
-Windows hosts: `windows-admin-engine-skills` (`C:\wamp64\www\windows-admin-engine-skills`) —
+Windows hosts: `windows-admin-engine-skills` (`windows-admin-engine-skills; resolve through the device catalogue`) —
 the reciprocal statement on that engine's side is "Linux hosts: `linux-skills`"
 (`windows-admin-engine-skills\AGENTS.md`). The two engines are the estate's paired
 infrastructure engines; route to whichever OS the target host actually runs.
@@ -296,4 +306,4 @@ For a prompt handoff, read the local [domain prompt contract](docs/ai-prompting/
 
 ## PORTFOLIO CRAFT CONTRACT
 
-Load `C:\wamp64\www\chwezi-engine-agents\docs\operations\portfolio-craft-standard-2026-09-04.md` when available. Execute administration work in bounded changes: frame the target and recovery consequence, select one operation, inspect ownership and current state, preview or stage the smallest change, verify normal and failure behaviour, refine the runbook or script, and record before/after and rollback proof. Do not generate a complete server change as one opaque batch. Apply `Observe -> Baseline -> Select -> Experiment -> Check -> Standardise -> Teach -> Re-measure` to kaizen itself. Missing host, lab, source, live, or recovery evidence is `NOT ASSESSED`, never a pass.
+Load `chwezi-engine-agents/docs/operations/portfolio-craft-standard-2026-09-04.md (resolve through the device catalogue)` when available. Execute administration work in bounded changes: frame the target and recovery consequence, select one operation, inspect ownership and current state, preview or stage the smallest change, verify normal and failure behaviour, refine the runbook or script, and record before/after and rollback proof. Do not generate a complete server change as one opaque batch. Apply `Observe -> Baseline -> Select -> Experiment -> Check -> Standardise -> Teach -> Re-measure` to kaizen itself. Missing host, lab, source, live, or recovery evidence is `NOT ASSESSED`, never a pass.

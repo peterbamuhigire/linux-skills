@@ -1,12 +1,26 @@
 # Linux Skills
 
-Linux Skills is an operations engine for administering Linux servers and the network equipment around them. Its 48 skills cover the working life of a host: provisioning and first boot, users and secrets, networking and DNS, web and mail services, systemd and virtualisation, storage, hardening, intrusion detection, observability, troubleshooting and disaster recovery, Bash automation, databases and caches, containers, backup and archiving, performance and kernel tuning, compliance auditing, and Cisco IOS/IOS-XE configuration review. A hub skill, `linux-sysadmin`, routes each request to the narrowest specialist. Every specialist carries a `## Distro support` matrix covering both the Debian/Ubuntu and RHEL families (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Every procedure declares its target, preconditions, a bounded change, a rollback route and a verification step. Mutating work is preview-first and needs explicit authority; evidence that is unavailable is recorded as `NOT ASSESSED`, never assumed.
+Linux Skills is an operations engine for administering Linux servers and the network equipment around them. Its 48 skills cover the working life of a host: provisioning and first boot, users and secrets, networking and DNS, web and mail services, systemd and virtualisation, storage, hardening, intrusion detection, observability, troubleshooting and disaster recovery, Bash automation, databases and caches, containers, backup and archiving, performance and kernel tuning, compliance auditing, and Cisco IOS/IOS-XE configuration review. A hub skill, `linux-sysadmin`, routes each request to the narrowest specialist. Linux specialists carry a `## Distro support` matrix covering both the Debian/Ubuntu and RHEL families (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle). Network-appliance specialists declare their vendor scope instead. Every procedure declares its target, preconditions, a bounded change, a rollback route and a verification step. Mutating work is preview-first and needs explicit authority; evidence that is unavailable is recorded as `NOT ASSESSED`, never assumed.
 
 The engine produces server provisioning plans and cloud-init, autoinstall and Kickstart files; Ansible desired-state playbooks; hardening and read-only security assessments; firewall, TLS and certificate configurations; site release and rollback runbooks; database backup, restore and point-in-time recovery procedures; container deployment specifications; observability and log-shipping configurations; incident diagnosis trees; recovery procedures; and 26 `sk-*` Bash scripts built on a shared `common.sh` contract. For network devices it produces bounded IOS change plans, Netmiko collection scripts and static configuration preflight reports. Its procedures follow the IETF RFCs for DNS, SMTP submission, TLS, HSTS, ACME, SPF, DKIM and DMARC. Compliance work uses CIS Benchmark and DISA STIG profiles through OpenSCAP and the SCAP Security Guide, and TLS work follows Mozilla's server-side TLS guidance. It is written for Linux administrators, infrastructure and network engineers, service owners and support teams, and for AI agents (Claude Code, Codex and others) acting on their behalf.
 
+## Security and Kaizen status — 29 October 2026
+
+The [Kaizen audit and evidence](docs/kaizen/2026-10-engine-kaizen/05-final-report.md)
+records the capped baseline, fixes, tests and remaining work towards 95/100. The ten-dimension raw score improved from 50.5 to 74; the 95 target remains unmet.
+Use the [current vulnerability triage runbook](docs/security/current-vulnerability-triage.md)
+and its dated source register when assessing packages. The watchlist is a review
+queue, not proof that a host is vulnerable or fully patched.
+
+This revision hardens temporary cleanup and atomic file replacement, corrects
+SSH/firewall/update-query audit results, checks the installer's `diffutils`
+dependency, and adds Python tests and Fedora fixture execution to CI. The
+[platform evidence](docs/continuous-improvement/platform-test-matrix-2026-08.md)
+distinguishes disposable tests from live service, recovery and production evidence.
+
 ## Installation
 
-**Prerequisites.** Git. Node.js 18 or later for the clone installers and the plugin's destructive-command hook. Python 3.11 or later for the validators, tests and the Codex model-policy helper. Bash 4 on target servers for the `sk-*` scripts.
+**Prerequisites.** Git. `diffutils` (`cmp`) for script installation/update; missing dependencies are reported before installation writes. Node.js 18 or later for the clone installers and the plugin's destructive-command hook. Python 3.11 or later for the validators, tests and the Codex model-policy helper. Bash 4 on target servers for the `sk-*` scripts.
 
 **Claude Code plugin (recommended).** The repository is its own marketplace (`.claude-plugin/marketplace.json`, marketplace `chwezi-linux`, plugin `linux`, version 1.1.0):
 
@@ -34,7 +48,7 @@ sudo scripts/install-skills-bin core
 
 `scripts/setup-claude-code.sh` is an optional, gated Claude Code bootstrap for a server. Review its `--dry-run` plan first. It needs explicit target, authority and recovery-file flags.
 
-**Codex.** No installer is needed. Load `AGENTS.md`, then the selected `SKILL.md`. Before substantive work, check the Codex model policy with `python .codex/ensure_model_policy.py --runtime codex --check`. Claude skips this step.
+**Codex.** The `.codex-plugin/plugin.json` compatibility manifest exposes the same 45 operational skills as Claude without copying skill content. See [marketplace packaging and checks](docs/marketplace.md) for verified support and public-upload limitations. Both the engine package and this checkout are checked against a 5,000-file ceiling. Manual use needs no installer. Load `AGENTS.md`, then the selected `SKILL.md`. Before substantive work, check the Codex model policy with `python .codex/ensure_model_policy.py --runtime codex --check`. Claude skips this step.
 
 **Manual use.** Clone the repository anywhere. Read `CLAUDE.md` (Claude Code) or `AGENTS.md` (any runner), then load `linux-sysadmin/SKILL.md` as the default route. Validate changes with `python -X utf8 scripts/validate_skills.py` and `python -X utf8 -m pytest tests`.
 

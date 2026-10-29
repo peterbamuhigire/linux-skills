@@ -136,8 +136,8 @@ Before writing or reviewing a script, load `linux-bash-scripting`.
 
 ## What Do You Need To Do?
 
-This hub routes to all **40 specialist skills**, organized into **15
-categories** (01-15), plus the `linux-bash-scripting` meta-skill (choice 0).
+This hub routes to **44 specialist skills** in **16 categories** (01-16),
+including `linux-bash-scripting` (choice 0). The filesystem catalogue is authoritative.
 
 ```
 Linux Server Management
@@ -207,6 +207,8 @@ Linux Server Management
   38.  File integrity (FIM with AIDE)
   39.  Benchmark scanning (security-benchmark / compliance scans)
 
+  40.  NGO cyber resilience and incident readiness
+
   NETWORK EQUIPMENT (routers/switches — not a Linux host)
   41.  Cisco IOS / IOS-XE config review and change-window checks
   42.  Netmiko SSH automation against network devices
@@ -266,7 +268,7 @@ Linux Server Management
 
 ## Standing Rules
 
-- All skills work on any Ubuntu/Debian server — no product names in guidance.
+- Linux specialists cover Debian/Ubuntu and the RHEL family; network-appliance skills declare their vendor scope. Verify the target release and dependencies.
 - Confirm before every destructive operation (restore, drop, reset, delete).
   Use `confirm_destructive` from `common.sh` — requires the literal word `yes`.
 - Run `sudo nginx -t` before every Nginx reload — never skip. This checkout does not ship the `sk-nginx-test-reload` wrapper.

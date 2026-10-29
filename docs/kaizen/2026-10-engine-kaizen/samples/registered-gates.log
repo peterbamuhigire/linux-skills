@@ -1,0 +1,54 @@
+linux-skills validator: 48 active skills, 1 templates
+fully compliant: 48
+failure counts: {}
+routing fixtures: 80/80 valid; expected-target P@1=67/80 (0.838); P@3=80/80 (1.000); required P@3=80/80 (1.000)
+fixture kinds: collision=5, failure-path=5, limited-capability=3, negative=23, positive=44
+coverage: 11/48 skills meet 3 positive + 2 owned-negative fixtures; owned negatives=23
+== Distro-matrix invariant ==
+  [SKIP] linux-sysadmin (exempt: routing hub)
+  [PASS] linux-cloud-init: family comparison table in Distro support
+  [PASS] linux-config-management: family comparison table in Distro support
+  [PASS] linux-package-management: family comparison table in Distro support
+  [PASS] linux-server-provisioning: family comparison table in Distro support
+  [PASS] linux-access-control: family comparison table in Distro support
+  [PASS] linux-secrets: family comparison table in Distro support
+  [PASS] linux-dns-server: family comparison table in Distro support
+  [PASS] linux-network-admin: family comparison table in Distro support
+  [PASS] linux-mail-server: family comparison table in Distro support
+  [PASS] linux-site-deployment: family comparison table in Distro support
+  [PASS] linux-webstack: family comparison table in Distro support
+  [PASS] linux-service-management: family comparison table in Distro support
+  [PASS] linux-virtualization: family comparison table in Distro support
+  [PASS] linux-disk-storage: family comparison table in Distro support
+  [PASS] linux-firewall-ssl: family comparison table in Distro support
+  [PASS] linux-intrusion-detection: family comparison table in Distro support
+  [PASS] linux-ngo-cyber-resilience: family comparison table in Distro support
+  [PASS] linux-security-analysis: family comparison table in Distro support
+  [PASS] linux-server-hardening: family comparison table in Distro support
+  [PASS] linux-log-management: family comparison table in Distro support
+  [PASS] linux-observability: family comparison table in Distro support
+  [PASS] linux-system-monitoring: family comparison table in Distro support
+  [PASS] linux-disaster-recovery: family comparison table in Distro support
+  [PASS] linux-troubleshooting: family comparison table in Distro support
+  [PASS] linux-bash-scripting: two-family common.sh primitive map
+  [PASS] linux-repo-sync: family comparison table in Distro support
+  [PASS] linux-inmemory-stores: family comparison table in Distro support
+  [PASS] linux-mysql-mariadb: family comparison table in Distro support
+  [PASS] linux-postgresql: family comparison table in Distro support
+  [PASS] linux-container-deployment: family comparison table in Distro support
+  [PASS] linux-container-engine: family comparison table in Distro support
+  [PASS] linux-image-hygiene: family comparison table in Distro support
+  [PASS] linux-archive-integrity: family comparison table in Distro support
+  [PASS] linux-filesystem-snapshots: family comparison table in Distro support
+  [PASS] linux-rsync-sync: family comparison table in Distro support
+  [PASS] linux-kernel-modules: family comparison table in Distro support
+  [PASS] linux-perf-profiling: family comparison table in Distro support
+  [PASS] linux-sysctl-tuning: family comparison table in Distro support
+  [PASS] linux-auditd-rules: family comparison table in Distro support
+  [PASS] linux-benchmark-scanning: family comparison table in Distro support
+  [PASS] linux-file-integrity: family comparison table in Distro support
+
+-- summary --
+  passed: 41
+  failed: 0
+EXIT_CODES contracts=0 routing=0 distro=0

@@ -71,3 +71,5 @@ LINUX_SKILLS_MYSQL_BACKUP_LAB=1 /tmp/linux-kaizen-checks/venv/bin/python -m pyte
 Final `scripts/sk-mysql-backup.sh` SHA-256: `79dd3307d7149a014a246876063d61fed240e9aa89b8a2cfc3418e3261ae968f`.
 
 <!-- Author: Peter Bamuhigire <techguypeter.com> +256784464178 -->
+
+Post-lab lint change: only ShellCheck explanatory comments were added to the backup script; behaviour is unchanged. Release script SHA-256: `fbb274fbd0bd90d5bab5033391a5459fddd500eda822b1b0efbd48e65f1eaf4c`. The earlier hash above identifies the executed lab source.
