@@ -9,7 +9,7 @@
 #:              common.sh. Use linux-server-hardening to fix what it finds.
 #: Author:      Peter Bamuhigire <techguypeter.com>
 #: Contact:     +256784464178
-#: Version:     0.3.0
+#: Version:     0.3.1
 
 # =============================================================================
 # 1. Library + safety
@@ -27,12 +27,16 @@ source "$SK_LIB" || { echo "FATAL: cannot source common.sh" >&2; exit 5; }
 # =============================================================================
 # 2. Defaults
 # =============================================================================
-SCRIPT_VERSION="0.3.0"
+# read by common.sh standard flag parser
+# shellcheck disable=SC2034
+SCRIPT_VERSION="0.3.1"
 
 # =============================================================================
 # 3. Functions
 # =============================================================================
 usage() {
+    # called by common.sh flag parser
+    # shellcheck disable=SC2317
     cat <<'EOF'
 Usage: sk-audit [OPTIONS]
 
@@ -71,17 +75,11 @@ AUTHOR:
 EOF
 }
 
-# Helper: get effective SSH setting (drop-in dir has higher priority)
+# Parse OpenSSH's effective configuration, never reconstruct Include/Match order.
+# SSH_EFFECTIVE is populated once by sshd -T in the SSH section below.
 ssh_setting() {
-    local key="$1"
-    local val=""
-    if [[ -d /etc/ssh/sshd_config.d ]]; then
-        val=$(grep -rh "^${key}" /etc/ssh/sshd_config.d/*.conf 2>/dev/null | tail -1 | awk '{print $2}')
-    fi
-    if [[ -z "$val" ]]; then
-        val=$(grep -h "^${key}" /etc/ssh/sshd_config 2>/dev/null | tail -1 | awk '{print $2}')
-    fi
-    printf '%s' "$val"
+    local key="${1,,}"
+    awk -v key="$key" '$1 == key { print $2; exit }' <<< "$SSH_EFFECTIVE"
 }
 
 sysctl_check() {
@@ -138,7 +136,7 @@ require_family any        # Debian/Ubuntu or RHEL family; sets SK_DISTRO_FAMILY
 # 6. Main logic — 14 audit sections
 # =============================================================================
 
-printf "${SK_BOLD}"
+printf "%s" "$SK_BOLD"
 printf "==============================================\n"
 printf "  Server Security Audit\n"
 printf "  Host: %s\n" "$(hostname)"
@@ -148,10 +146,12 @@ printf "  Date: %s\n" "$(date '+%Y-%m-%d %H:%M:%S')"
 printf "  OS:   %s\n" "$(. /etc/os-release && echo "$PRETTY_NAME")"
 printf "  Fam:  %s (%s)\n" "$SK_DISTRO_FAMILY" "$SK_PKG"
 printf "==============================================\n"
-printf "${SK_NC}\n"
+printf "%s\n" "$SK_NC"
 
 # --- 1. System updates -------------------------------------------------------
 header "1. System Updates"
+UPDATES_KNOWN=0
+UPDATES=0
 if [[ "$SK_DISTRO_FAMILY" == "debian" ]]; then
     if pkg_is_installed unattended-upgrades; then
         pass "unattended-upgrades is installed"
@@ -169,7 +169,10 @@ if [[ "$SK_DISTRO_FAMILY" == "debian" ]]; then
         fail "Automatic updates not configured"
     fi
 
-    UPDATES=$(apt list --upgradable 2>/dev/null | grep -c "upgradable" || true)
+    if UPDATE_OUTPUT=$(apt list --upgradable 2>/dev/null); then
+        UPDATES=$(printf '%s\n' "$UPDATE_OUTPUT" | grep -c "upgradable" || true)
+        UPDATES_KNOWN=1
+    fi
 else
     # RHEL family: dnf-automatic (dnf4) or dnf5-plugin-automatic (dnf5; the
     # default on Fedora 41+) is the unattended-upgrades equivalent.
@@ -188,15 +191,22 @@ else
     fi
 
     # `dnf check-update` exits 100 when updates exist; count package lines.
-    UPDATES=$("$SK_PKG" -q check-update 2>/dev/null | grep -cE '^[A-Za-z0-9]' || true)
+    UPDATE_OUTPUT=$("$SK_PKG" -C -q check-update 2>/dev/null)
+    UPDATE_STATUS=$?
+    if (( UPDATE_STATUS == 0 || UPDATE_STATUS == 100 )); then
+        UPDATES=$(printf '%s\n' "$UPDATE_OUTPUT" | grep -cE '^[A-Za-z0-9]' || true)
+        UPDATES_KNOWN=1
+    fi
 fi
 
-if (( UPDATES > 10 )); then
+if (( ! UPDATES_KNOWN )); then
+    warn "NOT_ASSESSED: cached package update query failed; refresh metadata through the package-management workflow"
+elif (( UPDATES > 10 )); then
     warn "$UPDATES packages have pending updates"
 elif (( UPDATES > 0 )); then
     info "$UPDATES packages have pending updates"
 else
-    pass "System is fully up to date"
+    info "No updates reported by cached metadata; freshness and vulnerability status require vendor verification"
 fi
 
 # --- 2. SSH hardening --------------------------------------------------------
@@ -208,47 +218,50 @@ if ! pkg_is_installed openssh-server && [[ ! -f /etc/ssh/sshd_config ]]; then
     info "No SSH server installed — SSH section skipped"
 else
     if ! systemctl is-active sshd &>/dev/null && ! systemctl is-active ssh &>/dev/null; then
-        info "SSH server present but not running — remote-login exposure is currently nil (policy still checked below)"
+        info "SSH server present but not running — verify sockets, alternate units and listeners before judging exposure (policy checked below)"
     fi
 
-    ROOT_LOGIN=$(ssh_setting "PermitRootLogin")
-    # Empty = "use sshd compiled default", which on modern OpenSSH is
-    # prohibit-password, NOT "yes" — treat it as such instead of false-failing.
-    [[ -z "$ROOT_LOGIN" ]] && ROOT_LOGIN="prohibit-password"
-    if [[ "$ROOT_LOGIN" == "no" ]]; then
-        pass "Root login is disabled"
-    elif [[ "$ROOT_LOGIN" == "prohibit-password" ]]; then
-        warn "Root login allowed with keys only (consider 'no')"
-    else
-        fail "Root login is permitted: $ROOT_LOGIN"
-    fi
+    SSH_EFFECTIVE=""
+    if SSH_EFFECTIVE=$(sshd -T 2>/dev/null) && [[ -n "$SSH_EFFECTIVE" ]]; then
+        info "SSH effective default configuration; Match contexts and service command-line overrides require separate verification"
+        ROOT_LOGIN=$(ssh_setting "PermitRootLogin")
+        case "$ROOT_LOGIN" in
+            no) pass "Root login is disabled" ;;
+            prohibit-password|without-password) warn "Root login allowed with keys only (consider 'no')" ;;
+            "") warn "NOT_ASSESSED: PermitRootLogin unavailable" ;;
+            *) fail "Root login is permitted: $ROOT_LOGIN" ;;
+        esac
 
-    PASS_AUTH=$(ssh_setting "PasswordAuthentication")
-    if [[ "$PASS_AUTH" == "no" ]]; then
-        pass "Password authentication is disabled (key-only)"
-    else
-        warn "Password authentication is ON — consider switching to key-only"
-    fi
+        PASS_AUTH=$(ssh_setting "PasswordAuthentication")
+        KBD_AUTH=$(ssh_setting "KbdInteractiveAuthentication")
+        if [[ "$PASS_AUTH" == "no" && "$KBD_AUTH" == "no" ]]; then
+            pass "Password and keyboard-interactive authentication are disabled"
+        else
+            warn "Review password/keyboard-interactive authentication and MFA policy: ${PASS_AUTH:-unknown}/${KBD_AUTH:-unknown}"
+        fi
 
-    PUBKEY_AUTH=$(ssh_setting "PubkeyAuthentication")
-    if [[ "$PUBKEY_AUTH" == "yes" || -z "$PUBKEY_AUTH" ]]; then
-        pass "Public key authentication is enabled"
-    else
-        fail "Public key authentication is disabled"
-    fi
+        PUBKEY_AUTH=$(ssh_setting "PubkeyAuthentication")
+        case "$PUBKEY_AUTH" in
+            yes) pass "Public key authentication is enabled" ;;
+            no) fail "Public key authentication is disabled" ;;
+            *) warn "NOT_ASSESSED: PubkeyAuthentication unavailable or unrecognised" ;;
+        esac
 
-    MAX_AUTH=$(ssh_setting "MaxAuthTries")
-    if [[ -n "$MAX_AUTH" && "$MAX_AUTH" -le 4 ]]; then
-        pass "MaxAuthTries is set to $MAX_AUTH"
-    else
-        warn "MaxAuthTries is ${MAX_AUTH:-6 (default)} — consider 3-4"
-    fi
+        MAX_AUTH=$(ssh_setting "MaxAuthTries")
+        if [[ "$MAX_AUTH" =~ ^[0-9]+$ ]] && (( 10#$MAX_AUTH > 0 && 10#$MAX_AUTH <= 4 )); then
+            pass "MaxAuthTries is set to $MAX_AUTH"
+        else
+            warn "MaxAuthTries is ${MAX_AUTH:-unknown} — review the authentication policy"
+        fi
 
-    EMPTY_PASS=$(ssh_setting "PermitEmptyPasswords")
-    if [[ "$EMPTY_PASS" == "no" || -z "$EMPTY_PASS" ]]; then
-        pass "Empty passwords are not permitted"
+        EMPTY_PASS=$(ssh_setting "PermitEmptyPasswords")
+        case "$EMPTY_PASS" in
+            no) pass "Empty passwords are not permitted" ;;
+            yes) fail "Empty passwords are permitted!" ;;
+            *) warn "NOT_ASSESSED: PermitEmptyPasswords unavailable" ;;
+        esac
     else
-        fail "Empty passwords are permitted!"
+        warn "NOT_ASSESSED: sshd -T failed or returned no configuration; no SSH policy passes inferred"
     fi
 fi
 
@@ -256,7 +269,7 @@ fi
 header "3. Firewall"
 if [[ "$SK_DISTRO_FAMILY" == "debian" ]]; then
     UFW_STATUS=$(ufw status 2>/dev/null | head -1)
-    if echo "$UFW_STATUS" | grep -q "active"; then
+    if echo "$UFW_STATUS" | grep -qx 'Status: active'; then
         pass "UFW firewall is active"
         UFW_DEFAULT=$(ufw status verbose 2>/dev/null | grep "Default:")
         if echo "$UFW_DEFAULT" | grep -q "deny (incoming)"; then
@@ -567,6 +580,9 @@ fi
 # =============================================================================
 print_summary
 
+# counter is initialised by common.sh
+
+# shellcheck disable=SC2153
 if (( FAIL_COUNT > 0 )); then
     printf "  ${SK_RED}Action required: %d critical issue(s) found.${SK_NC}\n" "$FAIL_COUNT"
 fi
