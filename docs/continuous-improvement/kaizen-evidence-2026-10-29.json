@@ -78,13 +78,23 @@
       "debian_exit": 0,
       "fedora_exit": 0,
       "scope": "process fixture; not actual PHP package upgrade"
+    },
+    "hosted_ci": {
+      "revision": "751d10b5304cb79af578a490771e6b91ce16664d",
+      "skill_quality": "success",
+      "bash_suites": "success",
+      "source_ingestion_guardrail": "success",
+      "run_ids": [
+        40815304825,
+        40815304843,
+        40815304824
+      ]
     }
   },
   "not_assessed": [
     "all operational scripts success/failure/recovery",
     "custom ACL/xattr/SELinux preservation",
     "production vulnerability applicability",
-    "controlled comparative model benchmark",
-    "GitHub-hosted CI execution"
+    "controlled comparative model benchmark"
   ]
 }

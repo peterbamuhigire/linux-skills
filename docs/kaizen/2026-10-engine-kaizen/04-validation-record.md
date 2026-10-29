@@ -38,3 +38,7 @@ Debian image digest: `sha256:a0039cc6bb3eb2215aabcd3437cce8808a3858d86bf483eee2e
 No target-host or network-appliance deployment, all 26 scripts matrix, live marketplace load, controlled model comparison, custom ACL/xattr/SELinux atomic-write preservation, production credentials or paid service calls. Those are NOT_ASSESSED. Historical WSL absence was not relabelled as a Linux success. Security research is a dated bounded official-source review, not an exhaustive guarantee that every vulnerability has been found.
 
 Author: Peter Bamuhigire, techguypeter.com, +256784464178.
+
+## Hosted release checks
+
+GitHub Actions completed successfully for released code revision `751d10b5304cb79af578a490771e6b91ce16664d` on2026-10-29: [Skill quality](https://github.com/peterbamuhigire/linux-skills/actions/runs/40815304825), [Bash suites including Fedora](https://github.com/peterbamuhigire/linux-skills/actions/runs/40815304843), and [source-ingestion guardrail](https://github.com/peterbamuhigire/linux-skills/actions/runs/40815304824). This supersedes the earlier hosted-CI NOT_ASSESSED entry for that exact revision. The following evidence-only commit does not alter executable code.
