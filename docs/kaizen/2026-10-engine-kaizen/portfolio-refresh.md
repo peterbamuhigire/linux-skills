@@ -77,3 +77,18 @@ counterpart. This corrects a lookup limitation, not the register's currency or
 claim accuracy; the development cycle owns those checks.
 
 Author: Peter Bamuhigire, techguypeter.com, +256784464178.
+
+## Hosted Fedora image repair
+
+Hosted [Bash suites run40839578412](https://github.com/peterbamuhigire/linux-skills/actions/runs/40839578412)
+failed before tests when the registry returned manifest-unknown for the original
+pinned Fedora digest. Skill quality and source-ingestion checks passed at
+`041c738`; this was not a Bash assertion failure.
+
+The official `quay.io/fedora/fedora:44` tag was resolved and pulled again on
+2026-10-29. Its current amd64 manifest is
+`sha256:351d714a39c16fda7f3d266c0e41b4f34b51e8dfc62f12ae83b8169d7a3c5c64`.
+The workflow remains digest-pinned. In a disposable container at that exact
+revision, all29 common-library and21 installer assertions pass. This verifies
+the replacement image for these fixtures, not enterprise RHEL or production
+services. Historical lab digests above remain unchanged as provenance.

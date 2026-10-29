@@ -38,7 +38,7 @@ jobs:
     timeout-minutes: 15
     container:
       # Fedora 44 image inspected during the 2026-10-29 Kaizen; refresh deliberately.
-      image: quay.io/fedora/fedora@sha256:474e0ab5a1e59c215e59f281b1fe49f2866ec20f773533f5cca851cc830c5c2b
+      image: quay.io/fedora/fedora@sha256:351d714a39c16fda7f3d266c0e41b4f34b51e8dfc62f12ae83b8169d7a3c5c64
     steps:
       - name: Install fixture dependencies in disposable container
         run: dnf -y install diffutils git
