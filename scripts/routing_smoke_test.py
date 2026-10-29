@@ -70,12 +70,33 @@ def main() -> int:
     baseline = json.loads(BASELINE.read_text(encoding="utf-8"))["routing"]
     skills = catalogue()
     top_k = int(baseline["top_k"])
-    passed = 0
+    hit_at_1 = 0
+    hit_at_3 = 0
+    hit_at_k = 0
     failures: list[str] = []
     kinds = Counter(item["kind"] for item in fixtures)
+    positive_coverage: Counter[str] = Counter()
+    owned_negative_coverage: Counter[str] = Counter()
+    seen_ids: set[str] = set()
     for fixture in fixtures:
-        top = rank(fixture["prompt"], skills)[:top_k]
+        fixture_id = str(fixture.get("id", ""))
+        if not fixture_id:
+            failures.append("<missing-id>: fixture id is required")
+        elif fixture_id in seen_ids:
+            failures.append(f"{fixture_id}: duplicate fixture id")
+        seen_ids.add(fixture_id)
+        ranked = rank(fixture["prompt"], skills)
+        top = ranked[:top_k]
+        hit_at_1 += int(fixture["expected"] in ranked[:1])
+        hit_at_3 += int(fixture["expected"] in ranked[:3])
+        hit_at_k += int(fixture["expected"] in top)
+        if fixture["kind"] == "positive":
+            positive_coverage[fixture["expected"]] += 1
+        if fixture["kind"] == "negative":
+            owned_negative_coverage[fixture["expected"]] += 1
         reasons: list[str] = []
+        if fixture["expected"] not in skills:
+            reasons.append(f"unknown expected skill {fixture['expected']}")
         if fixture["expected"] not in top:
             reasons.append(f"expected {fixture['expected']} in {top}")
         for neighbour in fixture.get("also_top_three", []):
@@ -84,18 +105,31 @@ def main() -> int:
         for forbidden in fixture.get("forbidden", []):
             if forbidden in top:
                 reasons.append(f"forbidden {forbidden} appeared in {top}")
+        if fixture["kind"] == "negative" and not fixture.get("forbidden"):
+            reasons.append("owned negative needs at least one forbidden competing skill")
         if reasons:
-            failures.append(f"{fixture['id']}: {'; '.join(reasons)}")
-        else:
-            passed += 1
-    precision = passed / len(fixtures) if fixtures else 0.0
-    print(f"routing fixtures: {passed}/{len(fixtures)} passed; top_k={top_k}; precision={precision:.3f}")
+            failures.append(f"{fixture_id or '<missing-id>'}: {'; '.join(reasons)}")
+    precision_at_1 = hit_at_1 / len(fixtures) if fixtures else 0.0
+    precision_at_3 = hit_at_3 / len(fixtures) if fixtures else 0.0
+    precision_at_k = hit_at_k / len(fixtures) if fixtures else 0.0
+    passed = len(fixtures) - len(failures)
+    print(
+        f"routing fixtures: {passed}/{len(fixtures)} valid; "
+        f"expected-target P@1={hit_at_1}/{len(fixtures)} ({precision_at_1:.3f}); "
+        f"P@3={hit_at_3}/{len(fixtures)} ({precision_at_3:.3f}); "
+        f"required P@{top_k}={hit_at_k}/{len(fixtures)} ({precision_at_k:.3f})"
+    )
     print("fixture kinds: " + ", ".join(f"{key}={value}" for key, value in sorted(kinds.items())))
+    covered = sum(positive_coverage[name] >= 3 and owned_negative_coverage[name] >= 2 for name in skills)
+    print(
+        f"coverage: {covered}/{len(skills)} skills meet 3 positive + 2 owned-negative fixtures; "
+        f"owned negatives={sum(owned_negative_coverage.values())}"
+    )
     for failure in failures:
         print(f"- {failure}")
     expected_count = int(baseline["fixture_count"])
     required = float(baseline["required_precision"])
-    return 1 if len(fixtures) != expected_count or precision < required or failures else 0
+    return 1 if len(fixtures) != expected_count or precision_at_k < required or failures else 0
 
 
 if __name__ == "__main__":
