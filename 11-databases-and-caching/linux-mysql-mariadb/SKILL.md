@@ -13,27 +13,29 @@ metadata:
 
 ## Distro support
 
-Two-family skill. MySQL and MariaDB are wire- and config-compatible forks;
-where they differ is noted inline. The split that matters most is the **config
-drop-in directory** and the **service/unit name**. The body below uses the
-RHEL-family paths (grounded in RHEL 9 Recipes 37 & 39); Debian/Ubuntu paths are
-in the matrix and in
+Two-family skill for two distinct server products. Do not assume their package,
+configuration, service, or SQL behavior is interchangeable; verify the target
+product and release. The split that matters most is the **config drop-in
+directory** and the **service/unit name**. The body below uses the RHEL-family
+paths (grounded in RHEL 9 Recipes 37 & 39); Debian/Ubuntu paths are in the
+matrix and in
 [`references/install-and-secure.md`](references/install-and-secure.md).
 
 | Concept | Debian/Ubuntu | RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) |
 |---|---|---|
-| Install MariaDB | `apt install mariadb-server` | `dnf install mariadb-server` |
-| Install MySQL | `apt install mysql-server` (default-mysql-server) | `dnf install mysql-server` (App Stream, MySQL 8) |
-| Service (MySQL) | `mysql` | `mysqld` |
+| Install MariaDB | `apt install mariadb-server`; Debian's `default-mysql-server` resolves to MariaDB in the inspected Debian 13 package index | `dnf install mariadb-server` |
+| Install Oracle MySQL | Use Oracle's official APT repository only when it supports the target Debian/Ubuntu release; do not treat `default-mysql-server` as Oracle MySQL | `dnf install mysql-server` only where the target RHEL-family release provides the supported MySQL stream/package |
+| Service (Oracle MySQL) | `mysql` when installed from a supported Oracle MySQL package | `mysqld` when provided by the selected MySQL package |
 | Service (MariaDB) | `mariadb` | `mariadb` |
-| Main config | `/etc/mysql/my.cnf` → includes `mysql.conf.d/` and `mariadb.conf.d/` | `/etc/my.cnf` → includes `/etc/my.cnf.d/` |
-| Tuning drop-in | `/etc/mysql/mysql.conf.d/zz-tuning.cnf` | `/etc/my.cnf.d/zz-tuning.cnf` |
+| Main config | Product-specific includes under `/etc/mysql/`; inspect the installed server's include chain | Product-specific includes under `/etc/my.cnf.d/`; inspect the installed server's include chain |
+| Tuning drop-in | Use the include directory for the installed product and release; verify before editing | `/etc/my.cnf.d/zz-tuning.cnf` when included by the installed product |
 | Data dir | `/var/lib/mysql` | `/var/lib/mysql` |
 | Client config (root) | `/root/.my.cnf` or `mariadb`/`mysql` socket auth | `/root/.my.cnf` or socket auth |
 | Secure script | `mysql_secure_installation` | `mysql_secure_installation` |
 | Logs | `journalctl -u mysql` / `mariadb` | `journalctl -u mysqld` / `mariadb` |
 
-Both families ship `mysqldump`, `mysql`, and `mysqlbinlog` under the same names.
+The CLI command names depend on the selected product and package. Verify the
+installed client before relying on `mysql`, `mysqldump`, or `mysqlbinlog`.
 On RHEL 9, MySQL and MariaDB **conflict** — you cannot install both (RHEL 9
 Recipe 39). Use the `svc_name`/`pkg_install` helpers from `common.sh` in
 `sk-*` scripts so one script runs on both families; see
@@ -94,12 +96,16 @@ Without database access, return version-specific commands and label values unver
 6. Create the logical backup and capture binlog coordinates when PITR is required.
 7. Restore into an isolated instance, reconcile objects and row counts, and test binlog replay. On failure, stop, retain evidence, revert the drop-in or prior service state, and keep the last known-good backup.
 
+For the supported `sk-mysql-backup` workflow, private staging, encryption,
+retention behavior, and a repeatable second-instance restore check, follow
+[`references/backup-and-restore.md`](references/backup-and-restore.md).
+
 ## Quality Standards
 
 - Tune via a numbered drop-in file; keep the packaged config pristine.
 - Always `--single-transaction` for InnoDB dumps (consistent, non-locking).
 - A backup you have not test-restored is not a backup.
-- Evidence identifies engine/version, config source, checksum, restore target, and recovery result while redacting credentials.
+- Evidence identifies engine/version, config source, checksum, restore target, recovery duration, and query reconciliation while redacting credentials.
 
 ## Anti-Patterns
 
@@ -121,8 +127,8 @@ Without database access, return version-specific commands and label values unver
 | Artefact | Consumer | Acceptance condition |
 |---|---|---|
 | Database change record | DBA/operator | Names engine/version, drop-in, before/after values, validation, restart, and rollback. |
-| Backup set and manifest | Recovery operator | Dump is checksummed, protected as required, retained at the approved destination, and includes required objects. |
-| Restore/PITR report | Service owner | Scratch restore succeeds and the declared recovery point is demonstrated or marked unproven. |
+| Backup set and manifest | Recovery operator | Dump is checksummed, encrypted as required, retained at the approved destination, and includes required objects. |
+| Restore/PITR report | Service owner | A second isolated instance restore succeeds and the declared recovery point is demonstrated or marked unproven. |
 
 ## Evidence Produced
 

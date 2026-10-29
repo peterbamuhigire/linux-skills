@@ -1,0 +1,41 @@
+
+=== sk-mysql-backup — 56c309c7e408 ===
+  [INFO] timestamp:    20261029-034159-1
+  [INFO] backup dir:   /lab/dryrun-backups
+  [INFO] rclone:       :local:/lab/dryrun-remote
+  [INFO] local keep:   7 days
+  [INFO] remote keep:  7 days
+  → mkdir -m 0700 -p /lab/dryrun-backups
+  [INFO] DRY-RUN would create a private staging directory under /lab/dryrun-backups
+
+=== Step 1/5: Enumerating databases ===
+  [INFO] 2 databases to back up
+
+=== Step 2/5: Dumping databases ===
+  [INFO]   dumping mysql
+  [INFO]   (dry-run skipped)
+  [INFO]   dumping lab_app
+  [INFO]   (dry-run skipped)
+  [PASS] dumps complete
+
+=== Step 3/5: Compressing ===
+  [INFO] DRY-RUN would create /lab/dryrun-backups/mysql-backup_20261029-034159-1.tar.gz
+
+=== Step 4/5: Encrypting with GPG ===
+  [INFO] DRY-RUN would encrypt to /lab/dryrun-backups/mysql-backup_20261029-034159-1.tar.gz.gpg
+
+=== Step 5/5: Uploading to remote ===
+  [INFO] DRY-RUN would upload to :local:/lab/dryrun-remote
+
+=== Rotation: pruning old copies ===
+  [INFO] DRY-RUN would prune local > 7 days, remote > 7 days
+  [PASS] dry-run completed; no backup was written
+
+=============================================
+ SUMMARY
+=============================================
+  PASS: 2
+  WARN: 0
+  FAIL: 0
+  Score: 100%
+

@@ -1,0 +1,26 @@
+
+=== sk-mysql-backup — bc90c4dcf212 ===
+  [INFO] timestamp:    20261029-034508-1
+  [INFO] backup dir:   /lab/final-gpg-failure
+  [INFO] rclone:       :local:/lab/final-remote
+  [INFO] local keep:   7 days
+  [INFO] remote keep:  7 days
+
+=== Step 1/5: Enumerating databases ===
+  [INFO] 2 databases to back up
+
+=== Step 2/5: Dumping databases ===
+  [INFO]   dumping mysql
+  [INFO]   dumping lab_app
+  [INFO]   dumping all-databases (combined)
+  [PASS] dumps complete
+
+=== Step 3/5: Compressing ===
+  [PASS] archive: /lab/final-gpg-failure/.mysql-backup.PXPzsXSV/mysql-backup_20261029-034508-1.tar.gz (1.7M)
+
+=== Step 4/5: Encrypting with GPG ===
+controlled synthetic GPG failure
+FATAL: gpg encryption failed
+
+FAILURE: sk-mysql-backup exited 1 at line 1
+  last command: exit "$code"

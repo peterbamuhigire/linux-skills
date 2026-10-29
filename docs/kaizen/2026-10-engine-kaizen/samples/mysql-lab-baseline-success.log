@@ -1,0 +1,48 @@
+scripts/sk-mysql-backup.sh: line 171: hostname: command not found
+
+=== sk-mysql-backup —  ===
+  [INFO] timestamp:    20261029-033132
+  [INFO] backup dir:   /lab/baseline-backups
+  [INFO] rclone:       :local:/lab/baseline-remote
+  [INFO] local keep:   7 days
+  [INFO] remote keep:  7 days
+
+=== Step 1/5: Enumerating databases ===
+  [INFO] 2 databases to back up
+
+=== Step 2/5: Dumping databases ===
+  [INFO]   dumping mysql
+  [INFO]   dumping lab_app
+  [INFO]   dumping all-databases (combined)
+  [PASS] dumps complete
+
+=== Step 3/5: Compressing ===
+  [PASS] archive: /lab/baseline-backups/mysql-backup_20261029-033132.tar.gz (1.7M)
+
+=== Step 4/5: Encrypting with GPG ===
+gpg: directory '/root/.gnupg' created
+gpg: keybox '/root/.gnupg/pubring.kbx' created
+  [PASS] encrypted: /lab/baseline-backups/mysql-backup_20261029-033132.tar.gz.gpg
+
+=== Step 5/5: Uploading to remote ===
+2026/10/29 03:31:34 NOTICE: Config file "/root/.config/rclone/rclone.conf" not found - using defaults
+2026/10/29 03:31:34 INFO  : mysql-backup_20261029-033132.tar.gz.gpg: Copied (new)
+2026/10/29 03:31:34 INFO  : 
+Transferred:   	    1.625 MiB / 1.625 MiB, 100%, 0 B/s, ETA -
+Transferred:            1 / 1, 100%
+Elapsed time:         0.0s
+
+  [PASS] uploaded to :local:/lab/baseline-remote
+
+=== Rotation: pruning old copies ===
+2026/10/29 03:31:34 NOTICE: Config file "/root/.config/rclone/rclone.conf" not found - using defaults
+
+=============================================
+ SUMMARY
+=============================================
+  PASS: 4
+  WARN: 0
+  FAIL: 0
+  Score: 100%
+
+  [PASS] backup completed successfully

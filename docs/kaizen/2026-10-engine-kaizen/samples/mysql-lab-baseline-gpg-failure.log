@@ -1,0 +1,27 @@
+scripts/sk-mysql-backup.sh: line 171: hostname: command not found
+
+=== sk-mysql-backup —  ===
+  [INFO] timestamp:    20261029-033143
+  [INFO] backup dir:   /lab/failure-backups
+  [INFO] rclone:       :local:/lab/failure-remote
+  [INFO] local keep:   7 days
+  [INFO] remote keep:  7 days
+
+=== Step 1/5: Enumerating databases ===
+  [INFO] 2 databases to back up
+
+=== Step 2/5: Dumping databases ===
+  [INFO]   dumping mysql
+  [INFO]   dumping lab_app
+  [INFO]   dumping all-databases (combined)
+  [PASS] dumps complete
+
+=== Step 3/5: Compressing ===
+  [PASS] archive: /lab/failure-backups/mysql-backup_20261029-033143.tar.gz (1.7M)
+
+=== Step 4/5: Encrypting with GPG ===
+controlled synthetic GPG failure
+FATAL: gpg encryption failed
+
+FAILURE: sk-mysql-backup exited 1 at line 1
+  last command: exit "$code"

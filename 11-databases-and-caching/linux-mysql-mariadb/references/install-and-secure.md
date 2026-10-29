@@ -1,21 +1,22 @@
 # MySQL / MariaDB: install & secure (both families)
 
-Install/secure steps are grounded in RHEL 9 for SysAdmins Recipes 37 (MySQL),
-38 (PostgreSQL — separate skill), and 39 (MariaDB). MySQL and MariaDB are forks
-of one codebase; `mysql_secure_installation` and the client tools are shared.
+MySQL and MariaDB are distinct server products. Verify package, service,
+configuration include paths, client tools, authentication defaults, and
+hardening command against the selected product and release.
 
 ## RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle)
 
-RHEL 9 ships **MySQL 8** and **MariaDB 10.5** in the Application Stream. They
-**conflict** — install one, not both.
+RHEL 9 package streams vary by minor release. RHEL 9.6 documentation lists
+MySQL 8.4; check the target's enabled AppStream and lifecycle before installing.
+MySQL and MariaDB packages conflict on RHEL 9 — install one, not both. See the
+[RHEL 9.6 release notes](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/pdf/9.6_release_notes/distribution).
 
 ```bash
-# MySQL 8 (Recipe 37)
+# MySQL (confirm the supported stream and package for this RHEL minor release)
 sudo dnf install mysql-server
 sudo systemctl enable --now mysqld.service
 
-# MariaDB 10.5 (Recipe 39)
-sudo dnf update
+# MariaDB (confirm the supported stream and package for this RHEL minor release)
 sudo dnf install mariadb-server mariadb
 sudo systemctl enable --now mariadb.service
 ```
@@ -27,24 +28,24 @@ sudo apt update
 sudo apt install mariadb-server         # MariaDB (Debian default)
 sudo systemctl enable --now mariadb
 
-# — or — Oracle MySQL
+# Oracle MySQL: first add Oracle's official APT repository if it supports this
+# Debian/Ubuntu release; follow Oracle's current repository instructions.
 sudo apt install mysql-server
 sudo systemctl enable --now mysql        # NOTE: unit is 'mysql', not 'mysqld'
 ```
 
-## Secure the install (both families, Recipe 37/39)
+## Secure the install
 
-`mysql_secure_installation` walks you through: set/validate the root password,
-remove anonymous users, disable remote root login, drop the `test` database,
-and reload privileges.
+Use the hardening tool supplied by the selected server package. Verify its
+name and supported options before invoking it.
 
 ```bash
 sudo mysql_secure_installation
 ```
 
-On modern MariaDB / MySQL the root account uses **socket (unix_socket / auth_socket)
-authentication** by default — `sudo mysql` works with no password. Keep socket
-auth for root; create a separate password account for apps.
+Do not assume the root authentication plugin or socket behavior. Inspect the
+installed server's account configuration and preserve its approved
+authentication policy; create a separate least-privilege account for apps.
 
 ## Create a least-privilege application user
 
@@ -84,3 +85,5 @@ By default the server binds to localhost. To accept remote connections, set
 `bind-address = 0.0.0.0` (or a specific NIC) in a tuning drop-in, restart, open
 the firewall (port 3306) via the `linux-firewall-ssl` skill, and grant the app
 user from the specific client host — never from `%`.
+
+<!-- Author: Peter Bamuhigire <techguypeter.com> +256784464178 -->
