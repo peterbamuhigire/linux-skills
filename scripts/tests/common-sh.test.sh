@@ -20,6 +20,18 @@ SK_LIB="${_TEST_DIR}/../lib/common.sh"
 # shellcheck source=/dev/null
 source "$SK_LIB"
 
+# Keep library audit writes and test scratch data inside a private fixture.
+TEST_FIXTURE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/common-sh-test.XXXXXXXX")"
+mkdir -m 0700 "$TEST_FIXTURE_DIR/audit"
+SK_AUDIT_DIR="$TEST_FIXTURE_DIR/audit"
+# library reads the configured audit path
+# shellcheck disable=SC2034
+SK_AUDIT_LOG="$SK_AUDIT_DIR/${SK_SCRIPT_NAME}.log"
+# called through sk_on_exit callback
+# shellcheck disable=SC2317
+test_fixture_cleanup() { rm -rf -- "$TEST_FIXTURE_DIR"; }
+sk_on_exit test_fixture_cleanup
+
 # -----------------------------------------------------------------------------
 # Test 1: output primitives increment counters correctly
 # -----------------------------------------------------------------------------
@@ -63,8 +75,10 @@ fi
 # -----------------------------------------------------------------------------
 # Test 4: safe_tempfile registers cleanup even via command substitution
 # (regression: the array append happens in the $(...) subshell and is lost;
-#  registration must survive via the PID-derived registry file)
+#  registration must survive via the private registry file)
 # -----------------------------------------------------------------------------
+# library cleanup reads this array
+# shellcheck disable=SC2034
 SK_CLEANUP_PATHS=()
 rm -f "$(_sk_registry)" 2>/dev/null || true
 tmp=$(safe_tempfile test4)
@@ -73,10 +87,28 @@ if [[ -f "$tmp" ]]; then
 else
     fail_t "safe_tempfile did not create the file"
 fi
-if grep -qxF "$tmp" "$(_sk_registry)" 2>/dev/null; then
+if grep -zqxF "$tmp" "$(_sk_registry)" 2>/dev/null; then
     pass_t "safe_tempfile registered $tmp despite command-substitution subshell"
 else
     fail_t "safe_tempfile did NOT register $tmp in the cleanup registry"
+fi
+
+# NUL-delimited registry records keep newline characters inside valid paths.
+newline_tmp="$(safe_tempfile $'test4\nprefix')"
+newline_registered=0
+while IFS= read -r -d '' registered_path; do
+    [[ "$registered_path" == "$newline_tmp" ]] && newline_registered=1
+done < "$(_sk_registry)"
+if [[ -f "$newline_tmp" && "$newline_registered" == "1" ]]; then
+    pass_t "cleanup registry preserves paths containing newlines"
+else
+    fail_t "cleanup registry corrupted a newline-containing path"
+fi
+_sk_remove_registered
+if [[ ! -e "$newline_tmp" ]]; then
+    pass_t "cleanup removes newline-containing temporary paths"
+else
+    fail_t "cleanup did not remove newline-containing temporary path"
 fi
 # Exercise the real cleanup path
 _sk_remove_registered
@@ -84,6 +116,58 @@ if [[ ! -f "$tmp" ]]; then
     pass_t "_sk_remove_registered removed $tmp"
 else
     fail_t "cleanup did not remove $tmp"
+fi
+
+# The registry must not follow a predictable shared-temp symlink to attacker
+# controlled cleanup entries.
+victim="$TEST_FIXTURE_DIR/keep-me"
+printf 'must survive\n' > "$victim"
+poison="$TEST_FIXTURE_DIR/poisoned-registry"
+printf '%s\n' "$victim" > "$poison"
+original_tmpdir="${TMPDIR:-/tmp}"
+export TMPDIR="$TEST_FIXTURE_DIR"
+predictable_registry="$TMPDIR/sk-cleanup.$$"
+ln -s "$poison" "$predictable_registry" || exit 1
+tmp=$(safe_tempfile test4-poison)
+_sk_remove_registered
+if [[ -f "$victim" ]] && ! grep -qxF "$tmp" "$poison"; then
+    pass_t "private registry ignores a planted predictable-registry symlink"
+else
+    fail_t "cleanup trusted a planted predictable-registry symlink"
+fi
+rm -f "$predictable_registry"
+export TMPDIR="$original_tmpdir"
+registry_dir="${SK_CLEANUP_REGISTRY_DIR:-}"
+registry_mode="$(stat -c '%a' "$registry_dir" 2>/dev/null || true)"
+if [[ -n "$registry_dir" && "$registry_mode" == "700" ]]; then
+    pass_t "cleanup registry is stored in a mode-700 private directory"
+else
+    fail_t "cleanup registry directory is not private (mode=$registry_mode)"
+fi
+source_failure_output="$(TMPDIR="$poison" bash -c 'source "$1"; printf "source continued\\n"' _ "$SK_LIB" 2>&1)"
+source_failure_status=$?
+if (( source_failure_status != 0 )) && [[ "$source_failure_output" == *"cannot create private cleanup registry directory"* ]] && [[ "$source_failure_output" != *"source continued"* ]]; then
+    pass_t "common.sh aborts if it cannot create the private cleanup registry"
+else
+    fail_t "common.sh continued after private registry creation failed"
+fi
+
+# Reject a shared writable temp parent even when a leaf directory is private.
+unsafe_base="$TEST_FIXTURE_DIR/unsafe-temp"
+mkdir -m 0777 "$unsafe_base"
+chmod 0777 "$unsafe_base"
+mkdir -m 0700 "$unsafe_base/private"
+if TMPDIR="$unsafe_base/private" bash -c 'source "$1"' _ "$SK_LIB" >/dev/null 2>&1; then
+    fail_t "common.sh accepted untrusted writable TMPDIR ancestry"
+else
+    pass_t "common.sh rejects writable non-sticky TMPDIR ancestry"
+fi
+# A later TMPDIR override cannot redirect safe_tempfile away from the checked base.
+checked_temp=$(TMPDIR="$unsafe_base" safe_tempfile verified-base)
+if [[ "$checked_temp" == "$SK_TEMP_BASE/"* && -f "$checked_temp" ]]; then
+    pass_t "safe_tempfile stays inside the validated temporary base"
+else
+    fail_t "safe_tempfile trusted a later TMPDIR override"
 fi
 
 # -----------------------------------------------------------------------------
@@ -105,6 +189,53 @@ else
     fail_t "atomic_write mode wrong: $mode"
 fi
 rm -f "$target"
+
+# A planted legacy .new symlink must not be followed by atomic_write.
+target="$TEST_FIXTURE_DIR/atomic-target"
+victim="$TEST_FIXTURE_DIR/atomic-victim"
+printf 'protected\n' > "$victim"
+ln -s "$victim" "$target.new"
+printf 'safe content\n' | atomic_write "$target"
+if [[ "$(cat "$target")" == "safe content" && "$(cat "$victim")" == "protected" ]]; then
+    pass_t "atomic_write uses a unique temp and ignores a planted .new symlink"
+else
+    fail_t "atomic_write followed a planted .new symlink"
+fi
+rm -f "$target" "$target.new"
+
+# Refuse symlink targets, preserving both the link and its referent.
+target="$TEST_FIXTURE_DIR/atomic-link"
+ln -s "$victim" "$target"
+if ( printf 'overwrite\n' | atomic_write "$target" >/dev/null 2>&1 ); then
+    fail_t "atomic_write should reject symlink targets"
+elif [[ -L "$target" && "$(cat "$victim")" == "protected" ]]; then
+    pass_t "atomic_write rejects symlink targets without changing referents"
+else
+    fail_t "atomic_write changed or removed a symlink target"
+fi
+rm -f "$target"
+
+# Existing-file metadata lookup must fail closed, without changing content/mode.
+target="$TEST_FIXTURE_DIR/stat-failure"
+printf 'private\n' > "$target"
+chmod 0600 "$target"
+# Failure-injection function is called by the sourced library.
+# shellcheck disable=SC2317
+if ( stat() { return 1; }; printf 'replacement\n' | atomic_write "$target" >/dev/null 2>&1 ); then
+    fail_t "atomic_write accepted failed metadata lookup"
+elif [[ "$(cat "$target")" == "private" && "$(stat -c '%a' "$target")" == "600" ]]; then
+    pass_t "atomic_write preserves target when metadata lookup fails"
+else
+    fail_t "atomic_write changed target after metadata lookup failure"
+fi
+# No privilege is needed to keep the owner/group already on the sibling temp.
+# Failure-injection function is called by the sourced library.
+# shellcheck disable=SC2317
+if ( chown() { return 1; }; printf 'updated\n' | atomic_write "$target" >/dev/null 2>&1 ); then
+    pass_t "atomic_write skips redundant chown for an already matching owner"
+else
+    fail_t "atomic_write required redundant chown"
+fi
 
 # -----------------------------------------------------------------------------
 # Test 6: backup_file creates the backup
@@ -219,6 +350,8 @@ fi
 # Test 9: require_flag under --yes with empty var aborts
 # -----------------------------------------------------------------------------
 YES=1
+# require_flag reads the variable indirectly
+# shellcheck disable=SC2034
 DOMAIN=""
 if ( require_flag DOMAIN 2>/dev/null ); then
     fail_t "require_flag should have failed with empty DOMAIN under --yes"

@@ -202,7 +202,7 @@ source /usr/local/lib/linux-skills/common.sh
 |---|---|
 | `safe_tempfile [prefix]` | Creates a temp file with `mktemp`, registers it for cleanup on EXIT/INT/TERM trap. Returns the path. |
 | `safe_tempdir [prefix]` | Same, for directories. |
-| `atomic_write <target>` | Reads stdin, writes to `<target>.new` in the same directory, then `mv` on success. Preserves permissions and ownership. |
+| `atomic_write <target>` | Reads stdin into a unique sibling temporary file, then renames on success. Rejects symlink/non-regular targets and fails closed on metadata errors. Preserves mode/ownership; custom ACLs, xattrs and SELinux labels need a separate validated procedure. |
 | `backup_file <path>` | Copies `<path>` to `<path>.bak-YYYYMMDD-HHMMSS` before mutating. Prints the backup path. |
 
 **Flag parsing:**

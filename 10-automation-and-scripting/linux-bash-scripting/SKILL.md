@@ -1,6 +1,6 @@
 ---
 name: linux-bash-scripting
-description: "Use when writing or reviewing portable sk-* Bash scripts for this engine, including common.sh primitives, flags, dry runs, and safety gates; use linux-repo-sync for Git-update behaviour and not for one-off commands."
+description: "Use when writing or reviewing portable sk-* Bash scripts for this engine, including common.sh primitives, flags, preview mode, and safety gates; use linux-repo-sync for Git-update behaviour and not for one-off commands."
 license: MIT
 metadata:
   portable: true
@@ -237,7 +237,7 @@ Always use these. Never roll your own `echo -e "\033[31m..."`.
 |---|---|
 | `safe_tempfile [prefix]` | `mktemp` + trap cleanup. Returns path. |
 | `safe_tempdir [prefix]` | As above, directory. |
-| `atomic_write <target>` | Reads stdin, writes `<target>.new`, `mv` on success. Preserves perms/owner. |
+| `atomic_write <target>` | Reads stdin into a unique sibling temporary file, then renames. Rejects symlink/non-regular targets and metadata errors; preserves mode/owner. |
 | `backup_file <path>` | Copies to `<path>.bak-YYYYMMDD-HHMMSS`. Prints backup path. |
 
 ### Flag parsing
@@ -317,7 +317,7 @@ available shell and engine validators before merging.
 4. **`IFS= read -r`** — every `read`, every time.
 5. **Parameter expansion over sed/awk** — `${var##*/}` for basename,
    `${var%.*}` for removing a suffix. Faster and safer than subprocessing.
-6. **Atomic file edits** — write to `$target.new`, then `mv`. Never `> file`
+6. **Atomic file edits** — use a unique sibling temporary file, then rename. Never use a predictable `.new` path or `> file`
    on anything important. Use `atomic_write` or `backup_file` first.
 7. **Safe temp files** — `safe_tempfile`, which auto-registers a cleanup trap.
 8. **Validate with `case`, not sprawling regex** — from *Pro Bash*. Easier to

@@ -15,6 +15,8 @@
 
 # Guard against double sourcing
 if [[ -n "${SK_COMMON_LOADED:-}" ]]; then
+    # fallback when invoked rather than sourced
+    # shellcheck disable=SC2317
     return 0 2>/dev/null || exit 0
 fi
 SK_COMMON_LOADED=1
@@ -47,6 +49,37 @@ SK_AUDIT_LOG="${SK_AUDIT_DIR}/${SK_SCRIPT_NAME}.log"
 # Cleanup registry — populated by safe_tempfile/safe_tempdir/sk_on_exit
 SK_CLEANUP_PATHS=()
 SK_CLEANUP_FUNCS=()
+
+# Resolve and validate the temporary base and every ancestor before trusting it.
+# A private child is not safe if an untrusted parent owner can replace it.
+_sk_trusted_temp_base() {
+    local candidate owner mode
+    candidate="$(readlink -f -- "${TMPDIR:-/tmp}")" || return 1
+    [[ -d "$candidate" ]] || return 1
+    SK_TEMP_BASE="$candidate"
+    while :; do
+        owner="$(stat -c '%u' -- "$candidate")" || return 1
+        mode="$(stat -c '%a' -- "$candidate")" || return 1
+        [[ "$owner" == "0" || "$owner" == "$EUID" ]] || return 1
+        [[ "$mode" =~ ^[0-7]+$ ]] || return 1
+        # Shared writable directories must have the sticky bit. Root/current
+        # owner checks above prevent a hostile parent owner bypassing sticky.
+        if (( (8#$mode & 0022) != 0 && (8#$mode & 01000) == 0 )); then
+            return 1
+        fi
+        [[ "$candidate" == "/" ]] && break
+        candidate="$(dirname -- "$candidate")"
+    done
+}
+if ! _sk_trusted_temp_base; then
+    printf 'FATAL: cannot create private cleanup registry directory: untrusted TMPDIR ancestry\n' >&2
+    exit 1
+fi
+readonly SK_TEMP_BASE
+SK_CLEANUP_REGISTRY_DIR="$(umask 077; mktemp -d "${SK_TEMP_BASE}/sk-cleanup.XXXXXXXX")" || {
+    printf 'FATAL: cannot create private cleanup registry directory\n' >&2
+    exit 1
+}
 
 # Distro detection state — populated lazily by detect_distro
 SK_DISTRO_ID=""       # raw ID from /etc/os-release (ubuntu, debian, fedora, rhel, ...)
@@ -126,6 +159,8 @@ log() {
 
 _sk_log_append() {
     # Append to $LOG_FILE if set, never fails
+    # logging failures intentionally do not abort
+    # shellcheck disable=SC2015
     [[ -n "$LOG_FILE" ]] && printf '%s %s\n' "$(date -Iseconds)" "$*" >> "$LOG_FILE" 2>/dev/null || true
 }
 
@@ -408,7 +443,7 @@ confirm_destructive() {
         return 0
     fi
     printf "\n  ${SK_YELLOW}${SK_BOLD}WARNING:${SK_NC} %s\n" "$msg" >&2
-    printf "  Type the word ${SK_BOLD}yes${SK_NC} to continue (anything else aborts): " >&2
+    printf "  Type the word %syes%s to continue (anything else aborts): " "$SK_BOLD" "$SK_NC" >&2
     local ans
     IFS= read -r ans
     if [[ "$ans" == "yes" ]]; then
@@ -490,12 +525,9 @@ select_one() {
 # =============================================================================
 
 _sk_registry() {
-    # Path to this run's temp-cleanup registry file. Derived from $$ (the PID of
-    # the invoking shell) which is STABLE inside command-substitution subshells,
-    # so a path registered by `TMP=$(safe_tempfile)` is still visible to the
-    # parent's cleanup trap. Without this, the array append below happens in the
-    # subshell and is lost — cleanup would silently never fire.
-    printf '%s/sk-cleanup.%s' "${TMPDIR:-/tmp}" "$$"
+    # The private directory's random name is inherited by command-substitution
+    # subshells, so `TMP=$(safe_tempfile)` still registers in the parent run.
+    printf '%s/paths' "$SK_CLEANUP_REGISTRY_DIR"
 }
 
 _sk_register_path() {
@@ -503,7 +535,7 @@ _sk_register_path() {
     # the parent shell) and the registry file (survives command substitution).
     local p="$1"
     SK_CLEANUP_PATHS+=("$p")
-    printf '%s\n' "$p" >> "$(_sk_registry)" 2>/dev/null || true
+    printf '%s\0' "$p" >> "$(_sk_registry)" 2>/dev/null || true
 }
 
 safe_tempfile() {
@@ -511,7 +543,7 @@ safe_tempfile() {
     # Creates a temp file, registers it for cleanup, returns the path on stdout.
     local prefix="${1:-sk}"
     local tmp
-    tmp="$(mktemp -t "${prefix}.XXXXXXXX")" || die "mktemp failed" 1
+    tmp="$(mktemp --tmpdir="$SK_TEMP_BASE" "${prefix}.XXXXXXXX")" || die "mktemp failed" 1
     _sk_register_path "$tmp"
     printf '%s\n' "$tmp"
 }
@@ -520,39 +552,56 @@ safe_tempdir() {
     # safe_tempdir [prefix]
     local prefix="${1:-sk}"
     local tmp
-    tmp="$(mktemp -d -t "${prefix}.XXXXXXXX")" || die "mktemp -d failed" 1
+    tmp="$(mktemp -d --tmpdir="$SK_TEMP_BASE" "${prefix}.XXXXXXXX")" || die "mktemp -d failed" 1
     _sk_register_path "$tmp"
     printf '%s\n' "$tmp"
 }
 
 atomic_write() {
     # atomic_write <target>
-    # Reads stdin, writes to <target>.new in the same dir, mvs on success.
-    # Preserves permissions/owner of the existing target.
+    # Reads stdin to a unique sibling temp file, then renames on success.
+    # Preserves permissions/owner of a regular existing target; rejects symlinks.
     local target="$1"
     local dir
     dir="$(dirname "$target")"
-    local tmp="${target}.new"
+    local tmp=""
+    local base="${target##*/}"
+
+    [[ -n "$target" && -n "$base" ]] || die "atomic_write needs a file target" 2
+
+    if [[ -L "$target" ]]; then
+        die "atomic_write refuses symlink target: $target" 1
+    fi
+    if [[ -e "$target" && ! -f "$target" ]]; then
+        die "atomic_write target is not a regular file: $target" 1
+    fi
 
     # Preserve permissions/owner of existing target if it exists
     local mode="" owner="" group=""
     if [[ -f "$target" ]]; then
-        mode="$(stat -c '%a' "$target" 2>/dev/null)" || true
-        owner="$(stat -c '%u' "$target" 2>/dev/null)" || true
-        group="$(stat -c '%g' "$target" 2>/dev/null)" || true
+        mode="$(stat -c '%a' -- "$target")" || die "cannot read mode of $target" 1
+        owner="$(stat -c '%u' -- "$target")" || die "cannot read owner of $target" 1
+        group="$(stat -c '%g' -- "$target")" || die "cannot read group of $target" 1
     fi
 
     mkdir -p "$dir" || die "cannot create dir $dir" 1
+    tmp="$(mktemp "${dir}/.${base}.new.XXXXXXXX")" || die "cannot create temporary file for $target" 1
+    _sk_register_path "$tmp"
     cat > "$tmp" || die "write failed: $tmp" 1
 
     if [[ -n "$mode" ]]; then
-        chmod "$mode" "$tmp"
-        chown "${owner}:${group}" "$tmp"
+        local temp_owner temp_group
+        temp_owner="$(stat -c '%u' -- "$tmp")" || die "cannot read temporary owner" 1
+        temp_group="$(stat -c '%g' -- "$tmp")" || die "cannot read temporary group" 1
+        if [[ "$owner:$group" != "$temp_owner:$temp_group" ]]; then
+            chown "${owner}:${group}" "$tmp" || die "cannot preserve ownership on $target" 1
+        fi
+        chmod "$mode" "$tmp" || die "cannot preserve mode on $target" 1
     else
-        chmod 0644 "$tmp"
+        chmod 0644 "$tmp" || die "cannot set mode on $target" 1
     fi
 
-    mv -f "$tmp" "$target" || die "atomic mv failed: $tmp -> $target" 1
+    mv -fT -- "$tmp" "$target" || die "atomic mv failed: $tmp -> $target" 1
     _sk_audit "atomic_write $target"
 }
 
@@ -561,7 +610,8 @@ backup_file() {
     # Copies <path> to <path>.bak-YYYYMMDD-HHMMSS. Prints the backup path.
     local path="$1"
     [[ ! -e "$path" ]] && return 0
-    local bak="${path}.bak-$(date +%Y%m%d-%H%M%S)"
+    local bak
+    bak="${path}.bak-$(date +%Y%m%d-%H%M%S)"
     cp -a "$path" "$bak" || die "backup_file failed: $path -> $bak" 1
     printf '%s\n' "$bak"
     _sk_audit "backup_file $path -> $bak"
@@ -689,13 +739,17 @@ _sk_remove_registered() {
     local reg p
     reg="$(_sk_registry)"
     if [[ -f "$reg" ]]; then
-        while IFS= read -r p; do
-            [[ -n "$p" && -e "$p" ]] && rm -rf "$p" 2>/dev/null || true
+        while IFS= read -r -d '' p; do
+            if [[ -n "$p" && ( -e "$p" || -L "$p" ) ]]; then
+                rm -rf -- "$p" 2>/dev/null || true
+            fi
         done < "$reg"
         rm -f "$reg" 2>/dev/null || true
     fi
     for p in "${SK_CLEANUP_PATHS[@]}"; do
-        [[ -e "$p" ]] && rm -rf "$p" 2>/dev/null || true
+        if [[ -e "$p" || -L "$p" ]]; then
+            rm -rf -- "$p" 2>/dev/null || true
+        fi
     done
 }
 
@@ -714,6 +768,10 @@ _sk_cleanup() {
             "$fn" "$exit_code" 2>/dev/null || true
         fi
     done
+
+    if [[ -n "$SK_CLEANUP_REGISTRY_DIR" ]]; then
+        rmdir -- "$SK_CLEANUP_REGISTRY_DIR" 2>/dev/null || true
+    fi
 
     if (( exit_code != 0 )); then
         # On non-zero exit, print a failure banner
@@ -735,9 +793,9 @@ trap _sk_cleanup EXIT INT TERM
 
 print_summary() {
     # print_summary — prints PASS/WARN/FAIL counts and a percentage score.
-    printf "\n${SK_BOLD}=============================================\n"
+    printf "\n%s=============================================\n" "$SK_BOLD"
     printf " SUMMARY\n"
-    printf "=============================================${SK_NC}\n"
+    printf "=============================================%s\n" "$SK_NC"
     printf "  ${SK_GREEN}PASS: %d${SK_NC}\n" "$PASS_COUNT"
     printf "  ${SK_YELLOW}WARN: %d${SK_NC}\n" "$WARN_COUNT"
     printf "  ${SK_RED}FAIL: %d${SK_NC}\n" "$FAIL_COUNT"

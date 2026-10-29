@@ -269,8 +269,10 @@ echo "content" > "$TMP"
 # ... no manual rm needed; cleanup trap handles it
 ```
 
-Creates a file in `/tmp` via `mktemp`, registers it in the cleanup trap,
-returns the path.
+Creates a file in `${TMPDIR:-/tmp}` via `mktemp`, registers it in the cleanup
+trap, and returns the path. The registry is held in a randomly named mode-`0700`
+directory so command-substitution calls can be cleaned up without trusting a
+predictable path in shared temporary storage.
 
 ### `safe_tempdir [prefix]`
 
@@ -282,10 +284,20 @@ Same, for directories.
 generate_config | atomic_write /etc/nginx/sites-available/example.conf
 ```
 
-Reads stdin, writes it to `<target>.new` in the same directory (so the mv is
-same-filesystem = atomic), then `mv` on success. Preserves existing
-permissions and ownership of the target. If the target doesn't exist, uses
-`0644 root:root`.
+Reads stdin to a uniquely named temporary file in the target's directory (so
+the rename stays on the same filesystem), then renames on success. Preserves
+permissions and ownership of an existing regular file. Refuses symlink and
+non-regular targets. If the target doesn't exist, uses mode `0644` and keeps
+the effective user running the script as owner.
+
+**Metadata boundary:** this helper preserves Unix mode and owner/group only.
+Do not use it to replace files whose ACLs, extended attributes, capabilities or
+custom SELinux labels matter without a separate tested preservation/relabel
+procedure. Those controls require before/after evidence on the target filesystem.
+The parent directory must be trusted and not writable by an adversary; this is
+not a defence against an attacker controlling path ancestors. Metadata lookup
+failure leaves the original target unchanged. Redundant ownership changes are
+skipped for an already matching owner/group.
 
 ### `backup_file <path>`
 
@@ -363,3 +375,13 @@ Every script exits with one of:
 
 Other codes are reserved. If a script needs a custom code, document it in
 `usage()`.
+
+### Temporary-directory trust boundary
+
+At source time, the library resolves `TMPDIR` (default `/tmp`) and requires every
+ancestor to be owned by root or the effective user. Group/world-writable
+ancestors require the sticky bit. Invalid or untrusted ancestry aborts before
+registry creation. Safe temporary helpers retain the validated canonical base;
+a later `TMPDIR` override cannot redirect them. This prevents a less-privileged
+parent owner replacing a privileged process's random private registry directory.
+Root/current-user malicious code is outside this boundary.
