@@ -1,6 +1,12 @@
 {
   "name": "linux",
+  "description": "Linux system administration workflows for provisioning, security, networking, databases, containers, and recovery.",
   "version": "1.1.0",
+  "author": {
+    "name": "Peter Bamuhigire",
+    "email": "peter.bamuhigire@gmail.com",
+    "url": "https://techguypeter.com"
+  },
   "skills": [
     "./01-provisioning-and-bootstrap/linux-cloud-init/",
     "./01-provisioning-and-bootstrap/linux-config-management/",

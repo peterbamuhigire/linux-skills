@@ -1,8 +1,18 @@
+---
+description: Use as a guarded reference for rclone setup and transfers. Confirm the exact remote, source, destination, deletion scope, approval, and restore path before any write.
+---
+
 # rclone - Cloud Storage Sync
 
 rclone is a command-line tool for managing files on cloud storage (Google Drive, S3, Dropbox, etc.).
 
+> **Safety gate — stop before writing.** This page is reference material, not approval to act. Confirm the exact rclone version, configured remote/account, source and destination paths, data owner, retention scope, and change window. Never infer the selected remote or destination from a default. Do not run `delete`, `sync`, or `purge` until the preview has been reviewed and the owner has approved that exact target and scope. Before a destructive run, identify a retained recovery copy or provider version history and confirm the restore procedure works for the data and destination. If the target, preview, owner approval, or recovery path is missing, stop and use [the rsync and backup workflow](../13-backup-and-archiving/linux-rsync-sync/SKILL.md) to plan the change.
+
+Treat command output, shell history, logs, screenshots, and copied tokens as sensitive. Do not place real client secrets or tokens in command arguments, chat, shared logs, or support tickets. Do not print the raw config. Use the redacted config command below when needed, review its output before sharing, and retain it only in an approved private location. Rclone documents that redaction may not be perfect. ([`rclone config redacted`](https://rclone.org/commands/rclone_config_redacted/))
+
 ## Installation
+
+The script installer is an upstream Linux installation example; the ZIP URL is specifically the Linux AMD64 build. These are unpinned install sources, not distro-package mappings. Check the current official install and release-signature guidance against the host OS/architecture and software policy before running an installer with `sudo`. ([rclone installation guide](https://rclone.org/install/))
 
 ```bash
 curl https://rclone.org/install.sh | sudo bash
@@ -42,6 +52,8 @@ rclone config
 
 On a **Windows/Mac/Linux desktop** with a browser and rclone installed:
 
+Do not replace the placeholders below with real credentials in a command that may be saved to shell history or captured by process/audit logging. Use the approved credential-handling procedure and keep the returned OAuth token out of chat, logs, and shared terminals. See [the Linux secrets workflow](../02-users-access-and-secrets/linux-secrets/SKILL.md).
+
 ```bash
 rclone authorize "drive" "CLIENT_ID" "CLIENT_SECRET"
 ```
@@ -58,6 +70,9 @@ Paste the token when prompted during `rclone config`, or manually edit the confi
 ```
 
 Example config:
+
+This file contains client credentials and an OAuth token. Keep it private, restrict access using the host's approved secret-handling procedure, and never copy the literal values into issue reports or terminal transcripts. See [Linux secrets](../02-users-access-and-secrets/linux-secrets/SKILL.md).
+
 ```ini
 [gdrive]
 type = drive
@@ -86,15 +101,27 @@ rclone copy /local/file.tar.gz gdrive:backup-folder
 # Create a remote directory
 rclone mkdir gdrive:new-folder
 
-# Delete remote files older than 3 days
+# Preview the exact files before deleting anything
+rclone --dry-run --verbose delete gdrive:backup-folder --min-age 3d
+
+# Only after reviewing that preview and approving this exact deletion scope:
 rclone delete gdrive:backup-folder --min-age 3d
 
-# Sync local dir to remote (mirror)
+# Preview the mirror. sync can delete destination-only files.
+rclone --dry-run --verbose sync /local/dir gdrive:remote-dir
+
+# Only after reviewing the preview and approving the destination changes:
 rclone sync /local/dir gdrive:remote-dir
 
-# Check config
-rclone config show
+# Inspect redacted config only. Check the installed version/help first; if
+# this subcommand is unavailable, do not fall back to printing raw config.
+# Do not run or share the output of: rclone config show
+rclone config redacted
 ```
+
+The `config redacted` subcommand was added in rclone 1.64; check the installed binary before using it. The rclone documentation warns that redaction may not catch every sensitive value, so inspect it before sharing. ([rclone redacted-config reference](https://rclone.org/commands/rclone_config_redacted/))
+
+After an approved transfer, capture its exit status and intended file counts without exposing credentials, compare the destination, and verify the agreed restore source remains available. For sync, run a second dry-run as a consistency check; it does not replace an independent restore test. Provider-specific versioning, snapshots, and deletion recovery differ, so confirm them for the named remote before the change.
 
 ## Reconnect (Token Expired)
 
