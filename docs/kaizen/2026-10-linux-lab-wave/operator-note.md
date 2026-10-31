@@ -54,6 +54,9 @@ podman ps --all --format '{{.Names}}' | grep '^lskw-'    # must print nothing af
 ```
 
 They need rootless Podman and the local images `debian:bookworm`, `fedora:44`, `mysql:8.4` and `rclone`; they pull
-nothing, publish no ports and mount no host path. Use `pytest` where it is installed.
+nothing and publish no ports. The SSH, PostgreSQL and automatic-updates labs copy files in with `podman cp` and mount
+nothing. The two MySQL labs in `tests/test_mysql_backup.py` bind-mount the repository read-only and a temporary working
+directory read-write, with `--security-opt label=disable` and no `:z` or `:Z`, so no host file is relabelled. Use `pytest`
+where it is installed.
 
 Author: Peter Bamuhigire, techguypeter.com, +256784464178.
