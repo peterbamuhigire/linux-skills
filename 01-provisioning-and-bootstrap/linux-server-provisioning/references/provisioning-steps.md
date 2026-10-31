@@ -120,8 +120,16 @@ Only after the new session works should you close the root session.
 
 Debian/Ubuntu's sshd reads `/etc/ssh/sshd_config.d/*.conf`. Drop a single hardening file there — leave the main `sshd_config` untouched so package upgrades don't conflict.
 
+**Name the file so it sorts first.** sshd processes the `Include` files in lexical order and keeps the *first* value it finds for each keyword, so a later file cannot override an earlier one. Cloud images ship `50-cloud-init.conf` (often `PasswordAuthentication yes`), and RHEL-family hosts ship `50-redhat.conf` and sometimes `01-permitrootlogin.conf`. A hardening file called `99-hardening.conf` loses to all of them. Use `00-linux-skills-ssh.conf`.
+
+Before writing it, list what already defines the keywords you are about to set:
+
 ```bash
-sudo tee /etc/ssh/sshd_config.d/99-hardening.conf >/dev/null <<'EOF'
+sudo grep -rniE '^[[:space:]]*(passwordauthentication|permitrootlogin|kbdinteractiveauthentication|pubkeyauthentication|allowusers)\b' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/
+```
+
+```bash
+sudo tee /etc/ssh/sshd_config.d/00-linux-skills-ssh.conf >/dev/null <<'EOF'
 # --- Access control ---
 PermitRootLogin no
 PasswordAuthentication no
@@ -168,7 +176,7 @@ ssh administrator@<server-ip>
 If the new session fails, the old session is still open — revert the file and retry:
 
 ```bash
-sudo rm /etc/ssh/sshd_config.d/99-hardening.conf
+sudo rm /etc/ssh/sshd_config.d/00-linux-skills-ssh.conf
 sudo systemctl reload ssh
 ```
 
@@ -182,6 +190,8 @@ sudo sshd -T | grep -Ei 'permitrootlogin|passwordauth|pubkeyauth|allowusers'
 #   pubkeyauthentication yes
 #   allowusers administrator
 ```
+
+If a value differs, another file defines that keyword earlier than yours. Re-run the `grep` above: the match in the file that sorts first is the one in force. Fix it there (or rename your file so it sorts before it); do not keep editing your own file.
 
 ---
 

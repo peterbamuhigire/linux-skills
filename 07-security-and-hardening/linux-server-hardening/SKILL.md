@@ -169,7 +169,7 @@ for the complete commands for each area.
 - Disable password auth, disable root login, set MaxAuthTries 3
 - **WARNING:** Keep existing SSH session open. Test login in a second terminal
   before closing the first session.
-- Config: `/etc/ssh/sshd_config.d/99-hardening.conf`
+- Config: `/etc/ssh/sshd_config.d/00-linux-skills-ssh.conf` — the `00-` prefix is deliberate: sshd keeps the first value it reads, so a later-sorting file loses to `50-cloud-init.conf` and distro drop-ins. Confirm with `sudo sshd -T`.
 - No SSH-hardening wrapper is shipped. Use the reviewed drop-in procedure in
   `references/hardening-checklist.md`; validate with `sshd -t` and keep the
   existing SSH session open until a second login succeeds.

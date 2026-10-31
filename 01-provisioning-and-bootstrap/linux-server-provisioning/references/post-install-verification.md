@@ -86,7 +86,7 @@ sudo wc -l /home/administrator/.ssh/authorized_keys
 - `authorized_keys` owned by `administrator:administrator`, mode `600`, at least one line.
 
 **Remediation:**
-- Any wrong `sshd -T` value: edit `/etc/ssh/sshd_config.d/99-hardening.conf`, run `sudo sshd -t`, then `sudo systemctl reload ssh` — **keep the current session open and verify login in a new terminal first**.
+- Any wrong `sshd -T` value: sshd keeps the *first* value it reads, in lexical order of `/etc/ssh/sshd_config` and `/etc/ssh/sshd_config.d/*.conf`. Find the file that sets it first with `sudo grep -rniE '^[[:space:]]*<keyword>\b' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/`, then correct it in that file or in `/etc/ssh/sshd_config.d/00-linux-skills-ssh.conf` (which sorts before cloud-init and distro files). Run `sudo sshd -t`, then `sudo systemctl reload ssh`, and re-check with `sudo sshd -T` — **keep the current session open and verify login in a new terminal first**.
 - Wrong perms: `sudo chown -R administrator:administrator /home/administrator/.ssh && sudo chmod 700 /home/administrator/.ssh && sudo chmod 600 /home/administrator/.ssh/authorized_keys`.
 
 ---

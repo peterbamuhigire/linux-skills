@@ -95,10 +95,10 @@ ssh-copy-id -i ~/.ssh/id_ed25519.pub user@server
 
 ### 3.2 Harden sshd_config
 
-Create a drop-in config (survives package upgrades):
+Create a drop-in config (survives package upgrades). Name it so it sorts before `50-cloud-init.conf` and distro files: sshd keeps the *first* value it reads for each keyword, so a `99-` file silently loses:
 
 ```bash
-sudo nano /etc/ssh/sshd_config.d/99-hardening.conf
+sudo nano /etc/ssh/sshd_config.d/00-linux-skills-ssh.conf
 ```
 
 ```

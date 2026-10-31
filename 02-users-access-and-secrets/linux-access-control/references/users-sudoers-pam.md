@@ -501,7 +501,7 @@ sudo mv /home/alice/.ssh/authorized_keys /home/alice/.ssh/authorized_keys.disabl
 | `~/.ssh/config`                           | Client-side config                           |
 | `/etc/ssh/ssh_host_*_key{,.pub}`          | Server host keys                             |
 | `/etc/ssh/sshd_config`                    | Server config                                |
-| `/etc/ssh/sshd_config.d/99-hardening.conf`| Your hardening drop-in                       |
+| `/etc/ssh/sshd_config.d/00-linux-skills-ssh.conf`| Your hardening drop-in (the `00-` prefix makes it win: first value read is kept) |
 
 **Private keys should never live on the server.** A web host should
 have only public keys in `authorized_keys` files and the server host
