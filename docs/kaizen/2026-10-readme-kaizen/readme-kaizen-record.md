@@ -99,7 +99,7 @@ Exit codes are identical. Package file counts rose by 2 (the references page and
 
 Other checks, all run after the last README edit:
 
-- Preservation: `readme-preserve-check.py` against `main`: 0 lost links, 0 lost commands (35 of 35 kept), 0 broken anchors (4 inbound anchors), 0 broken in-page links (19). 73 link targets moved to `docs/references.md`.
+- Preservation: `readme-preserve-check.py` against `main`: 0 lost links, 0 lost commands (35 of 35 kept), 0 broken anchors (6 distinct `README.md#anchor` links in tracked files: the 4 listed under Observe, plus 2 that the new docs index lines add), 0 broken in-page links (19). 73 link targets moved to `docs/references.md`.
 - Independent preservation check, not using that tool: all 74 URLs and 24 relative link targets of the old README appear in the new README or `docs/references.md`; all 249 of its inline code spans appear verbatim in one of the two; all 40 commit hashes appear in the new README, except 5 that now sit in `docs/references.md`.
 - Counts, checked against `find` and the installer rather than the README: 48 `SKILL.md` files, 44 specialists in 16 category folders, 3 meta skills, 1 hub, 26 `sk-*` files, 13 tier 1 (`scripts/install-skills-bin --list`), 45 skills in the Codex manifest.
 - Task table: the 12 task wordings were ranked with `scripts/routing_smoke_test.py`; the listed skill is first for all 12.
@@ -114,7 +114,7 @@ Conventions for the next README editor. Limits are the ones this edit met.
 
 1. **Skeleton.** Title and purpose; At a glance and Start here; Contents; When to use it; Find the right skill; How it works; What is inside; Install; Validation; Quality and improvement; References; Contributing, author and licence.
 2. **Limits.** First fenced command within 40 lines. A contents list of every H2. No H2 over 1,200 words. No paragraph over 90 words and no table cell over 35. Lines over 300 characters only where a link or a command forces it. Mean sentence length 16 words or fewer.
-3. **Interface headings.** Do not rename or move these without updating the linking files in the same commit: `Validation`, `Updating installed scripts`, `Quality and improvement`, `What the October 2026 kaizen improved` (linked from `AGENTS.md`, `CONTRIBUTING.md`, `docs/README.md` and two `docs/engine-design` pages).
+3. **Interface headings.** Do not rename or move these without updating the linking files in the same commit: `Validation`, `Updating installed scripts`, `Quality and improvement`, `What the October 2026 kaizen improved`, `Open findings that matter to a user` and `Date-triggered gates` (linked from `AGENTS.md`, `CONTRIBUTING.md`, `docs/README.md` and two `docs/engine-design` pages).
 4. **Say each figure where it is measured.** The skill, script, routing and test counts appear in At a glance, the Validation table and the figures table. Change all three together and re-run the commands in Validation.
 5. **Move bulk, keep a link.** Source lists and long catalogues go to `docs/`. Keep a summary and a link in the README, and run the preservation check.
 
