@@ -99,7 +99,7 @@ Exit codes are identical. Package file counts rose by 2 (the references page and
 
 Other checks, all run after the last README edit:
 
-- Preservation: `readme-preserve-check.py` against `main`: 0 lost links, 0 lost commands (35 of 35 kept), 0 broken anchors (6 distinct `README.md#anchor` links in tracked files: the 4 listed under Observe, plus 2 that the new docs index lines add), 0 broken in-page links (19). 73 link targets moved to `docs/references.md`.
+- Preservation: `readme-preserve-check.py` against `main`: 0 lost links, 0 lost commands (35 of 35 kept), 0 broken anchors (6 distinct README heading anchors linked from tracked files: the 4 listed under Observe, plus 2 that the new docs index lines add), 0 broken in-page links (19). 73 link targets moved to `docs/references.md`.
 - Independent preservation check, not using that tool: all 74 URLs and 24 relative link targets of the old README appear in the new README or `docs/references.md`; all 249 of its inline code spans appear verbatim in one of the two; all 40 commit hashes appear in the new README, except 5 that now sit in `docs/references.md`.
 - Counts, checked against `find` and the installer rather than the README: 48 `SKILL.md` files, 44 specialists in 16 category folders, 3 meta skills, 1 hub, 26 `sk-*` files, 13 tier 1 (`scripts/install-skills-bin --list`), 45 skills in the Codex manifest.
 - Task table: the 12 task wordings were ranked with `scripts/routing_smoke_test.py`; the listed skill is first for all 12.
