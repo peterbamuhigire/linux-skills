@@ -23,7 +23,7 @@ before doing it. Format:
   [INFO] Backing up /etc/ssh/sshd_config to /etc/ssh/sshd_config.bak-20260410-110523
   [INFO] Setting PermitRootLogin no
   [INFO] Setting PasswordAuthentication no
-  [INFO] Will run: sshd -t && systemctl reload ssh
+  [INFO] Will run: sshd -t && systemctl reload sshd
 Continue? [y/N]
 ```
 

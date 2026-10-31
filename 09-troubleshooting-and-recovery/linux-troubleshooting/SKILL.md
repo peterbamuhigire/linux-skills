@@ -20,6 +20,7 @@ as a cause of failures that look like permission or connection bugs.
 | When diagnosing… | Debian/Ubuntu | RHEL family |
 |---|---|---|
 | Web server unit | `systemctl status apache2` | `systemctl status httpd` |
+| SSH unit | `systemctl status ssh` | `systemctl status sshd` (no `ssh` unit) |
 | System log | `/var/log/syslog`, `journalctl` | `/var/log/messages`, `journalctl` |
 | Auth failures | `/var/log/auth.log` | `/var/log/secure` |
 | Web logs | `/var/log/apache2/` | `/var/log/httpd/` |

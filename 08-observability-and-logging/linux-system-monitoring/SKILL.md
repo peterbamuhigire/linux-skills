@@ -26,6 +26,7 @@ Alma, Oracle) equivalents are in the matrix.
 | Process/socket/mem tools | `ps`, `ss`, `free`, `vmstat` | identical |
 | Service health | `systemctl status` / `journalctl` | identical |
 | Firewall used for port checks | `ufw` | `firewalld` |
+| Time-sync service to check | `systemd-timesyncd` | `chronyd` |
 
 In `sk-*` scripts use the `common.sh` primitives (`pkg_install`, `svc_name`,
 `firewall_allow`) instead of hardcoding the family. See

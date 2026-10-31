@@ -27,6 +27,7 @@ matrix.
 | Default root FS / repair | ext4 → `e2fsck` | xfs → `xfs_repair` (xfs can't shrink) |
 | Restore networking | Netplan | NetworkManager/`nmcli` |
 | Restore firewall | `ufw` | `firewalld` |
+| Restart SSH after restoring its configuration | `systemctl restart ssh` | `systemctl restart sshd` (no `ssh` unit) |
 | Rescue target | `systemctl rescue` | identical |
 
 **RHEL-family note:** the two recovery actions that most often differ are

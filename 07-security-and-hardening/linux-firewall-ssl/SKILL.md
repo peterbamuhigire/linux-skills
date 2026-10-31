@@ -22,6 +22,7 @@ in [`references/firewalld-reference.md`](references/firewalld-reference.md).
 | Concept | Debian/Ubuntu | RHEL family |
 |---|---|---|
 | Firewall | `ufw` | `firewalld` (`firewall-cmd`) |
+| Apache service unit (certbot reload hook) | `apache2` | `httpd` |
 | Show rules | `ufw status verbose` | `firewall-cmd --list-all` |
 | Allow HTTP/HTTPS | `ufw allow 80,443/tcp` | `firewall-cmd --permanent --add-service={http,https}` |
 | Allow a raw port | `ufw allow 9100/tcp` | `firewall-cmd --permanent --add-port=9100/tcp` |
