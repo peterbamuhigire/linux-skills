@@ -482,6 +482,30 @@ else
 fi
 
 # -----------------------------------------------------------------------------
+# Failure banner: die reports its own cause, an unexpected failure keeps its location
+# -----------------------------------------------------------------------------
+BANNER_FX="$TEST_FIXTURE_DIR/banner"; mkdir -m 0700 "$BANNER_FX"
+printf '#!/usr/bin/env bash\nset -uo pipefail\nsource "%s"\ndie "probe failure" 4\n' "$SK_LIB" > "$BANNER_FX/die.sh"
+printf '#!/usr/bin/env bash\nset -uo pipefail\nsource "%s"\nexit 7\n' "$SK_LIB" > "$BANNER_FX/plain-exit.sh"
+out="$(SK_AUDIT_DIR="$TEST_FIXTURE_DIR/audit" bash "$BANNER_FX/die.sh" 2>&1)"; rc=$?
+if (( rc == 4 )) && [[ "$out" == *"FATAL: probe failure"* && "$out" == *"die exited 4"* ]]; then
+    pass_t "die prints its message and the banner names the script and exit status"
+else
+    fail_t "die banner missing the message or status (rc=$rc): $out"
+fi
+if [[ "$out" != *"at line"* && "$out" != *"last command"* ]]; then
+    pass_t "die banner does not print a line number or last command taken from the exit trap"
+else
+    fail_t "die banner printed a wrong location: $out"
+fi
+out="$(SK_AUDIT_DIR="$TEST_FIXTURE_DIR/audit" bash "$BANNER_FX/plain-exit.sh" 2>&1)"; rc=$?
+if (( rc == 7 )) && [[ "$out" == *"plain-exit exited 7 at line"* && "$out" == *"last command: exit 7"* ]]; then
+    pass_t "an exit that did not go through die keeps the location banner"
+else
+    fail_t "plain exit banner changed (rc=$rc): $out"
+fi
+
+# -----------------------------------------------------------------------------
 # Summary
 # -----------------------------------------------------------------------------
 printf "\n--- common.sh test summary ---\n"

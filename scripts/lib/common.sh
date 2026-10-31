@@ -142,11 +142,16 @@ header() {
     _sk_log_append "=== $* ==="
 }
 
+SK_DIE_REPORTED=0
+
 die() {
     local msg="$1"
     local code="${2:-1}"
     printf "${SK_RED}FATAL:${SK_NC} %s\n" "$msg" >&2
     _sk_log_append "FATAL: $msg (exit $code)"
+    # The failure banner in _sk_cleanup reads BASH_COMMAND and BASH_LINENO inside the EXIT trap, which
+    # by then describe this exit, not the failing command. Tell it the cause was already reported.
+    SK_DIE_REPORTED=1
     exit "$code"
 }
 
@@ -847,9 +852,14 @@ _sk_cleanup() {
     if (( exit_code != 0 )); then
         # On non-zero exit, print a failure banner
         if [[ "${SK_SUPPRESS_FAIL_BANNER:-0}" != "1" ]]; then
-            printf "\n${SK_RED}FAILURE:${SK_NC} %s exited %d at line %s\n" \
-                   "$SK_SCRIPT_NAME" "$exit_code" "$line" >&2
-            [[ -n "$cmd" ]] && printf "  last command: %s\n" "$cmd" >&2
+            if [[ "${SK_DIE_REPORTED:-0}" == "1" ]]; then
+                # die already printed the cause; a line number and command taken here would be wrong.
+                printf "\n${SK_RED}FAILURE:${SK_NC} %s exited %d\n" "$SK_SCRIPT_NAME" "$exit_code" >&2
+            else
+                printf "\n${SK_RED}FAILURE:${SK_NC} %s exited %d at line %s\n" \
+                       "$SK_SCRIPT_NAME" "$exit_code" "$line" >&2
+                [[ -n "$cmd" ]] && printf "  last command: %s\n" "$cmd" >&2
+            fi
         fi
     fi
 
