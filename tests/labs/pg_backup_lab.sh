@@ -93,7 +93,7 @@ check "globals hold a SCRAM hash, which is why mode 600 matters" grep -q 'SCRAM-
 for d in "$BK"/*.dump; do check "pg_restore --list reads $(basename "$d")" pg_restore --list "$d" >/dev/null; done
 check "the awkward database name became a safe file name" bash -c "ls '$BK' | grep -q '^lab_odd_db_[0-9]*_[0-9]\{8\}-[0-9]\{6\}\.dump\$'"
 noise=$(grep -c 'could not change directory' /root/p2.log)
-lab_info "client 'could not change directory' warnings in the real run: $noise"
+check "no 'could not change directory' warning from the client calls (run from /root, as cron does)" test "$noise" -eq 0
 mkdir -p "$OUT/set"; find "$OUT/set" -mindepth 1 -delete; cp -p "$BK"/* "$OUT/set/"
 
 echo; echo "=== P3 repeated run and retention"

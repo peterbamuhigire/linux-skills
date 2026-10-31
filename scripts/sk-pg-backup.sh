@@ -63,7 +63,9 @@ data. Interactive by default; --yes for cron.
 
 Files are written mode 0600 (the globals file holds role password hashes) via a
 private staging directory, checked with pg_restore --list, then renamed into
-BACKUP_DIR. A failed run leaves nothing that looks like a backup. Dumps are not
+BACKUP_DIR. A failed or unreadable dump is never published. The globals file is
+published first, so a run that fails on a later database can leave a globals file
+with no dumps beside it: that file is not a backup of any database. Dumps are not
 encrypted: protect BACKUP_DIR and any copy of it accordingly.
 
 CONFIG:
@@ -138,6 +140,12 @@ ask_overwrite() {
     [[ "$DRY_RUN" == "1" ]] && return 0
     confirm "Overwrite existing $f?" N
 }
+
+# Run a PostgreSQL client as $PG_USER from "/". Debian's pg_wrapper prints
+# 'could not change directory to "<cwd>": Permission denied' for every call made from a
+# directory the postgres user cannot enter, and cron starts root's jobs in /root, so each run
+# would mail two warnings per database. Redirects stay with the calling (root) shell.
+as_pg() { ( cd / && sudo -u "$PG_USER" "$@" ); }
 
 # File-name-safe form of a database name. A name that needed changing gets a
 # checksum suffix so two different names cannot collide on one file.
@@ -267,7 +275,7 @@ if [[ "$ALL_DBS" == "1" ]]; then
         info "DRY-RUN: would list databases via psql"
     else
         # NUL-separated so a database name can hold any character.
-        sudo -u "$PG_USER" psql -A -t -0 -c \
+        as_pg psql -A -t -0 -c \
             "SELECT datname FROM pg_database WHERE datistemplate = false AND datname <> 'postgres';" \
             > "$STAGING_DIR/databases.list" 2>/dev/null \
             || die "cannot connect to PostgreSQL as $PG_USER" 1
@@ -289,7 +297,7 @@ if ask_overwrite "$GLOBALS_FILE"; then
     else
         # The redirect is opened by this shell under umask 077, so the file is
         # 0600 whatever umask the postgres user has.
-        sudo -u "$PG_USER" pg_dumpall --globals-only > "$STAGING_DIR/$GLOBALS_NAME" \
+        as_pg pg_dumpall --globals-only > "$STAGING_DIR/$GLOBALS_NAME" \
             || die "pg_dumpall --globals-only failed" 1
         [[ -s "$STAGING_DIR/$GLOBALS_NAME" ]] || die "pg_dumpall --globals-only produced an empty file" 1
         publish_staged "$STAGING_DIR/$GLOBALS_NAME" "$GLOBALS_FILE"
@@ -312,7 +320,7 @@ for DB in ${DATABASES[@]+"${DATABASES[@]}"}; do
     if [[ "$DRY_RUN" == "1" ]]; then
         info "  DRY-RUN: sudo -u $PG_USER pg_dump --format=custom $DB > $DUMP_FILE"
     else
-        sudo -u "$PG_USER" pg_dump --format=custom -- "$DB" > "$STAGING_DIR/$DUMP_NAME" \
+        as_pg pg_dump --format=custom -- "$DB" > "$STAGING_DIR/$DUMP_NAME" \
             || die "pg_dump failed for $DB" 1
         [[ -s "$STAGING_DIR/$DUMP_NAME" ]] || die "pg_dump produced an empty file for $DB" 1
         pg_restore --list "$STAGING_DIR/$DUMP_NAME" > /dev/null \

@@ -94,6 +94,11 @@ dump start and end times, file names, sizes, mode and `sha256sum`.
    time sudo -u postgres pg_restore --exit-on-error --create --dbname=postgres < appdb_<timestamp>.dump
    ```
 
+   Run both from `/` or another directory the `postgres` user can enter, and name the
+   dump files by absolute path. On Debian, `pg_wrapper` prints `could not change directory
+   to "<dir>": Permission denied` for every call made from a directory it cannot read (such
+   as `/root`); the restore still works, but the line clutters a recorded run.
+
    Expect a `role ... already exists` error for the bootstrap superuser from the
    globals script: the pg_dumpall manual calls it harmless, so do not use `ON_ERROR_STOP` for that
    file. A parallel restore (`-j`) cannot read standard input (pg_restore manual:
