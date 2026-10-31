@@ -30,6 +30,8 @@ source "$SK_LIB" || { echo "FATAL: cannot source common.sh" >&2; exit 5; }
 # =============================================================================
 # 2. Defaults
 # =============================================================================
+# Read by parse_standard_flags in the sourced shared library.
+# shellcheck disable=SC2034
 SCRIPT_VERSION="0.1.0"
 
 SERVICE=""

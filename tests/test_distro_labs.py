@@ -165,3 +165,33 @@ def test_debian_unattended_upgrades_origins_match_the_security_archive(lab: Lab)
     blocks = unattended_blocks(lab.work / "uu-blocks")
     container.put(blocks, "/root/blocks-uu")
     assert_driver_passed(run_driver(container, "unattended_upgrades_lab.sh", "/root/blocks-uu"))
+
+
+def shell_sources(repository: Path) -> list[str]:
+    """Every shell source in the repository copy: *.sh files and extensionless files with a bash or sh shebang."""
+    found: list[str] = []
+    for path in sorted(repository.rglob("*")):
+        if not path.is_file() or any(part in {".git", "node_modules"} for part in path.parts):
+            continue
+        if path.suffix == ".sh":
+            found.append(path.relative_to(repository).as_posix())
+        elif path.suffix == "":
+            first = path.read_bytes()[:64].split(b"\n", 1)[0]
+            if first.startswith(b"#!") and (b"bash" in first or first.endswith(b"/sh")):
+                found.append(path.relative_to(repository).as_posix())
+    return found
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_shellcheck_reports_no_warnings(lab: Lab, family: str) -> None:
+    """ShellCheck (0.9.0 on Debian 12, the Fedora 44 package on Fedora) finds no warning or error anywhere."""
+    container = lab.src(family)
+    sources = shell_sources(lab.work / "repo")
+    assert len(sources) >= 30, f"expected the engine's shell sources, found {len(sources)}"
+    result = container.exec(
+        "bash", "-c",
+        "cd /opt/repo && shellcheck --version | sed -n 2p && "
+        f"shellcheck -x --severity=warning {' '.join(sources)}",
+        timeout=600,
+    )
+    assert result.returncode == 0, f"ShellCheck findings in {family}:\n{result.stdout}"

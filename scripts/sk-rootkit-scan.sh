@@ -29,6 +29,8 @@ source "$SK_LIB" || { echo "FATAL: cannot source common.sh" >&2; exit 5; }
 # =============================================================================
 # 2. Defaults
 # =============================================================================
+# Read by parse_standard_flags in the sourced shared library.
+# shellcheck disable=SC2034
 SCRIPT_VERSION="0.1.0"
 UPDATE_BASELINE=0          # --update-baseline → run rkhunter --propupd (MUTATING)
 QUICK=0                    # --quick → rkhunter only, skip chkrootkit

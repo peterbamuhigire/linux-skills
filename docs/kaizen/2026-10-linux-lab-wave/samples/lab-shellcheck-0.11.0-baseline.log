@@ -1,0 +1,5 @@
+version: 0.11.0
+shellcheck exit=1
+28
+      3 SC2024 (warning)
+     25 SC2034 (warning)

@@ -9,7 +9,7 @@
 #: Contact: +256784464178
 set -u
 LAB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=tests/labs/lab_common.sh
+# shellcheck source=lab_common.sh
 source "$LAB_DIR/lab_common.sh"
 BLOCKS=${1:?usage: unattended_upgrades_lab.sh <blocks-dir>}
 

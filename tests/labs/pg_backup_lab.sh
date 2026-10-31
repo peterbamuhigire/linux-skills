@@ -8,7 +8,7 @@
 #: Contact: +256784464178
 set -u
 LAB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=tests/labs/lab_common.sh
+# shellcheck source=lab_common.sh
 source "$LAB_DIR/lab_common.sh"
 SCRIPT=${1:?usage: pg_backup_lab.sh <path-to-sk-pg-backup.sh>}
 BK=/srv/pgbk
@@ -66,7 +66,10 @@ SELECT 'owner', tableowner FROM pg_tables WHERE tablename='customers';
 SELECT 'grant_app_ro', has_table_privilege('app_ro','customers','SELECT');
 SQL
 chmod 644 "$OUT/fp.sql"
+# The root shell opens the input and output files on purpose: postgres cannot read /root.
+# shellcheck disable=SC2024
 sudo -u postgres psql -X -At -F'|' -d lab_a < "$OUT/fp.sql" > "$OUT/fp-lab_a.txt" 2>/dev/null
+# shellcheck disable=SC2024
 sudo -u postgres psql -X -At -F'|' -d 'lab odd;db' -c "SELECT 't_rows', count(*) FROM t; SELECT 't_md5', md5(string_agg(x::text, ',' ORDER BY id)) FROM t x;" > "$OUT/fp-odd.txt" 2>/dev/null
 lab_info "dump-time figures: $(tr '\n' ' ' < "$OUT/fp-lab_a.txt")"
 
@@ -86,7 +89,7 @@ check "backup directory is mode 700" test "$(stat -c %a "$BK")" = 700
 check "every file is mode 600" test -z "$(find "$BK" -maxdepth 1 -type f ! -perm 600)"
 check "no staging directory or temp file remains" test -z "$(find "$BK" -maxdepth 1 -name '.pg-backup.*')"
 check "one globals file and two dumps" test "$(ls "$BK"/globals_*.sql | wc -l)" -eq 1 -a "$(ls "$BK"/*.dump | wc -l)" -eq 2
-check "the postgres maintenance database is not dumped" test -z "$(ls "$BK" | grep '^postgres_')"
+check "the postgres maintenance database is not dumped" test -z "$(find "$BK" -maxdepth 1 -name 'postgres_*')"
 globals=$(ls "$BK"/globals_*.sql)
 check "globals hold the app_user role" grep -q 'CREATE ROLE app_user' "$globals"
 check "globals hold a SCRAM hash, which is why mode 600 matters" grep -q 'SCRAM-SHA-256' "$globals"
@@ -106,7 +109,7 @@ echo precious > "$BK/notes.txt"; echo x > "$BK/manual.dump"; echo x > "$BK/other
 touch -d '30 days ago' "$BK/notes.txt" "$BK/manual.dump" "$BK/other_20200101-000000.sql"
 sleep 1.2; run_script --retention 7 >/root/p3b.log; rc=$?
 check "run with --retention 7 exits 0" test $rc -eq 0
-check "the expired set is pruned" test -z "$(ls "$BK" | grep "$first_ts")"
+check "the expired set is pruned" test -z "$(find "$BK" -maxdepth 1 -name "*${first_ts}*")"
 check "the two newer sets are kept" test "$(ls "$BK"/globals_*.sql | wc -l)" -eq 2
 check "unrelated old files are untouched" test -f "$BK/notes.txt" -a -f "$BK/manual.dump" -a -f "$BK/other_20200101-000000.sql"
 check "every file the script wrote is still mode 600" test -z "$(find "$BK" -maxdepth 1 -type f \( -name 'lab*.dump' -o -name 'globals_*' \) ! -perm 600)"

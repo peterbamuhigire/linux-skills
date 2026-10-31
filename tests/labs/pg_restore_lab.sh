@@ -9,7 +9,7 @@
 #: Contact: +256784464178
 set -u
 LAB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=tests/labs/lab_common.sh
+# shellcheck source=lab_common.sh
 source "$LAB_DIR/lab_common.sh"
 BLOCKS=${1:?usage: pg_restore_lab.sh <blocks-dir>}
 D=/root/restore
@@ -42,7 +42,10 @@ bash /root/db-odd-cmd.sh >/root/db-odd.out 2>&1; rc=$?
 check "restore of the awkwardly named database exits 0" test $rc -eq 0
 
 echo; echo "=== step 3: reconcile with the dump-time figures"
+# The root shell opens the input and output files on purpose: postgres cannot read /root.
+# shellcheck disable=SC2024
 sudo -u postgres psql -X -At -F'|' -d lab_a < /root/src/fp.sql > /root/fp-restored.txt 2>/dev/null
+# shellcheck disable=SC2024
 sudo -u postgres psql -X -At -F'|' -d 'lab odd;db' -c "SELECT 't_rows', count(*) FROM t; SELECT 't_md5', md5(string_agg(x::text, ',' ORDER BY id)) FROM t x;" > /root/fp-odd-restored.txt 2>/dev/null
 lab_info "restored figures: $(tr '\n' ' ' < /root/fp-restored.txt)"
 check "lab_a: every reconciliation figure equals the dump-time figure" test "$(cat /root/fp-restored.txt)" = "$(cat /root/src/fp-lab_a.txt)"
