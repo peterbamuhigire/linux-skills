@@ -76,6 +76,7 @@ def run_driver(container: LabContainer, driver: str, *args: str) -> str:
 
 
 def assert_driver_passed(output: str) -> None:
+    print(output)  # shown for passing labs too with `pytest -rP`, so a run leaves its own evidence
     failures = [line for line in output.splitlines() if line.startswith("FAIL")]
     assert "### RESULT: ALL-PASS" in output and not failures, (
         "lab failures:\n" + "\n".join(failures) + "\n\nfull output:\n" + output
