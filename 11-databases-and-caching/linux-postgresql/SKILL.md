@@ -226,7 +226,12 @@ sudo -u postgres pg_restore -C -d postgres appdb.dump      # create DB then rest
 ```
 
 `pg_dumpall` is needed for cluster-wide objects (roles, tablespaces) that
-`pg_dump` does not capture. Full matrix: [`references/backup-and-pitr.md`](references/backup-and-pitr.md).
+`pg_dump` does not capture. Its output includes role password hashes, so dumps
+are created mode 0600 in a 0700 directory (`umask 077` for manual commands;
+`sk-pg-backup` does it for you). A dump is not a backup until it has been
+restored and reconciled on a scratch instance: see "Verify a logical backup" in
+[`references/backup-and-pitr.md`](references/backup-and-pitr.md), which also has
+the full format matrix.
 
 ## WAL archiving & point-in-time recovery (PITR)
 

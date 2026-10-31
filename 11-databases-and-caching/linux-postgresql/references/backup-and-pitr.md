@@ -56,6 +56,64 @@ For a full-cluster rebuild: restore `globals.sql` (roles/tablespaces) **first**,
 then the per-database custom dumps. Always **verify** by restoring into a scratch
 database before trusting a backup.
 
+### Keep dumps private
+
+A dump holds the data, and the `pg_dumpall --globals-only` output holds role
+password hashes (pg_dumpall includes passwords unless `--no-role-passwords` is
+given, and says so in its manual). Create both mode `0600` in a `0700` directory
+owned by the account that will restore them. `sk-pg-backup` does this: it writes
+through a private staging directory and renames a file into place only after
+`pg_restore --list` can read it. For a manual dump, set `umask 077` first and
+let the shell that owns the directory open the file:
+
+```bash
+umask 077
+install -d -m 0700 /var/backups/postgresql
+sudo -u postgres pg_dump --format=custom -- appdb > /var/backups/postgresql/appdb.dump
+```
+
+The redirect is opened by your shell, not by `postgres`, so the file belongs to
+you and has your umask's mode. Dumps are not encrypted: protect any copy of the
+directory (offsite, snapshots) the way you protect the database itself.
+
+### Verify a logical backup
+
+A dump that was written is not a backup until it has been restored. Do this on a
+scratch PostgreSQL instance of the same major version or newer, never on the
+source cluster: restoring globals there would alter its roles. Record, without
+credentials or row values you are not cleared to copy: source `server_version`,
+dump start and end times, file names, sizes, mode and `sha256sum`.
+
+1. Readability, no server needed: `pg_restore --list appdb.dump > /dev/null`.
+2. Restore roles first, then the database, timing the whole step. The 0600 files
+   belong to the backup account, so read them on standard input from your own
+   shell:
+
+   ```bash
+   time sudo -u postgres psql -X postgres < globals_<timestamp>.sql
+   time sudo -u postgres pg_restore --exit-on-error --create --dbname=postgres < appdb_<timestamp>.dump
+   ```
+
+   Expect a `role ... already exists` error for the bootstrap superuser from the
+   globals script: the pg_dumpall manual calls it harmless, so do not use `ON_ERROR_STOP` for that
+   file. A parallel restore (`-j`) cannot read standard input (pg_restore manual:
+   the input must be a regular file or directory); for it, copy the dump to a
+   directory the restore user owns on the scratch host and restore from there.
+3. Reconcile with the source as it was at dump time: schemas, table and index
+   counts, extensions (`\dx`), functions and triggers, sequences, and row counts
+   for the tables the application cannot live without. Run `ANALYZE`, then one
+   read-only application query. Counts on a live source drift after the dump;
+   compare against figures taken at dump time, or state the tolerated drift.
+4. Record target version, commands, elapsed time (the restore-time input for
+   this data size), results and any failure. If any step fails, mark recovery
+   unproven and keep the last known-good backup.
+
+Status: this procedure follows the current PostgreSQL manuals for `pg_restore`
+and `pg_dumpall` (pages read 2026-10-31; the manual's release number was not recorded). It has not been run in a lab by this
+engine, and no PostgreSQL server was used to test `sk-pg-backup`, which is
+covered by stub fixtures only (`tests/test_pg_backup.py`). Timing, reconciliation
+and failure behaviour on real data are `NOT_ASSESSED`.
+
 ## WAL archiving & PITR
 
 ### Configure (postgresql.conf) — RESTART required
