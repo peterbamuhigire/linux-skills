@@ -158,6 +158,7 @@ scores and explicit unassessed checks; never promote a target to an achieved
 score. Use the [security triage runbook](docs/security/current-vulnerability-triage.md)
 for current advisory matching and the dated source register for its limitations.
 The [portfolio refresh](docs/kaizen/2026-10-engine-kaizen/portfolio-refresh.md) records native plugin discovery and the hard file-cap regression.
+The [2026-10-31 pass 2](docs/kaizen/2026-10-engine-kaizen-pass-2/05-final-report.md) continues that cycle: it fixed the SSH drop-in naming, `sk-pg-backup` file modes, configuration trust and the audit-log fallback, and its [operator note](docs/updates/2026-10-31-kaizen-pass-2.md) lists the host checks that follow. Installed `sk-*` copies and `/usr/local/lib/linux-skills/common.sh` can be older than this checkout; compare before relying on them.
 The historical 88-script inventory is a roadmap; installed availability comes
 from `scripts/install-skills-bin --list` and current skill manifests.
 

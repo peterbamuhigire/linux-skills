@@ -1,0 +1,10 @@
+# Defect D1 after P2-01 (2026-10-31, OpenSSH on this host: OpenSSH_10.2p1, OpenSSL 3.5.9 29 Sep 2026)
+$ python3 -X utf8 -m unittest -v tests/test_ssh_dropin_precedence.py
+test_competing_file_does_win_over_a_later_name
+test_hardening_checklist_dropin_wins_over_cloud_init ... ok
+test_provisioning_dropin_wins_over_cloud_init ... ok
+test_mentions_use_one_consistent_name ... ok
+test_no_procedure_numbers_a_hardening_dropin_after_cloud_init ... ok
+test_procedures_exist ... ok
+Ran 6 tests in 0.024s
+OK

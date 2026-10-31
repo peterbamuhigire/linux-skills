@@ -1,0 +1,13 @@
+# Defect D2 after P2-05 (Fedora 44, dnf5 5.4.6): the pattern documented in dnf-reference.md
+$ journalctl -u 'dnf*automatic*' -n 3 --no-pager
+Oct 31 06:11:24 <host> systemd[1]: dnf5-automatic.service: Deactivated successfully.
+Oct 31 06:11:24 <host> systemd[1]: Finished dnf5-automatic.service - dnf5 automatic.
+Oct 31 06:11:24 <host> systemd[1]: dnf5-automatic.service: Consumed 6.336s CPU time over 11.939s wall clock time, 358M memory peak.
+$ systemctl list-unit-files 'dnf*automatic*'
+UNIT FILE              STATE   PRESET
+dnf-automatic.service  alias   -
+dnf5-automatic.service static  -
+dnf-automatic.timer    alias   -
+dnf5-automatic.timer   enabled disabled
+
+4 unit files listed.

@@ -1,0 +1,13 @@
+# Host observation, 2026-10-31 (read-only: version flags, ls, grep). This workstation's installed copies predate the 29 October repairs.
+$ /usr/local/bin/sk-mysql-backup --version
+sk-mysql-backup 0.3.0
+# repository: scripts/sk-mysql-backup.sh now at Version 0.4.0 before this pass; this pass changes only configuration loading and help text
+$ ls -l --time-style=long-iso /usr/local/bin/sk-mysql-backup /usr/local/lib/linux-skills/common.sh (size, date, name)
+  9795 2026-06-15 /usr/local/bin/sk-mysql-backup
+  24580 2026-06-15 /usr/local/lib/linux-skills/common.sh
+$ grep -c _sk_trusted_temp_base /usr/local/lib/linux-skills/common.sh   (the K01 temporary-directory validation)
+0
+$ install-skills-bin --list   (repository copy, read-only listing)
+  sk-audit                       linux-security-analysis        yes    available    yes
+  sk-mysql-backup                linux-disaster-recovery        yes    available    yes
+# install-skills-bin --list reports INSTALLED? yes for a script whose content differs from the repository copy; the installer would refuse to replace it without --force.

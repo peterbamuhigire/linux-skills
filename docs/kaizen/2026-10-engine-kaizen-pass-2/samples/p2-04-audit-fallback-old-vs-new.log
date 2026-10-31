@@ -1,0 +1,7 @@
+# P2-04: new audit-fallback cases run against the previous common.sh (2026-10-31)
+# Previous library = commit 62f2e56 scripts/lib/common.sh. Result of the three new cases:
+  [FAIL] audit fallback private-directory case failed (mode ''): disabled=
+  [FAIL] audit fallback accepted a loose directory: disabled=
+  [FAIL] audit fallback followed a symlink: disabled=
+# Side effect observed (then removed by the tester): the previous library created /tmp/linux-skills-<user>
+# with mode 755 and an audit log with mode 644, and appended to it. Current library: all three cases pass.

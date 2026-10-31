@@ -1,0 +1,33 @@
+# P2-02: tests/test_pg_backup.py against the previous and the new sk-pg-backup.sh (2026-10-31)
+# Stub fixture: PATH stubs for sudo, psql, pg_dump, pg_dumpall, pg_restore; no PostgreSQL server contacted.
+# Previous script = commit da3f050 (unchanged since 29 October), run through the same fixture.
+
+== previous script
+test_dry_run_writes_nothing ... FAIL
+test_dump_that_pg_restore_cannot_read_is_not_published ... FAIL
+test_failed_dump_leaves_no_partial_file_or_staging_directory ... FAIL
+test_invalid_retention_is_rejected_before_anything_is_written ... 
+test_relative_backup_directory_is_rejected ... FAIL
+test_retention_failure_fails_the_run ... FAIL
+test_existing_loose_directory_warns_and_files_stay_private ... FAIL
+test_new_directory_and_every_artefact_are_private ... FAIL
+test_staging_directory_is_removed_after_success ... ok
+test_hostile_database_names_stay_inside_the_backup_directory ... FAIL
+test_only_this_scripts_names_are_pruned ... FAIL
+Ran 11 tests in 2.099s
+FAILED (failures=14)
+
+== new script (first version of the tests, before the configuration and library-skew cases were added)
+test_dry_run_writes_nothing ... ok
+test_dump_that_pg_restore_cannot_read_is_not_published ... ok
+test_failed_dump_leaves_no_partial_file_or_staging_directory ... ok
+test_invalid_retention_is_rejected_before_anything_is_written ... ok
+test_relative_backup_directory_is_rejected ... ok
+test_retention_failure_fails_the_run ... ok
+test_existing_loose_directory_warns_and_files_stay_private ... ok
+test_new_directory_and_every_artefact_are_private ... ok
+test_staging_directory_is_removed_after_success ... ok
+test_hostile_database_names_stay_inside_the_backup_directory ... ok
+test_only_this_scripts_names_are_pruned ... ok
+Ran 11 tests in 2.373s
+OK

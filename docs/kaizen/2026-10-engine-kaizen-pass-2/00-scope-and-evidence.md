@@ -128,4 +128,29 @@ Not assessed, with reason: `sk-capture.sh` pcap file mode (needs root and `tcpdu
 scripts' failure and rollback behaviour (no lab); SELinux enforcing behaviour of the web stack on
 RHEL; ACME renewal; Cisco appliance behaviour.
 
+## Addendum written during Step 4 (original text above is unchanged)
+
+- **Test count corrected.** The table above says nine `unittest` modules gave 62 tests. Summing the
+  per-module results actually recorded (1, 8, 9, 10, 4, 9, 10, 6) gives **57** tests from eight modules;
+  the ninth module, `test_validate_skills`, uses pytest-style functions and ran 0 tests under `unittest`.
+  The 8 stand-in-runner passes are separate. Final comparisons use 57.
+- **D3, partial dump.** The first baseline stub ignored `pg_dump --file=`, so it showed the directory and
+  file modes but not the partial file. After the stub was made faithful, the case "a failed dump leaves
+  no partial file" failed against the previous script as claimed ([old vs new](samples/p2-02-pg-backup-old-vs-new.log)).
+- **D4 reproduced.** Running the new audit cases against the previous `common.sh` created
+  `/tmp/linux-skills-<user>` mode 755 with a 644 audit log ([sample](samples/p2-04-audit-fallback-old-vs-new.log));
+  the two paths were removed afterwards.
+- **Installed copies are stale (new, host-level).** `/usr/local/bin/sk-mysql-backup` is version 0.3.0 and
+  `/usr/local/lib/linux-skills/common.sh` dates from 15 June and lacks the temporary-directory validation, so the
+  29 October repairs are not live on this workstation. `install-skills-bin --list` reports `yes` for an
+  installed script that differs from the repository copy ([sample](samples/host-installed-copies-stale.log)).
+  The installer would refuse to overwrite it without `--force`. Not fixed this pass (it would be an eleventh
+  item); recorded in `06-next-cycle.md` with a decision for Peter.
+- **`sk-capture.sh` (new, unverified).** Its default output directory is `/var/log/linux-skills` and it starts
+  `tcpdump` without `-Z`; the `tcpdump` manual on this host says privilege dropping to user `tcpdump` is enabled by
+  default before savefiles open. Failure and pcap mode need root: `NOT_ASSESSED`, in `06-next-cycle.md`.
+- **Ranker artefacts (D10 detail).** Lexical ranking lists `linux-mysql-mariadb` in the top three for
+  PostgreSQL prompts (its description names `linux-postgresql`) and `netmiko-ssh-automation` for SSH user
+  prompts. Recorded, not tuned.
+
 Author: Peter Bamuhigire, techguypeter.com, +256784464178.

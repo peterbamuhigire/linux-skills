@@ -1,0 +1,16 @@
+# Defect D3 after P2-02: same stub idea and umask 022 as d3-pg-backup-modes-baseline.log (2026-10-31)
+# (the stub pg_dump writes to standard output, as the new script calls it; the baseline stub wrote to --file)
+
+  [PASS] backup completed successfully
+exit=0
+
+$ stat -c '%a %n' <backup dir> <backup dir>/*
+700 <scratch>/pgfx-after2/work/bk
+600 <scratch>/pgfx-after2/work/bk/appdb_20261031-162722.dump
+600 <scratch>/pgfx-after2/work/bk/globals_20261031-162722.sql
+600 <scratch>/pgfx-after2/work/bk/salesdb_20261031-162722.dump
+
+$ ls -A <backup dir> | grep -c '^\.pg-backup'   (staging directories left behind)
+0
+
+# Directory 700 and every file 600; no staging directory left.

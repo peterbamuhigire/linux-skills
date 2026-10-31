@@ -52,4 +52,9 @@ Source: `metrics-baseline.json` (same parser as the 29 October baseline, run 202
 D1 and D3 are safety and integrity failures in operator-facing output. They are in the backlog
 as P0 and must be fixed and verified, or escalated, before this pass can report done.
 
+## Correction, 31 October 2026 (original statements above are unchanged)
+
+The line "Python tests: 62 `unittest` tests pass" should read **57** (see the addendum in
+`00-scope-and-evidence.md`); the scores and the other measures are unaffected.
+
 Author: Peter Bamuhigire, techguypeter.com, +256784464178.

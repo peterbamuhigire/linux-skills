@@ -1,0 +1,54 @@
+# Pass 2 final validator run, 2026-10-31, on branch kaizen/2026-10-pass2 after the last change (before the evidence documents were committed)
+
+$ python3 -X utf8 scripts/validate_skills.py --baseline quality-baseline.json
+linux-skills validator: 48 active skills, 1 templates
+fully compliant: 48
+failure counts: {}
+exit=0
+
+$ python3 -X utf8 scripts/routing_smoke_test.py
+routing fixtures: 95/95 valid; expected-target P@1=82/95 (0.863); P@3=95/95 (1.000); required P@3=95/95 (1.000)
+fixture kinds: collision=5, failure-path=5, limited-capability=3, negative=29, positive=53
+coverage: 14/48 skills meet 3 positive + 2 owned-negative fixtures; owned negatives=29
+exit=0
+
+$ bash scripts/tests/check-distro-matrix.sh
+  [PASS] linux-benchmark-scanning: family comparison table in Distro support
+  [PASS] linux-file-integrity: family comparison table in Distro support
+
+-- summary --
+  passed: 41
+  failed: 0
+exit=0
+
+$ bash scripts/tests/common-sh.test.sh
+
+--- common.sh test summary ---
+  passed: 42
+  failed: 0
+exit=0
+
+== run_all (every other safe check; one line each)
+validate_skills | exit=0 | failure counts: {}
+routing_smoke | exit=0 | routing fixtures: 95/95 valid; expected-target P@1=82/95 (0.863); P@3=95/95 (1.000); required P@3=95/95 (1.000) fixture kinds: collision=5, failure-pa
+distro_matrix | exit=0 |   failed: 0
+safe_operation_fixture | exit=0 | [PASS] fixture-only validation completed; no host action was executed
+source_ingestion | exit=0 | findings: 0
+marketplace | exit=0 | PASS: Claude marketplace and Codex compatibility manifests are aligned
+plugin_manifest | exit=0 | linux-skills: plugin.json is current — 45 skills.
+common_sh_suite | exit=0 |   failed: 0
+unittest:test_approval_adapter | exit=0 | OK
+unittest:test_audit_ssh | exit=0 | OK
+unittest:test_bootstrap_safety_static | exit=0 | OK
+unittest:test_distro_matrix | exit=0 | OK
+unittest:test_kaizen_contracts | exit=0 | OK
+unittest:test_kaizen_metrics | exit=0 | OK
+unittest:test_marketplace | exit=0 | OK
+unittest:test_mysql_backup_config | exit=0 | OK
+unittest:test_pg_backup | exit=0 | OK
+unittest:test_safe_operation_fixture | exit=0 | OK
+unittest:test_script_trust_boundaries | exit=0 | OK
+unittest:test_ssh_dropin_precedence | exit=0 | OK
+shim:validate_skills+admin_activity+codex_policy | exit=0 | test_codex_model_policy.py: passed=4 failed=0 skipped=0
+bash -n | files=36 failures=0
+run_all exit=0

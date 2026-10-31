@@ -1,0 +1,8 @@
+# Step 1 routing, ranker top four per request, 2026-10-31. Skill descriptions are unchanged by this pass, so the ranking is unchanged.
+# The ranker is a lexical stand-in for the model reading descriptions; see 06-next-cycle.md for its known artefacts.
+Task 1 hardened baseline: ['linux-server-provisioning', 'linux-mysql-mariadb', 'linux-file-integrity', 'linux-server-hardening']
+Task 2 MySQL backup: ['linux-disaster-recovery', 'linux-mysql-mariadb', 'kaizen-improvement-system', 'linux-bash-scripting']
+Task 3 502 after PHP upgrade: ['linux-webstack', 'linux-filesystem-snapshots', 'linux-log-management', 'cisco-ios-patterns']
+Extra: PostgreSQL backup: ['linux-postgresql', 'linux-disaster-recovery', 'linux-mysql-mariadb', 'linux-filesystem-snapshots']
+Extra: SSH password policy: ['netmiko-ssh-automation', 'linux-access-control', 'linux-server-hardening', 'cisco-ios-patterns']
+Extra: automatic updates on RHEL: ['linux-security-analysis', 'linux-package-management', 'linux-server-hardening', 'linux-sysadmin']
