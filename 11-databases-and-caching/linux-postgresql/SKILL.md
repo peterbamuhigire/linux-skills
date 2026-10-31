@@ -31,7 +31,7 @@ lives under `/etc/postgresql/<ver>/<cluster>/`. The body uses RHEL paths
 | `pg_hba.conf` | `/etc/postgresql/<ver>/main/pg_hba.conf` | `/var/lib/pgsql/data/pg_hba.conf` |
 | Admin user | `postgres` (peer auth: `sudo -u postgres psql`) | `postgres` (peer auth: `sudo -u postgres psql`) |
 | Cluster tooling | `pg_ctlcluster`, `pg_lsclusters` | `systemctl`, `pg_ctl` |
-| Default version | distro current | RHEL 9: PostgreSQL 13 (App Stream; newer streams available) |
+| Default version | distro current | RHEL 9: a plain `dnf install postgresql-server` installs PostgreSQL 13, which the PostgreSQL project no longer supports; choose a module stream first (see `references/install-and-auth.md`) |
 
 Both families ship `psql`, `pg_dump`, `pg_dumpall`, `pg_restore`,
 `pg_basebackup`, and connect over the same `postgres` superuser via **peer

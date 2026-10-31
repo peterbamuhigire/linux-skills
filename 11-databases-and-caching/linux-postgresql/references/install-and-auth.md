@@ -6,8 +6,26 @@ auth-method details are filled from the official PostgreSQL documentation.
 ## RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle)
 
 The cluster is **not** auto-created — you must initialize it once after install
-(Recipe 38). The default version is the Application Stream default (PostgreSQL 13
-on RHEL 9; newer streams are selectable).
+(Recipe 38).
+
+**Choose the major version before installing.** On RHEL 9 a plain
+`dnf install postgresql-server` installs PostgreSQL 13, the initial Application
+Stream version. The PostgreSQL project supported majors 14 to 18 on 2026-10-31
+and listed 13 and older as unsupported; 14 reaches its final release on
+2026-11-12. Red Hat documents newer streams for RHEL 9: 15 (since 9.2), 16
+(since 9.4) and 18 (since 9.8), and only one `postgresql` stream can be installed
+at a time:
+
+```bash
+dnf module list postgresql
+sudo dnf module install postgresql:16/server      # example: pick a supported major
+```
+
+Sources, read 2026-10-31: the PostgreSQL project's versioning policy page and
+Red Hat's RHEL 9 "Using PostgreSQL" chapter. Review by 2026-11-30 (a major
+reaches end of life each November). Not assessed: how long Red Hat back-ports
+fixes to each stream under its own lifecycle (project end of life and vendor
+support are different dates), and RHEL 10 or derivative-specific packaging.
 
 ```bash
 sudo dnf install postgresql-server postgresql-contrib
