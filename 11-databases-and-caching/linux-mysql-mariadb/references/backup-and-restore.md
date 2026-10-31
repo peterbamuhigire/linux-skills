@@ -28,6 +28,41 @@ or remote retention step returns nonzero; a completed encrypted local copy is
 left available for retry. Local and remote retention apply only to the
 script's `mysql-backup_*.tar.gz.gpg` files.
 
+## Backup account
+
+The credentials file named by `MYSQL_CNF` should belong to a dedicated account, not
+`root`. The script runs `mysqldump --single-transaction --routines --triggers --events`
+once per schema and once for `--all-databases`. The MySQL 8.4 `mysqldump` manual page
+(read 2026-10-31) says that command set needs:
+
+| Need | Privilege |
+|---|---|
+| Rows of every dumped table | `SELECT`; `--routines` requires the **global** `SELECT` |
+| Views, triggers, events | `SHOW VIEW`, `TRIGGER`, `EVENT` |
+| Tablespace metadata | `PROCESS`, unless `--no-tablespaces` is passed (the script does not pass it) |
+| Consistent snapshot with GTIDs | `RELOAD` or `FLUSH_TABLES` with `--single-transaction`, when `gtid_mode=ON` and `gtid_purged=ON` or `AUTO` |
+| Table locks | not needed: `--single-transaction` replaces `LOCK TABLES` |
+
+```sql
+CREATE USER 'sk_backup'@'localhost' IDENTIFIED BY '<generated, kept only in the 0600 option file>';
+GRANT SELECT, SHOW VIEW, TRIGGER, EVENT, PROCESS, RELOAD ON *.* TO 'sk_backup'@'localhost';
+```
+
+Treat that credential like the dump itself: global `SELECT` reads the `mysql` schema,
+and `PROCESS` shows every session's statements. Two traps follow from narrowing the
+grants. The script lists schemas from `information_schema.schemata`, and MySQL shows a
+user only the rows for objects it has some privilege on, so a schema the account cannot
+see is left out of the backup and the run still reports success. Compare the dumped
+schema list with `SHOW DATABASES` run by an administrator before trusting a narrower
+account. A missing privilege on a schema the account can see makes `mysqldump` fail, and the
+script then stops with `mysqldump failed` (exit 1).
+
+Status: the privilege list comes from the manual page, not from a server run in this
+review; the example statements were not executed. MariaDB ships `mariadb-dump`
+and its grants were not assessed. Sources: MySQL 8.4
+reference manual, `mysqldump` and INFORMATION_SCHEMA introduction pages, read
+2026-10-31; review by 2026-11-30.
+
 ## Verify a backup
 
 Record the source engine/version, backup start and end times, encrypted file
