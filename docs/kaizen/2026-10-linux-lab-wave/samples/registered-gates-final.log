@@ -1,0 +1,65 @@
+# Registered gates and suites after the last edit: HEAD cf670be on kaizen/2026-10-linux-wave plus the uncommitted evidence files (2026-10-31)
+
+$ python3 -X utf8 scripts/validate_skills.py --baseline quality-baseline.json
+linux-skills validator: 48 active skills, 1 templates
+fully compliant: 48
+failure counts: {}
+exit=0
+
+$ python3 -X utf8 scripts/routing_smoke_test.py
+routing fixtures: 109/109 valid; expected-target P@1=96/109 (0.881); P@3=109/109 (1.000); required P@3=109/109 (1.000)
+fixture kinds: collision=5, failure-path=5, limited-capability=3, negative=34, positive=62
+coverage: 17/48 skills meet 3 positive + 2 owned-negative fixtures; owned negatives=34
+exit=0
+
+$ bash scripts/tests/check-distro-matrix.sh
+  [PASS] linux-benchmark-scanning: family comparison table in Distro support
+  [PASS] linux-file-integrity: family comparison table in Distro support
+
+-- summary --
+  passed: 41
+  failed: 0
+exit=0
+
+$ python3 -X utf8 scripts/validate_safe_operation_fixture.py tests/fixtures/safe-operation-evidence.json
+[PASS] TEST-PACKAGE-DRY-RUN: dry-run and rollback fields are safe fixture evidence
+[PASS] TEST-SERVICE-DRY-RUN: dry-run and rollback fields are safe fixture evidence
+[PASS] TEST-FIREWALL-DRY-RUN: dry-run and rollback fields are safe fixture evidence
+[PASS] TEST-STORAGE-DRY-RUN: dry-run and rollback fields are safe fixture evidence
+[PASS] TEST-RECOVERY-DRY-RUN: dry-run and rollback fields are safe fixture evidence
+[PASS] fixture-only validation completed; no host action was executed
+exit=0
+
+$ python3 -X utf8 scripts/source_ingestion_guardrail.py
+source-ingestion-guardrail: <repository root>
+findings: 0
+exit=0
+
+$ python3 scripts/check_marketplace.py
+Package files (excluding .git and ephemeral caches): 444/5000
+Checkout file-like entries (including .git and caches): 1230/5000
+PASS: Claude marketplace and Codex compatibility manifests are aligned
+exit=0
+
+$ node scripts/generate-plugin-manifest.js --engine . --root . --exclude docs,scripts,templates,tests,commands,meta,notes,prompts --check
+linux-skills: plugin.json is current — 45 skills.
+exit=0
+
+$ bash scripts/tests/common-sh.test.sh
+  [PASS] die banner does not print a line number or last command taken from the exit trap
+  [PASS] an exit that did not go through die keeps the location banner
+
+--- common.sh test summary ---
+  passed: 45
+  failed: 0
+exit=0
+
+$ python -m pytest -p no:cacheprovider -q
+..................................sssssss............................ [ 53%]
+..............ss..................................... [ 95%]
+......                                                             [100%]
+119 passed, 9 skipped, 28 subtests passed in 2.98s
+exit=0
+
+$ python3 scripts/kaizen_metrics.py --as-of 2026-10-31 --baseline docs/kaizen/2026-10-linux-lab-wave/metrics-baseline.json --output /dev/null --quiet
+exit=0

@@ -31,7 +31,7 @@ $ python3 -X utf8 scripts/validate_safe_operation_fixture.py tests/fixtures/safe
 exit=0
 
 $ python3 -X utf8 scripts/source_ingestion_guardrail.py
-source-ingestion-guardrail: /home/peter/.claude/skills/linux-skills
+source-ingestion-guardrail: <repository root>
 findings: 0
 exit=0
 

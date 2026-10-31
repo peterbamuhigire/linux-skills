@@ -1,0 +1,288 @@
+.......                                                                  [100%]
+==================================== PASSES ====================================
+______________________ test_ssh_dropin_procedure[debian] _______________________
+----------------------------- Captured stdout call -----------------------------
+INFO  Debian GNU/Linux 12 (bookworm); OpenSSH_9.2, OpenSSL 3.0.22 25 Aug 2026
+INFO  service unit on this distro: ssh
+PASS  before: password login works, so the lab can see a failure
+PASS  before: key login works
+
+=== A. documented procedure, blocks run verbatim
+/etc/ssh/sshd_config:62:KbdInteractiveAuthentication no
+/etc/ssh/sshd_config.d/50-cloud-init.conf:2:PasswordAuthentication yes
+PASS  apply block (writes the drop-in, ends with sshd -t) exits 0
+PASS  reload block exits 0 (after naming the unit sshd where it failed as written)
+PASS  the documented reload block exits 0 as written on this distro
+PASS  sshd -T reports: permitrootlogin no
+PASS  sshd -T reports: passwordauthentication no
+PASS  sshd -T reports: pubkeyauthentication yes
+PASS  sshd -T reports: allowusers administrator
+PASS  a real password login is refused
+PASS  a real key login still works for the allowed user
+PASS  a real key login is refused for a user outside AllowUsers
+PASS  a real root login is refused (PermitRootLogin no)
+
+=== B. rollback block, verbatim
+PASS  the documented rollback block exits 0 as written on this distro
+PASS  after rollback the cloud-init default is back: password login works
+
+=== C. the old drop-in name loses to cloud-init
+PASS  old name: sshd -T still says passwordauthentication yes
+PASS  old name: a real password login still succeeds
+
+=== D. controlled failure: a syntax error in the drop-in
+PASS  D0: hardened state refuses password login
+PASS  D1: the broken apply block really contains the error
+/etc/ssh/sshd_config.d/00-linux-skills-ssh.conf line 3: unsupported option "maybe".
+PASS  D2: the block's own sshd -t step reports the error (exit 255)
+PASS  D3: 'sshd -t && systemctl reload' stops before the reload (exit 255)
+PASS  D4: no reload reached systemctl during the failure
+PASS  D5: the running daemon still accepts the allowed key
+PASS  D6: the running daemon still refuses passwords
+PASS  D7: after the repair, passwords are refused again
+### RESULT: ALL-PASS
+
+______________________ test_ssh_dropin_procedure[fedora] _______________________
+----------------------------- Captured stdout call -----------------------------
+INFO  Fedora Linux 44 (Container Image); OpenSSH_10.2p1, OpenSSL 3.5.9 29 Sep 2026
+INFO  service unit on this distro: sshd
+PASS  before: password login works, so the lab can see a failure
+PASS  before: key login works
+
+=== A. documented procedure, blocks run verbatim
+/etc/ssh/sshd_config.d/50-redhat.conf:3:KbdInteractiveAuthentication no
+/etc/ssh/sshd_config.d/50-cloud-init.conf:2:PasswordAuthentication yes
+PASS  apply block (writes the drop-in, ends with sshd -t) exits 0
+PASS  reload block exits 0 (after naming the unit sshd where it failed as written)
+PASS  the documented reload block exits 0 as written on this distro
+PASS  sshd -T reports: permitrootlogin no
+PASS  sshd -T reports: passwordauthentication no
+PASS  sshd -T reports: pubkeyauthentication yes
+PASS  sshd -T reports: allowusers administrator
+PASS  a real password login is refused
+PASS  a real key login still works for the allowed user
+PASS  a real key login is refused for a user outside AllowUsers
+PASS  a real root login is refused (PermitRootLogin no)
+
+=== B. rollback block, verbatim
+PASS  the documented rollback block exits 0 as written on this distro
+PASS  after rollback the cloud-init default is back: password login works
+
+=== C. the old drop-in name loses to cloud-init
+PASS  old name: sshd -T still says passwordauthentication yes
+PASS  old name: a real password login still succeeds
+
+=== D. controlled failure: a syntax error in the drop-in
+PASS  D0: hardened state refuses password login
+PASS  D1: the broken apply block really contains the error
+/etc/ssh/sshd_config.d/00-linux-skills-ssh.conf line 3: unsupported option "maybe".
+PASS  D2: the block's own sshd -t step reports the error (exit 255)
+PASS  D3: 'sshd -t && systemctl reload' stops before the reload (exit 255)
+PASS  D4: no reload reached systemctl during the failure
+PASS  D5: the running daemon still accepts the allowed key
+PASS  D6: the running daemon still refuses passwords
+PASS  D7: after the repair, passwords are refused again
+### RESULT: ALL-PASS
+
+___________ test_pg_backup_then_restore_on_scratch_instance[debian] ____________
+----------------------------- Captured stdout call -----------------------------
+INFO  Debian GNU/Linux 12 (bookworm); PostgreSQL 15.19 (Debian 15.19-0+deb12u1) on x86
+INFO  script: #: Version:     0.2.0
+INFO  dump-time figures: customers_rows|5000 customers_md5|03ff3690912436243551a0b0a7610106 audit_rows|5000 indexes|2 triggers|1 views|1 extensions|pgcrypto,plpgsql seq_last|5000 owner|app_user grant_app_ro|t 
+
+=== P1 dry run
+PASS  dry run exits 0
+PASS  dry run created nothing
+
+=== P2 real run, all databases
+  PASS: 3
+  WARN: 0
+  FAIL: 0
+  Score: 100%
+
+  [PASS] backup completed successfully
+PASS  real run exits 0
+total 64
+drwx------. 1 root root   190 Oct 31 16:05 .
+drwxr-xr-x. 1 root root     8 Oct 31 16:05 ..
+-rw-------. 1 root root   917 Oct 31 16:05 globals_20261031-160517.sql
+-rw-------. 1 root root 49218 Oct 31 16:05 lab_a_20261031-160517.dump
+-rw-------. 1 root root  7962 Oct 31 16:05 lab_odd_db_2678297631_20261031-160517.dump
+PASS  backup directory is mode 700
+PASS  every file is mode 600
+PASS  no staging directory or temp file remains
+PASS  one globals file and two dumps
+PASS  the postgres maintenance database is not dumped
+PASS  globals hold the app_user role
+PASS  globals hold a SCRAM hash, which is why mode 600 matters
+PASS  the awkward database name became a safe file name
+PASS  no 'could not change directory' warning from the client calls (run from /root, as cron does)
+
+=== P3 repeated run and retention
+PASS  second run exits 0
+PASS  second run adds a second complete set
+PASS  run with --retention 7 exits 0
+PASS  the expired set is pruned
+PASS  the two newer sets are kept
+PASS  unrelated old files are untouched
+PASS  every file the script wrote is still mode 600
+
+=== P4 controlled failures
+PASS  F1 a missing database: exit 1
+PASS  F1 no staging left behind
+PASS  F2 PostgreSQL stopped, --all: exit 1
+PASS  F2 nothing written
+PASS  F2 PostgreSQL stopped, --db: exit 1
+PASS  F2 nothing written, no staging
+PASS  F3 an unwritable backup path (its parent is a file): exit 1
+PASS  F4 a write failure (file-size limit standing in for a full disk): exit 1
+PASS  F4 no staging left behind
+PASS  F4 no unreadable dump published under a backup name
+PASS  F5 a truncated dump: exit 1
+PASS  F5 no truncated dump published
+PASS  F6 a world-writable configuration file is refused: exit 3
+PASS  F7 retention 0 is refused: exit 2
+### RESULT: ALL-PASS
+
+INFO  scratch instance: Debian GNU/Linux 12 (bookworm); PostgreSQL 15.19 (Debian 15.19-0+deb12u1) on x86
+INFO  backup set 20261031-160517: globals_20261031-160517.sql lab_a_20261031-160517.dump lab_odd_db_2678297631_20261031-160517.dump 
+
+=== step 1: readability, no server needed
+
+=== step 2: roles first, then the database (documented commands, placeholders substituted)
+INFO  globals restore: exit 0 in 77 ms
+PASS  globals restore exits 0 despite the expected bootstrap-role error
+PASS  the documented harmless error appeared (role postgres already exists)
+PASS  app_user exists on the scratch instance
+INFO  lab_a restore: exit 0 in 260 ms
+PASS  lab_a restore exits 0
+PASS  restore of the awkwardly named database exits 0
+
+=== step 3: reconcile with the dump-time figures
+INFO  restored figures: customers_rows|5000 customers_md5|03ff3690912436243551a0b0a7610106 audit_rows|5000 indexes|2 triggers|1 views|1 extensions|pgcrypto,plpgsql seq_last|5000 owner|app_user grant_app_ro|t 
+PASS  lab_a: every reconciliation figure equals the dump-time figure
+PASS  awkwardly named database: row count and content md5 equal
+PASS  ANALYZE, then a read-only application query
+
+=== controlled failures of the restore
+PASS  a second --create restore into the same instance is refused (exit 1)
+PASS  the refusal names the existing database
+PASS  a truncated dump fails loudly (exit 1)
+PASS  pg_restore -j from standard input is refused, as the procedure says
+PASS  the parallel refusal message is the manual's
+### RESULT: ALL-PASS
+
+___________ test_pg_backup_then_restore_on_scratch_instance[fedora] ____________
+----------------------------- Captured stdout call -----------------------------
+INFO  Fedora Linux 44 (Container Image); PostgreSQL 18.6 on x86_64-redhat-linux-gnu, comp
+INFO  script: #: Version:     0.2.0
+INFO  dump-time figures: customers_rows|5000 customers_md5|03ff3690912436243551a0b0a7610106 audit_rows|5000 indexes|2 triggers|1 views|1 extensions|pgcrypto,plpgsql seq_last|5000 owner|app_user grant_app_ro|t 
+
+=== P1 dry run
+PASS  dry run exits 0
+PASS  dry run created nothing
+
+=== P2 real run, all databases
+  PASS: 3
+  WARN: 0
+  FAIL: 0
+  Score: 100%
+
+  [PASS] backup completed successfully
+PASS  real run exits 0
+total 72
+drwx------. 1 root root   190 Oct 31 16:05 .
+drwxr-xr-x. 1 root root     8 Oct 31 16:05 ..
+-rw-------. 1 root root   917 Oct 31 16:05 globals_20261031-160532.sql
+-rw-------. 1 root root 53973 Oct 31 16:05 lab_a_20261031-160532.dump
+-rw-------. 1 root root  8880 Oct 31 16:05 lab_odd_db_2678297631_20261031-160532.dump
+PASS  backup directory is mode 700
+PASS  every file is mode 600
+PASS  no staging directory or temp file remains
+PASS  one globals file and two dumps
+PASS  the postgres maintenance database is not dumped
+PASS  globals hold the app_user role
+PASS  globals hold a SCRAM hash, which is why mode 600 matters
+PASS  the awkward database name became a safe file name
+PASS  no 'could not change directory' warning from the client calls (run from /root, as cron does)
+
+=== P3 repeated run and retention
+PASS  second run exits 0
+PASS  second run adds a second complete set
+PASS  run with --retention 7 exits 0
+PASS  the expired set is pruned
+PASS  the two newer sets are kept
+PASS  unrelated old files are untouched
+PASS  every file the script wrote is still mode 600
+
+=== P4 controlled failures
+PASS  F1 a missing database: exit 1
+PASS  F1 no staging left behind
+PASS  F2 PostgreSQL stopped, --all: exit 1
+PASS  F2 nothing written
+PASS  F2 PostgreSQL stopped, --db: exit 1
+PASS  F2 nothing written, no staging
+PASS  F3 an unwritable backup path (its parent is a file): exit 1
+PASS  F4 a write failure (file-size limit standing in for a full disk): exit 1
+PASS  F4 no staging left behind
+PASS  F4 no unreadable dump published under a backup name
+PASS  F5 a truncated dump: exit 1
+PASS  F5 no truncated dump published
+PASS  F6 a world-writable configuration file is refused: exit 3
+PASS  F7 retention 0 is refused: exit 2
+### RESULT: ALL-PASS
+
+INFO  scratch instance: Fedora Linux 44 (Container Image); PostgreSQL 18.6 on x86_64-redhat-linux-gnu, comp
+INFO  backup set 20261031-160532: globals_20261031-160532.sql lab_a_20261031-160532.dump lab_odd_db_2678297631_20261031-160532.dump 
+
+=== step 1: readability, no server needed
+
+=== step 2: roles first, then the database (documented commands, placeholders substituted)
+INFO  globals restore: exit 0 in 59 ms
+PASS  globals restore exits 0 despite the expected bootstrap-role error
+PASS  the documented harmless error appeared (role postgres already exists)
+PASS  app_user exists on the scratch instance
+INFO  lab_a restore: exit 0 in 262 ms
+PASS  lab_a restore exits 0
+PASS  restore of the awkwardly named database exits 0
+
+=== step 3: reconcile with the dump-time figures
+INFO  restored figures: customers_rows|5000 customers_md5|03ff3690912436243551a0b0a7610106 audit_rows|5000 indexes|2 triggers|1 views|1 extensions|pgcrypto,plpgsql seq_last|5000 owner|app_user grant_app_ro|t 
+PASS  lab_a: every reconciliation figure equals the dump-time figure
+PASS  awkwardly named database: row count and content md5 equal
+PASS  ANALYZE, then a read-only application query
+
+=== controlled failures of the restore
+PASS  a second --create restore into the same instance is refused (exit 1)
+PASS  the refusal names the existing database
+PASS  a truncated dump fails loudly (exit 1)
+PASS  pg_restore -j from standard input is refused, as the procedure says
+PASS  the parallel refusal message is the manual's
+### RESULT: ALL-PASS
+
+______ test_debian_unattended_upgrades_origins_match_the_security_archive ______
+----------------------------- Captured stdout call -----------------------------
+INFO  Debian GNU/Linux 12 (bookworm)
+INFO  pending security upgrades before the procedure: tzdata
+
+=== the archive's own Release fields
+PASS  a security archive Release file is present
+INFO  security archive: Origin=Debian Label=Debian-Security Suite=oldstable-security Codename=bookworm-security
+PASS  the Suite is not the codename (the reason the Ubuntu pattern cannot match on Debian)
+
+=== documented configuration block, verbatim
+PASS  configuration block exits 0
+
+=== documented verify command, verbatim
+Allowed origins are: origin=Debian,codename=bookworm-security,label=Debian-Security
+Packages that will be upgraded: tzdata
+Inst tzdata [2026e-0+deb12u1] (2026f-0+deb12u1 Debian-Security:12/oldstable-security [all])
+PASS  the dry run names origins ('Allowed origins are')
+PASS  the origins include the security archive's Label (Debian-Security)
+PASS  the origins include the security archive's Codename (bookworm-security)
+PASS  the dry run does not report 'No packages found' while security upgrades are pending
+PASS  pending security upgrade tzdata is listed to be upgraded
+### RESULT: ALL-PASS
+
+7 passed in 201.22s (0:03:21)
+exit=0

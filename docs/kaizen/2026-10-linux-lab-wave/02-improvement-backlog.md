@@ -1,6 +1,6 @@
-# Improvement backlog — Linux lab wave (nine items selected of ten allowed)
+# Improvement backlog — Linux lab wave (ten items selected of ten allowed)
 
-Ordered by risk. Commit order differs for one item: the lab harness (LW-03) is committed first so that
+Ordered by risk. LW-10 was added while standardising (Step 6). Commit order differs for one item: the lab harness (LW-03) is committed first so that
 each fix after it adds its own assertion to a harness that already runs, and the assertion can be shown
 failing against the unfixed copy. Every item names its root cause (5 Whys condensed to the cause that a
 change can reach), exact change, hypothesis, acceptance evidence, risk and rollback, and the dimensions it moves.
@@ -18,6 +18,7 @@ Owner for all items: Peter Bamuhigire. Date: 2026-10-31.
 | LW-07 | P2 | ShellCheck was run once by hand in a container and never gated. Root cause: no configuration records which findings are intended. | `.shellcheckrc` disables SC2034 for variables read by the sourced library; an inline directive with a reason on the three intended redirects in `sk-pg-backup`; a lab test that fails on any warning or error. Hypothesis: zero warnings today, so a new one is visible. | ShellCheck 0.9.0 and the Fedora package over 36 sources, exit 0 after, non-zero before. | Configuration only. Revert. | Hygiene, applied proof |
 | LW-08 | P2 | The distro-matrix check asks only that the section exists (the standing P2). Root cause: it was written to catch a missing section, not a divergent command. | Add a static check that a Debian-only service unit used in a two-family procedure has its RHEL counterpart named in the same file or matrix, starting with SSH and cron. Hypothesis: it fails on the pre-LW-02 text and passes after. | `tests/test_distro_matrix.py` case failing on the unfixed copy of the checklist. | Test only. Revert. | Doctrine, hygiene |
 | LW-09 | P2 | Pass-2 next-cycle P2: `kaizen_metrics.py --output` also prints the whole JSON. | Add `--quiet`. Hypothesis: with `--output` and `--quiet` nothing is printed on success. | New case in `tests/test_kaizen_metrics.py`. | Tool option only. Revert. | Hygiene |
+| LW-10 | P2 | Step 6 asks for routing fixtures for every skill touched. Root cause: three skills edited in this wave (disaster recovery, troubleshooting, system monitoring) had 0 or 1 owned negatives. | Fourteen fixtures (3 positives and 2 owned negatives each), then pin the fixture count in `quality-baseline.json`. Hypothesis: each ranks its owner first and keeps named neighbours out of the top three. | `scripts/routing_smoke_test.py` exit 0; P@1 not below 0.863; skills at 3+2 not below 14. | Fixtures only. Revert. | Taxonomy and routing |
 
 ## Moved to `06-next-cycle.md`
 

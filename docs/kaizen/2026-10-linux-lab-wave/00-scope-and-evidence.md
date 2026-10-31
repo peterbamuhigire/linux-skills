@@ -99,3 +99,24 @@ the reference file says Ubuntu, the procedure says Debian, W1); the SSH service 
 - Production-size backups, real disk exhaustion (a file-size limit stands in), remote object-store outage.
 - Ubuntu's `Allowed-Origins` behaviour: no Ubuntu image; the Debian result says nothing about it.
 - The other 22 `sk-*` scripts (mutating host scripts) were not run, even in containers: each needs its subsystem (LVM, auditd, nftables, kernel modules) that an unprivileged container does not provide.
+
+## Addendum written during Step 4 (original text above is unchanged)
+
+- **W1 has two manifestations, not one.** Table row W1 describes the pattern placed where the shipped Debian
+  stanza was. A second lab run put the documented Ubuntu block beside the shipped `Origins-Pattern`
+  ([sample](samples/lab-unattended-upgrades-debian12-fix-candidates.log), last section): the dry run then listed the
+  pending tzdata upgrade, because the shipped stanza still matched. So the documented text is inert when the shipped
+  stanza is removed or replaced (the "security-only" intent, shown in
+  [documented origins](samples/lab-unattended-upgrades-debian12-documented-origins.log) and
+  [driver before fix](samples/lab-unattended-upgrades-debian12-driver-before-fix.log)), and merely redundant, with
+  the host not security-only, when it is added beside it. Both miss what the procedure states. Severity stays
+  critical for the first case.
+- **A second fault in the same verify step.** `unattended-upgrade --dry-run --debug` printed 35 lines on a fresh
+  Debian 12 container; the procedure piped it through `tail -30`, which dropped the `Allowed origins are:` line and
+  the `Initial blacklist` line that the "Expected" text names. The fixed procedure filters with `grep` instead.
+- **Test counts.** The 102 passed and 1 skipped at baseline became 119 passed and 9 skipped by the last static
+  change (the 8 added skips are the opt-in lab tests: 7 distro labs and 1 MySQL account lab; the original skip is
+  the MySQL backup lab).
+- **Debian restore sample.** `lab-pg-restore-debian12-baseline.log` ends with `HAS-FAILURES` because the scratch
+  driver mixed standard error into the comparison file; the figures printed beside the `FAIL` are identical. The
+  committed driver captures standard output only, and the final Debian restore run in the validation record passes.
