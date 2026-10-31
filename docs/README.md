@@ -28,6 +28,7 @@ The latest published score, [what the October 2026 kaizen improved](../README.md
 | [`control-plane-adoption.md`](control-plane-adoption.md) | How the shared control plane applies to this engine |
 | [`operations/system-admin-activity.md`](operations/system-admin-activity.md) | Administration activity records |
 | [`ai-prompting/`](ai-prompting/domain-prompt-compilation-contract.md) | The contract for generating a ready-to-paste operational prompt |
+| [`references.md`](references.md) | The full list of books, adapted repositories, tool projects, standards and product documentation behind the engine (moved out of the README) |
 
 ## Historical records
 
