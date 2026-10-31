@@ -30,4 +30,4 @@ jobs:
           python scripts/check_marketplace.py
           node scripts/generate-plugin-manifest.js --engine . --root . --exclude "docs,scripts,templates,tests,commands,meta,notes,prompts" --check
       - name: Check bounded hygiene regressions
-        run: python scripts/kaizen_metrics.py --baseline docs/kaizen/2026-10-engine-kaizen/metrics-baseline.json
+        run: python scripts/kaizen_metrics.py --baseline docs/kaizen/2026-10-engine-kaizen-pass-2/metrics-final.json
