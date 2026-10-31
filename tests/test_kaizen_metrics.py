@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import subprocess
 import tempfile
@@ -262,6 +264,30 @@ One concise example.
             result = METRICS.touched_skill_metrics(self.root, skills, coverage, "2ce755a")
         self.assertEqual(result["touched_skills"], ["linux-alpha"])
         self.assertEqual(result["coverage"], {"linux-alpha": {"positive": 3, "owned_negative": 2}})
+
+    def run_main(self, *extra: str) -> tuple[int, str, Path]:
+        output = self.root / "out" / "metrics.json"
+        arguments = ["--root", str(self.root), "--as-of", "2026-10-31", "--output", str(output), *extra]
+        captured = io.StringIO()
+        with contextlib.redirect_stdout(captured):
+            code = METRICS.main(arguments)
+        return code, captured.getvalue(), output
+
+    def test_output_without_quiet_still_prints_the_report(self) -> None:
+        code, printed, output = self.run_main()
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(printed), json.loads(output.read_text(encoding="utf-8")))
+
+    def test_quiet_with_output_writes_the_file_and_prints_nothing(self) -> None:
+        code, printed, output = self.run_main("--quiet")
+        self.assertEqual(code, 0)
+        self.assertEqual(printed, "")
+        self.assertEqual(json.loads(output.read_text(encoding="utf-8"))["as_of"], "2026-10-31")
+
+    def test_quiet_without_output_is_a_usage_error_not_a_silent_discard(self) -> None:
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as raised:
+            METRICS.main(["--root", str(self.root), "--quiet"])
+        self.assertEqual(raised.exception.code, 2)
 
 
 if __name__ == "__main__":

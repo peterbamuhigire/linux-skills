@@ -525,15 +525,22 @@ def build_metrics(
     return report
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="with --output, write the report to the file only and print nothing on success",
+    )
     parser.add_argument("--baseline", type=Path, help="baseline metrics JSON for a same-scope hygiene regression gate")
     parser.add_argument("--base-ref", default="HEAD", help="Git ref for touched-skill diff coverage (default: HEAD)")
     parser.add_argument("--baseline-commit", help="source commit when measuring a detached archive snapshot")
     parser.add_argument("--as-of", type=date.fromisoformat, default=date.today())
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    if args.quiet and not args.output:
+        parser.error("--quiet needs --output: without a file the report would be discarded")
     root = args.root.resolve()
     report = build_metrics(
         root,
@@ -546,7 +553,8 @@ def main() -> int:
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(rendered, encoding="utf-8")
-    print(rendered, end="")
+    if not (args.quiet and args.output):
+        print(rendered, end="")
     return 1 if report["hygiene_regression"].get("status") == "fail" else 0
 
 
