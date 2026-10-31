@@ -262,12 +262,12 @@ The canonical engine scanner needs the engineering-catalogue checkout. On some m
 - **Container lab requirements.** Rootless Podman, with these images already present locally: `docker.io/library/debian:bookworm`, `quay.io/fedora/fedora:44`, `docker.io/library/mysql:8.4` and `docker.io/rclone/rclone`. The labs never pull an image or publish a port.
   - The Debian and Fedora labs copy the repository into their containers and mount no host path. Those containers install packages from the distribution mirrors, so they need outbound network access from the container.
   - The MySQL labs mount the repository read-only and one temporary directory read-write, and use an internal Podman network.
-  - Lab wave results: 7 passed in 201 s and 2 passed in 70 s ([validation record](docs/kaizen/2026-10-linux-lab-wave/04-validation-record.md)). They were not re-run on 31 October 2026, because no containers were used then.
+  - Lab wave results: 7 passed in 201 s and 2 passed in 70 s ([validation record](docs/kaizen/2026-10-linux-lab-wave/04-validation-record.md)). They were not re-run on 31 October 2026: no containers were used.
   - After a run, `podman ps --all --format '{{.Names}}' | grep '^lskw-'` must print nothing.
 - **ShellCheck.** CI does not run it. It runs inside the lab containers (`test_shellcheck_reports_no_warnings`, ShellCheck 0.9.0 on Debian 12 and 0.11.0 on Fedora 44): `shellcheck -x --severity=warning` over 41 shell sources.
   - The lab wave measured 0 findings.
   - Before it there were 28 warnings. The wave judged them to be false positives and annotated them inline with `# shellcheck disable=` directives and a reason.
-- **PowerShell.** `install.ps1` needs `pwsh` or Windows PowerShell. It has not been run.
+- **PowerShell.** `install.ps1` needs `pwsh` or Windows PowerShell. It was not run on 31 October 2026 (no PowerShell on the machine).
 - **Not needed.** No check renders a document, so Pandoc, Mermaid, a browser and LibreOffice are not required.
 
 ## Quality and improvement
@@ -318,7 +318,7 @@ The three lists after the figures hold kept changes only: [defects](#defects-fix
 | Dangling local paths, dangling anchors | 7, 10 | 5, 10 | 0, 0 | 0, 0 | Final reports; 0, 0 re-measured |
 | Skills with duplicate contract headings | 10 | 10 | 0 | 0 | Final reports; 0 re-measured |
 | Expired source rows | 10 | 10 | 0 | 0 | Final reports; 0 re-measured |
-| ShellCheck warnings | not recorded | not recorded | 28 | 0 | Lab wave validation record; not re-measured (no ShellCheck or container available) |
+| ShellCheck warnings | not recorded | not recorded | 28 | 0 | Lab wave validation record; not re-measured (no ShellCheck installed; no container used) |
 | Opt-in container lab tests | not recorded | 1 | 1 | 9 | Validation records; 9 re-measured as the default run's skips |
 
 - The raw mean is a reviewer judgement against named evidence. No command re-measures it.
