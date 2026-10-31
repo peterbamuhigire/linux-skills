@@ -311,7 +311,7 @@ lxc config show web01 | grep -E 'limits\.'
 
 ---
 
-## References
+## Reference files
 
 - [`references/lxd-reference.md`](references/lxd-reference.md) — full LXD
   reference: init, profiles, storage, networks, 6 worked examples.

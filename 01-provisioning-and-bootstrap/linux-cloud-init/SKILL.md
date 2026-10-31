@@ -390,7 +390,7 @@ cd /tmp/autoinstall && python3 -m http.server 3003
 
 ---
 
-## References
+## Reference files
 
 - [`references/user-data-reference.md`](references/user-data-reference.md) —
   full user-data reference: every module with examples, 5 complete

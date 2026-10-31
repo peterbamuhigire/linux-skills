@@ -393,7 +393,7 @@ sudo postfix reload
 
 ---
 
-## References
+## Reference files
 
 - [`references/postfix-reference.md`](references/postfix-reference.md) —
   full Postfix reference: `main.cf` parameters, `master.cf`, queue

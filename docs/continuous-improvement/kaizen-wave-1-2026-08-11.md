@@ -16,10 +16,10 @@ firewall, storage, and recovery planning without executing a host action.
 The Windows host still cannot supply Linux system evidence. The Bash suites and
 LXD harness remain `NOT ASSESSED`; they are not reported as passes. The Wave 1
 report score is therefore held at the diagnostic raw baseline of `62.0`
-([initial assessment](../../../KAIZEN-INITIAL-ASSESSMENT.md)), with the
+(portfolio document `KAIZEN-INITIAL-ASSESSMENT.md`, kept outside this repository), with the
 exercise publication cap applied as `min(62.0, 55.0) = 55.0`. The permanent
 Linux engine cap of `65` remains unchanged in the repository policy
-([engine audit rule](../../linux-sysadmin/SKILL.md#engine-audits)). The target
+([engine audit rule](../../linux-sysadmin/SKILL.md#workflow)). The target
 of `95` is not achieved.
 
 No required file was unavailable. The assignment prompt, initial assessment,
@@ -32,7 +32,7 @@ The frozen portfolio assessment records `44` active Linux skills plus one
 template, `44/44` active contracts, `25/25` routing fixtures, zero source
 guardrail findings, raw diagnostic score `62.0`, exercise-published score
 `55.0`, and maturity `L2 — repeatable workflow with platform execution
-unassessed` ([initial assessment](../../../KAIZEN-INITIAL-ASSESSMENT.md)).
+unassessed` (portfolio document `KAIZEN-INITIAL-ASSESSMENT.md`, kept outside this repository).
 
 The pre-edit working tree was clean and aligned with its remote branch:
 `main...origin/main` ([baseline status command evidence](#baseline-and-change-control)).
@@ -80,7 +80,7 @@ No sibling repository or workspace-level report was modified.
 
 | Field | Wave 1 record |
 | --- | --- |
-| Gap | Portability and system-evidence dimensions: canonical policy and setup guidance centred Claude discovery and a fixed `~/.claude/skills` path; Bash/system suites had no repository-local matrix or disposable CI route. Baseline system execution was `NOT ASSESSED` ([assessment gap](../../../KAIZEN-INITIAL-ASSESSMENT.md)). |
+| Gap | Portability and system-evidence dimensions: canonical policy and setup guidance centred Claude discovery and a fixed `~/.claude/skills` path; Bash/system suites had no repository-local matrix or disposable CI route. Baseline system execution was `NOT ASSESSED` (assessment gap in the portfolio document `KAIZEN-INITIAL-ASSESSMENT.md`, kept outside this repository). |
 | Root cause | Routing/documentation and proof failure. A Claude adapter was treated as the default entry point, while the available Windows host could not execute `/bin/bash` or LXD. |
 | Exact change | Updated `AGENTS.md`, `README.md`, `linux-sysadmin/SKILL.md`, `docs/engine-design/spec.md`, and the optional `scripts/setup-claude-code.sh`; added `docs/continuous-improvement/platform-test-matrix-2026-08.md` and `.github/workflows/bash-suites.yml`. |
 | Hypothesis | A fresh agent can start from `AGENTS.md` and `linux-sysadmin/SKILL.md` without assuming Claude or a fixed home path, while Linux suites have a reproducible disposable route. |

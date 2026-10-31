@@ -391,7 +391,7 @@ silent workaround.
 
 ---
 
-## References
+## Reference files
 
 - [`references/script-template.sh`](references/script-template.sh) — the canonical six-section template.
 - [`references/common-sh-contract.md`](references/common-sh-contract.md) — full function contract for the shared library.

@@ -394,7 +394,7 @@ journalctl -u chrony -n 50 --no-pager
 
 ---
 
-## References
+## Reference files
 
 - [`references/netplan-reference.md`](references/netplan-reference.md) —
   complete netplan YAML syntax and 8 worked examples.

@@ -358,7 +358,7 @@ dig @127.0.0.1 -x 192.0.2.10 +short
 
 ---
 
-## References
+## Reference files
 
 - [`references/bind9-reference.md`](references/bind9-reference.md) —
   full BIND9 reference: named.conf structure, options, logging, views,

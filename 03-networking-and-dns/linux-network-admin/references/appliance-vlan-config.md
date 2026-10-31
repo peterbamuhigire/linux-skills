@@ -9,7 +9,7 @@ appliance-config counterpart to this skill's own host-side VLAN coverage.
 **Do not duplicate netplan content here.** For tagging a VLAN on a Linux
 **server's own NIC** (802.1Q trunk parsing, `vlans:` stanza syntax, bonded
 trunk examples), see
-[`netplan-reference.md`](netplan-reference.md#bridges-bonds-vlans-wifis) —
+[`netplan-reference.md`](netplan-reference.md#bridges-bonds-vlans-wifis--key-reference) —
 that file already has 8 worked netplan examples including VLAN trunks and a
 management-VLAN-on-a-bond production example. This file starts where that one
 stops: the switch/router/AP/firewall side of the same VLAN design, which a
@@ -238,7 +238,7 @@ add chain=forward src-address=192.168.20.0/24 dst-address=192.168.10.0/24 \
 
 The equivalent Linux-host-side concept (a NIC receiving a tagged trunk from
 one of these switches) is documented in
-[`netplan-reference.md` Example 4](netplan-reference.md#bridges-bonds-vlans-wifis).
+[`netplan-reference.md` Example 4](netplan-reference.md#bridges-bonds-vlans-wifis--key-reference).
 
 ## Anti-Patterns
 

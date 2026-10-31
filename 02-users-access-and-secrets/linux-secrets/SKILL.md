@@ -399,7 +399,7 @@ sudo find /etc/mysql /root/.ssh /etc/ssl/private -type f \
 
 ---
 
-## References
+## Reference files
 
 - [`references/secret-scanning.md`](references/secret-scanning.md) —
   trufflehog, gitleaks, detect-secrets, pre-commit integration, history

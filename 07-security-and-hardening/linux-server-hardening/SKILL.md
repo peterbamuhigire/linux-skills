@@ -195,7 +195,7 @@ for the complete commands for each area.
 - `expose_php = Off`, `display_errors = Off`, `allow_url_include = Off`
 - Session cookie security settings
 - `disable_functions` for dangerous functions
-- Config: `/etc/php/8.3/fpm/php.ini`
+- Config: the installed FPM `php.ini` (Debian `/etc/php/<version>/fpm/php.ini`, RHEL family `/etc/php.ini`); discover the version first, as `references/hardening-checklist.md` does with `$PHP_VER`
 - No PHP-hardening wrapper is shipped. Use the installed PHP-FPM paths and
   validator documented in `references/hardening-checklist.md`.
 

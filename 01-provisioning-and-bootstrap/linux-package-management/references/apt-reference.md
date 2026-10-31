@@ -20,7 +20,7 @@ carefully.
 - [Update, upgrade, install, purge, autoremove](#updating-and-upgrading)
 - [Holds with apt-mark](#holds-apt-mark)
 - [Pinning](#pinning-with-etcaptpreferencesd)
-- [PPAs and GPG keys](#ppas-and-add-apt-repository)
+- [PPAs and GPG keys](#ppas-third-party-repos-and-gpg-keys)
 - [Phasing and held-back packages](#phasing-ubuntus-gradual-rollout)
 - [dpkg output and apt-cache](#reading-dpkg-output-during-install-and-upgrade)
 - [Dependency failures and recovery](#dependency-failures-and-recovery)

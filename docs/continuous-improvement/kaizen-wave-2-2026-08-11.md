@@ -48,10 +48,10 @@ Claude adapter.
 The Wave 1 score records also need reconciliation. The portfolio report records
 Linux diagnostic raw `70.0`, while the repository-local Wave 1 report deliberately
 holds its raw re-score at `62.0` because live platform evidence was absent
-([portfolio report](../../../KAIZEN-WAVE-1-REPORT.md), [repository Wave 1 report](kaizen-wave-1-2026-08-11.md)).
+(portfolio report `KAIZEN-WAVE-1-REPORT.md`, kept outside this repository; [repository Wave 1 report](kaizen-wave-1-2026-08-11.md)).
 Wave 2 does not invent a replacement raw score. The exercise-published score
 remains capped at `55.0` under the assignment rule in the initial assessment
-([initial assessment](../../../KAIZEN-INITIAL-ASSESSMENT.md)).
+(portfolio document `KAIZEN-INITIAL-ASSESSMENT.md`, kept outside this repository).
 
 ## Wave 1 challenge and result
 

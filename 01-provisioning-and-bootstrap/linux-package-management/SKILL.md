@@ -19,7 +19,7 @@ metadata:
 This skill covers **both supported families**. The `apt`/`snap`/`unattended-upgrades`
 commands below are the **Debian/Ubuntu** column; the **RHEL family** (Fedora,
 RHEL, CentOS Stream, Rocky, Alma, Oracle) equivalents are in the matrix and the
-[dnf quick reference](#rhel-family--dnf-quick-reference) further down.
+[dnf reference](references/dnf-reference.md).
 
 | Concept | Debian/Ubuntu | RHEL family |
 |---|---|---|
@@ -377,7 +377,7 @@ sudo apt update
 
 ---
 
-## References
+## Reference files
 
 - [`references/apt-reference.md`](references/apt-reference.md) — full
   apt reference, sources, keys, pinning, PPA trust model.

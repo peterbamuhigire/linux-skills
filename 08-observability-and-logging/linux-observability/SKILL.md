@@ -392,7 +392,7 @@ caching, auth for detail endpoint) — see
 
 ---
 
-## References
+## Reference files
 
 - [`references/prometheus-setup.md`](references/prometheus-setup.md) —
   full node_exporter install, other exporters, cardinality discipline,

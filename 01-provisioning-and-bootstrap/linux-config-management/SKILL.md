@@ -409,7 +409,7 @@ sudo etckeeper commit "drift remediation: ssh config restored to baseline"
 
 ---
 
-## References
+## Reference files
 
 - [`references/ansible-patterns.md`](references/ansible-patterns.md) —
   full Ansible reference: idempotent modules, roles, templates, Jinja2,

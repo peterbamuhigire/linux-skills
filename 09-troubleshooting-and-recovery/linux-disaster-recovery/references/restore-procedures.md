@@ -19,7 +19,7 @@ the original. Never skip the verification step at the end of each procedure.
 - [PostgreSQL restore](#postgresql-restore)
 - [Redis restore](#redis-restore)
 - [Site files restore](#site-files-restore)
-- [/etc restore from config snapshot](#etc-restore-from-config-snapshot)
+- [/etc restore from config snapshot](#etc-restore-from-an-existing-configuration-snapshot)
 - [Cold restore — whole server gone](#cold-restore--whole-server-gone)
 - [Dry-run restore in an LXD container](#dry-run-restore-in-an-lxd-container)
 - [Demo/dev reset pattern](#demodev-reset-pattern)
