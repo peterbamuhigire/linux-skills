@@ -2,7 +2,7 @@
 
 Author: Peter Bamuhigire, [techguypeter.com](https://techguypeter.com), +256 784 464 178.
 
-This index lists what is under `docs/` and which records are current. The skills, scripts and routing live outside this folder; start from the [README](../README.md) or [`AGENTS.md`](../AGENTS.md). Every measured figure for the engine, and the command that produced it, is in the README's [Validation](../README.md#validation) section.
+This index lists what is under `docs/` and which records are current. The skills, scripts and routing live outside this folder; start from the [README](../README.md) (at a glance, three start steps, a contents list and a task-to-skill table) or [`AGENTS.md`](../AGENTS.md). Every measured figure for the engine, and the command that produced it, is in the README's [Validation](../README.md#validation) section.
 
 ## Current records: October 2026 Kaizen
 
@@ -11,11 +11,12 @@ This index lists what is under `docs/` and which records are current. The skills
 | [`kaizen/2026-10-engine-kaizen/`](kaizen/2026-10-engine-kaizen/) | 29 October first cycle: scope, baseline scorecard, backlog, experiment log, validation record, [final report](kaizen/2026-10-engine-kaizen/05-final-report.md), [next cycle](kaizen/2026-10-engine-kaizen/06-next-cycle.md), currency record, [portfolio refresh](kaizen/2026-10-engine-kaizen/portfolio-refresh.md) |
 | [`kaizen/2026-10-engine-kaizen-pass-2/`](kaizen/2026-10-engine-kaizen-pass-2/) | 31 October pass 2, same file set, plus [documentation follow-ups](kaizen/2026-10-engine-kaizen-pass-2/07-docs-followups.md) from the documentation wave |
 | [`kaizen/2026-10-linux-lab-wave/`](kaizen/2026-10-linux-lab-wave/) | 31 October lab wave (Debian 12, Fedora 44 and MySQL 8.4 in rootless Podman), same file set, plus the [operator note](kaizen/2026-10-linux-lab-wave/operator-note.md) |
+| [`kaizen/2026-10-readme-kaizen/`](kaizen/2026-10-readme-kaizen/readme-kaizen-record.md) | 31 October README kaizen: the [record](kaizen/2026-10-readme-kaizen/readme-kaizen-record.md) of the README restructure (metrics before and after, what moved, the conventions to follow). A scoped cycle, so it publishes no score |
 | [`updates/`](updates/) | Dated notes for operators: [PHP security and runtime upgrades](updates/2026-10-22-php-security-and-runtime-upgrades.md), [short user script paths](updates/2026-10-24-short-user-script-paths.md), [Kaizen pass 2](updates/2026-10-31-kaizen-pass-2.md) |
 | [`security/`](security/) | [Vulnerability triage runbook](security/current-vulnerability-triage.md) and its [dated source register](security/source-register-2026-10-29.md) |
 | [`continuous-improvement/`](continuous-improvement/) | Standards and records that the cycles use: [platform test matrix](continuous-improvement/platform-test-matrix-2026-08.md), [two-family validation and recovery](continuous-improvement/two-family-validation-and-recovery.md), [safe reversible operations](continuous-improvement/safe-reversible-operations-standard.md), [incident learning](continuous-improvement/incident-learning-standard.md), [product audit checklist](continuous-improvement/linux-product-audit-checklist.md), the [29 October interim record](continuous-improvement/kaizen-2026-10-29.md) and the [Codex model review](continuous-improvement/model-review-2026-10-29.md) |
 
-The latest published score, [what the October 2026 kaizen improved](../README.md#what-the-october-2026-kaizen-improved), the open findings and the calendar of date-triggered gates are in the README's [Quality and improvement](../README.md#quality-and-improvement) section.
+The README's [Quality and improvement](../README.md#quality-and-improvement) section holds the latest published score. [What the October 2026 kaizen improved](../README.md#what-the-october-2026-kaizen-improved), the [open findings](../README.md#open-findings-that-matter-to-a-user) and the calendar of [date-triggered gates](../README.md#date-triggered-gates) follow it as separate sections.
 
 ## Reference
 
