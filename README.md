@@ -35,7 +35,7 @@ Claude Code users can install the plugin instead, and Windows users have `instal
 
 ## Contents
 
-- **Start:** [At a glance](#at-a-glance), [When to use it](#when-to-use-it), [Find the right skill](#find-the-right-skill), [How it works](#how-it-works), [What is inside](#what-is-inside)
+- **Start:** [At a glance](#at-a-glance), [When to use it](#when-to-use-it), [Capabilities](#capabilities), [Find the right skill](#find-the-right-skill), [How it works](#how-it-works), [What is inside](#what-is-inside)
 - **Install and check:** [Install](#install), [Updating installed scripts](#updating-installed-scripts), [Codex and manual use](#codex-and-manual-use), [Validation](#validation)
 - **Quality:** [Quality and improvement](#quality-and-improvement), [What the October 2026 kaizen improved](#what-the-october-2026-kaizen-improved)
 - **Kaizen record:** [Defects fixed](#defects-fixed-in-october-2026), [Checks and tests added](#checks-and-tests-added-in-october-2026), [Procedures, sources and packaging](#procedures-sources-and-packaging-in-october-2026)
@@ -64,7 +64,11 @@ It produces:
 
 Its procedures follow the IETF RFCs for DNS, SMTP submission, TLS, HSTS, ACME, SPF, DKIM and DMARC. Compliance work uses CIS Benchmark and DISA STIG profiles through OpenSCAP and the SCAP Security Guide. TLS work follows Mozilla's server-side TLS guidance.
 
-## Find the right skill
+## Capabilities
+
+The engine holds 48 skills: 44 specialists in 16 numbered categories, the `linux-sysadmin` hub and 3 meta skills, grouped under [What is inside](#what-is-inside). The table under Find the right skill is the capability map: common tasks and the skill that handles each.
+
+### Find the right skill
 
 Start at `linux-sysadmin` when unsure. The tasks below are worded after the routing fixtures in `tests/fixtures/routing.json`. The ranker in `scripts/routing_smoke_test.py` puts the listed skill first for each wording.
 
