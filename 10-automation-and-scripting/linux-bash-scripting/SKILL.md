@@ -239,6 +239,7 @@ Always use these. Never roll your own `echo -e "\033[31m..."`.
 | `safe_tempdir [prefix]` | As above, directory. |
 | `atomic_write <target>` | Reads stdin into a unique sibling temporary file, then renames. Rejects symlink/non-regular targets and metadata errors; preserves mode/owner. |
 | `backup_file <path>` | Copies to `<path>.bak-YYYYMMDD-HHMMSS`. Prints backup path. |
+| `sk_source_trusted_config <file>` | Sources a config file only if root/the caller owns it, it is not group/world-writable or a symlink, and its directory is likewise. Returns 0 loaded, 1 absent, 2 refused. Never `source` a config path directly. |
 
 ### Flag parsing
 

@@ -361,6 +361,68 @@ fi
 YES=0
 
 # -----------------------------------------------------------------------------
+# Test 10: sk_source_trusted_config loads only files nobody untrusted can write
+# -----------------------------------------------------------------------------
+CFG_DIR="$TEST_FIXTURE_DIR/cfg"
+mkdir "$CFG_DIR" && chmod 0755 "$CFG_DIR"
+make_cfg() {
+    # make_cfg <dir> <name> <mode>: a config that sets a marker variable
+    printf 'TRUSTED_CFG_MARK=loaded\n' > "$1/$2"
+    chmod "$3" "$1/$2"
+}
+try_load() {
+    # Runs in a subshell so sourced variables never leak; prints "<rc> <marker>".
+    (
+        unset TRUSTED_CFG_MARK
+        sk_source_trusted_config "$1" >/dev/null 2>&1
+        rc=$?
+        printf '%s %s' "$rc" "${TRUSTED_CFG_MARK:-unset}"
+    )
+}
+expect_load() {
+    # expect_load <label> <path> <expected "rc marker">
+    local got
+    got="$(try_load "$2")"
+    if [[ "$got" == "$3" ]]; then
+        pass_t "sk_source_trusted_config: $1 -> $3"
+    else
+        fail_t "sk_source_trusted_config: $1 expected '$3', got '$got'"
+    fi
+}
+
+make_cfg "$CFG_DIR" good-0644 0644
+make_cfg "$CFG_DIR" good-0600 0600
+make_cfg "$CFG_DIR" group-writable 0664
+make_cfg "$CFG_DIR" world-writable 0666
+make_cfg "$CFG_DIR" other-write-only 0602
+ln -s good-0644 "$CFG_DIR/symlink"
+printf 'TRUSTED_CFG_MARK=loaded\nfalse\n' > "$CFG_DIR/ends-false" && chmod 0644 "$CFG_DIR/ends-false"
+mkdir "$TEST_FIXTURE_DIR/loose" && chmod 0775 "$TEST_FIXTURE_DIR/loose"
+make_cfg "$TEST_FIXTURE_DIR/loose" in-loose-dir 0644
+
+expect_load "mode 0644 file in a closed directory loads" "$CFG_DIR/good-0644" "0 loaded"
+expect_load "mode 0600 loads" "$CFG_DIR/good-0600" "0 loaded"
+expect_load "group-writable file is refused" "$CFG_DIR/group-writable" "2 unset"
+expect_load "world-writable file is refused" "$CFG_DIR/world-writable" "2 unset"
+expect_load "other-writable-only file is refused" "$CFG_DIR/other-write-only" "2 unset"
+expect_load "symlink is refused" "$CFG_DIR/symlink" "2 unset"
+expect_load "file in a group-writable directory is refused" "$TEST_FIXTURE_DIR/loose/in-loose-dir" "2 unset"
+expect_load "absent file is not an error" "$CFG_DIR/does-not-exist" "1 unset"
+expect_load "a failing last command in the file does not leak as a status" "$CFG_DIR/ends-false" "0 loaded"
+
+if [[ -f /usr/lib/os-release && ! -L /usr/lib/os-release ]]; then
+    expect_load "root-owned file is accepted for a non-root caller" /usr/lib/os-release "0 unset"
+fi
+
+if (( EUID == 0 )); then
+    make_cfg "$CFG_DIR" foreign-owner 0644
+    chown nobody "$CFG_DIR/foreign-owner" 2>/dev/null || true
+    expect_load "file owned by another user is refused" "$CFG_DIR/foreign-owner" "2 unset"
+else
+    printf "  [SKIP] foreign-owner case needs root to create a file owned by another user (not run here)\n"
+fi
+
+# -----------------------------------------------------------------------------
 # Summary
 # -----------------------------------------------------------------------------
 printf "\n--- common.sh test summary ---\n"

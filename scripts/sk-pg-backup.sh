@@ -28,6 +28,9 @@ if [[ ! -f "$SK_LIB" ]]; then
 fi
 # shellcheck source=/dev/null
 source "$SK_LIB" || { echo "FATAL: cannot source common.sh" >&2; exit 5; }
+# The installed library may predate this script; fail with a clear remedy, not "command not found".
+declare -F sk_source_trusted_config >/dev/null \
+    || { echo "FATAL: $SK_LIB is older than this script (no sk_source_trusted_config). Run: sudo install-skills-bin core" >&2; exit 5; }
 
 # =============================================================================
 # 2. Defaults
@@ -64,8 +67,9 @@ BACKUP_DIR. A failed run leaves nothing that looks like a backup. Dumps are not
 encrypted: protect BACKUP_DIR and any copy of it accordingly.
 
 CONFIG:
-    Reads /etc/linux-skills/pg-backup.conf if present. Overridable by
-    environment variables or flags:
+    Reads /etc/linux-skills/pg-backup.conf if present and refuses it unless it
+    is root-owned, not group/world-writable and not a symlink (exit 3). The file
+    overrides environment variables; flags override the file. Settings:
         PG_USER             OS user to run dumps as (peer auth; default: postgres)
         BACKUP_DIR          Local backup directory (default: /var/backups/postgresql)
         RETENTION_DAYS      Prune dumps older than this many days (default: 7)
@@ -108,11 +112,12 @@ EOF
 }
 
 load_config() {
-    if [[ -f "$CONFIG_FILE" ]]; then
-        # shellcheck source=/dev/null
-        source "$CONFIG_FILE"
-        info "loaded config from $CONFIG_FILE"
-    fi
+    sk_source_trusted_config "$CONFIG_FILE"
+    case $? in
+        0) info "loaded config from $CONFIG_FILE" ;;
+        1) ;;
+        *) die "untrusted configuration file: $CONFIG_FILE (owner root, no group/other write, not a symlink)" 3 ;;
+    esac
 }
 
 # Remove the private staging directory, whatever the exit path. Nothing the
@@ -158,6 +163,7 @@ publish_staged() {
 # 4. Flag parsing
 # =============================================================================
 parse_standard_flags "$@"
+load_config
 
 while (( ${#REMAINING_ARGS[@]} > 0 )); do
     case "${REMAINING_ARGS[0]}" in
@@ -196,7 +202,6 @@ done
 # =============================================================================
 # 5. Sanity checks
 # =============================================================================
-load_config
 require_family any        # runs on Debian/Ubuntu and the RHEL family
 require_cmd pg_dump pg_dumpall pg_restore psql find stat date mkdir mktemp mv chmod rm du cut wc cksum
 

@@ -23,6 +23,9 @@ if [[ ! -f "$SK_LIB" ]]; then
 fi
 # shellcheck source=/dev/null
 source "$SK_LIB" || { echo "FATAL: cannot source common.sh" >&2; exit 5; }
+# The installed library may predate this script; fail with a clear remedy, not "command not found".
+declare -F sk_source_trusted_config >/dev/null \
+    || { echo "FATAL: $SK_LIB is older than this script (no sk_source_trusted_config). Run: sudo install-skills-bin core" >&2; exit 5; }
 
 # =============================================================================
 # 2. Defaults
@@ -40,7 +43,7 @@ RCLONE_REMOTE="${RCLONE_REMOTE:-}"
 LOCAL_RETENTION_DAYS="${LOCAL_RETENTION_DAYS:-7}"
 REMOTE_RETENTION_DAYS="${REMOTE_RETENTION_DAYS:-3}"
 
-CONFIG_FILE="/etc/linux-skills/mysql-backup.conf"
+CONFIG_FILE="${SK_MYSQL_BACKUP_CONFIG:-/etc/linux-skills/mysql-backup.conf}"
 
 # =============================================================================
 # 3. Functions
@@ -53,14 +56,16 @@ Dump all MySQL databases, compress, GPG-encrypt, upload via rclone,
 rotate local and remote copies. Designed for cron or interactive use.
 
 CONFIG:
-    Reads /etc/linux-skills/mysql-backup.conf if present. Overridable by
-    environment variables or flags:
+    Reads /etc/linux-skills/mysql-backup.conf if present and refuses it unless
+    it is root-owned, not group/world-writable and not a symlink (exit 3). The
+    file overrides environment variables; flags override the file. Settings:
         MYSQL_CNF               MySQL credentials file (mode 600)
         BACKUP_DIR              Local backup directory
         GPG_KEY_FILE            Passphrase file for GPG symmetric encryption
         RCLONE_REMOTE           Rclone destination (e.g. gdrive:backups/host)
         LOCAL_RETENTION_DAYS    (default: 7)
         REMOTE_RETENTION_DAYS   (default: 3)
+    SK_MYSQL_BACKUP_CONFIG names a different configuration file (tests, unusual layouts).
 
 DECISION FLAGS (required under --yes if not in config):
     --mysql-cnf <path>
@@ -95,11 +100,12 @@ EOF
 }
 
 load_config() {
-    if [[ -f "$CONFIG_FILE" ]]; then
-        # shellcheck source=/dev/null
-        source "$CONFIG_FILE"
-        info "loaded config from $CONFIG_FILE"
-    fi
+    sk_source_trusted_config "$CONFIG_FILE"
+    case $? in
+        0) info "loaded config from $CONFIG_FILE" ;;
+        1) ;;
+        *) die "untrusted configuration file: $CONFIG_FILE (owner root, no group/other write, not a symlink)" 3 ;;
+    esac
 }
 
 cleanup_dump() {

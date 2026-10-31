@@ -22,6 +22,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "sk-pg-backup.sh"
+LIBRARY = ROOT / "scripts" / "lib" / "common.sh"
+# Scripts prefer the installed library over the one beside them. The fixture points
+# that single line at the repository copy so the test exercises the code under review,
+# not whatever version happens to be installed on the host running it.
+INSTALLED_LIBRARY_LINE = 'SK_LIB="/usr/local/lib/linux-skills/common.sh"'
 SYNTHETIC_HASH = "SCRAM-SHA-256$4096:SYNTHETIC-FIXTURE-HASH"
 
 STUBS = {
@@ -77,13 +82,30 @@ class PgBackupFixture(unittest.TestCase):
         self.tmp = self.work / "tmp"
         self.tmp.mkdir(mode=0o700)
         self.backups = self.work / "backups"
+        self.script = self.make_script_tree(LIBRARY.read_text(encoding="utf-8"))
+
+    def make_script_tree(self, library_text: str) -> Path:
+        """Copy the script beside a library and point it at that library."""
+        tree = self.work / "tree" / "scripts"
+        (tree / "lib").mkdir(parents=True, exist_ok=True)
+        (tree / "lib" / "common.sh").write_text(library_text, encoding="utf-8")
+        source = SCRIPT.read_text(encoding="utf-8")
+        self.assertEqual(source.count(INSTALLED_LIBRARY_LINE), 1, "library line changed; update the fixture")
+        script = tree / "sk-pg-backup.sh"
+        script.write_text(
+            source.replace(INSTALLED_LIBRARY_LINE, f'SK_LIB="{tree / "lib" / "common.sh"}"'),
+            encoding="utf-8",
+        )
+        return script
 
     def install_stub(self, name: str, body: str) -> None:
         path = self.stubs / name
         path.write_text(body, encoding="utf-8")
         path.chmod(0o755)
 
-    def run_script(self, *args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    def run_script(
+        self, *args: str, env: dict[str, str] | None = None, backup_dir_flag: bool = True
+    ) -> subprocess.CompletedProcess[str]:
         environment = {
             "PATH": f"{self.stubs}:/usr/local/bin:/usr/bin:/bin",
             "SYNTHETIC_HASH": SYNTHETIC_HASH,
@@ -94,7 +116,7 @@ class PgBackupFixture(unittest.TestCase):
         }
         environment.update(env or {})
         return subprocess.run(
-            ["bash", str(SCRIPT), "--yes", "--backup-dir", str(self.backups), *args],
+            ["bash", str(self.script), "--yes", *(["--backup-dir", str(self.backups)] if backup_dir_flag else []), *args],
             env=environment,
             text=True,
             capture_output=True,
@@ -171,7 +193,7 @@ class PgBackupFailureTests(PgBackupFixture):
 
     def test_relative_backup_directory_is_rejected(self) -> None:
         result = subprocess.run(
-            ["bash", str(SCRIPT), "--yes", "--backup-dir", "relative/path"],
+            ["bash", str(self.script), "--yes", "--backup-dir", "relative/path"],
             env={"PATH": f"{self.stubs}:/usr/bin:/bin", "TMPDIR": str(self.tmp), "SK_PG_BACKUP_CONFIG": str(self.work / "absent.conf")},
             text=True,
             capture_output=True,
@@ -218,7 +240,50 @@ class PgBackupNamingTests(PgBackupFixture):
             self.assertNotIn("/", name)
             resolved = (self.backups / name).resolve()
             self.assertEqual(resolved.parent, self.backups.resolve())
-        self.assertEqual(sorted(p.name for p in self.work.iterdir()), ["backups", "stubs", "tmp"])
+        self.assertEqual(sorted(p.name for p in self.work.iterdir()), ["backups", "stubs", "tmp", "tree"])
+
+
+class PgBackupConfigurationTests(PgBackupFixture):
+    def write_config(self, text: str, mode: int) -> Path:
+        path = self.work / "pg-backup.conf"
+        path.write_text(text, encoding="utf-8")
+        path.chmod(mode)
+        return path
+
+    def test_flag_overrides_the_configuration_file(self) -> None:
+        configured = self.work / "configured-backups"
+        config = self.write_config(f'BACKUP_DIR="{configured}"\n', 0o600)
+        result = self.run_script(env={"SK_PG_BACKUP_CONFIG": str(config)})
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("loaded config from", result.stdout)
+        self.assertTrue(self.entries(), "the --backup-dir flag must win over the file")
+        self.assertFalse(configured.exists())
+
+    def test_configuration_value_is_used_when_no_flag_is_given(self) -> None:
+        configured = self.work / "configured-backups"
+        config = self.write_config(f'BACKUP_DIR="{configured}"\n', 0o600)
+        result = self.run_script(env={"SK_PG_BACKUP_CONFIG": str(config)}, backup_dir_flag=False)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue(any(p.name.startswith("globals_") for p in configured.iterdir()))
+        self.assertFalse(self.backups.exists())
+
+    def test_untrusted_configuration_is_refused_and_not_executed(self) -> None:
+        marker = self.work / "executed"
+        config = self.write_config(f'touch "{marker}"\n', 0o666)
+        result = self.run_script(env={"SK_PG_BACKUP_CONFIG": str(config)})
+        self.assertEqual(result.returncode, 3, result.stdout + result.stderr)
+        self.assertIn("refusing to load configuration", result.stdout + result.stderr)
+        self.assertFalse(marker.exists(), "a writable configuration file must not be executed")
+        self.assertFalse(self.backups.exists())
+
+
+class PgBackupLibrarySkewTests(PgBackupFixture):
+    def test_older_installed_library_stops_the_script_with_a_clear_message(self) -> None:
+        self.script = self.make_script_tree("sk_on_exit() { :; }\n")
+        result = self.run_script()
+        self.assertEqual(result.returncode, 5, result.stdout + result.stderr)
+        self.assertIn("older than this script", result.stdout + result.stderr)
+        self.assertFalse(self.backups.exists())
 
 
 class PgBackupDryRunTests(PgBackupFixture):

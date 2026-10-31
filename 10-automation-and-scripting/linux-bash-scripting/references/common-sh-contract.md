@@ -308,6 +308,31 @@ backup_file /etc/ssh/sshd_config
 Copies the file to `<path>.bak-YYYYMMDD-HHMMSS`. Prints the backup path to
 stdout and to the audit log. No-op if the file doesn't exist.
 
+### `sk_source_trusted_config <file>`
+
+```bash
+load_config() {
+    sk_source_trusted_config "$CONFIG_FILE"
+    case $? in
+        0) info "loaded config from $CONFIG_FILE" ;;
+        1) ;;                                   # absent: defaults apply
+        *) die "untrusted configuration file: $CONFIG_FILE" 3 ;;
+    esac
+}
+```
+
+Sources a shell configuration file only if nobody but root or the caller could
+have written it: a regular file (symlinks refused), owned by root or the
+effective user, not group- or world-writable, inside a directory with the same
+properties. Returns 0 when loaded, 1 when the file is absent, 2 (after a
+`fail` line naming the reason) when refused. The file's own last status is not
+returned. Never `source "$SOME_PATH"` directly in a script that runs as root:
+`tests/test_script_trust_boundaries.py` fails the build if a shipped script
+sources any variable path other than `SK_LIB`. Call it before parsing flags so
+that flags override the file. A script that needs a newer library function than
+the installed `common.sh` provides should check `declare -F <function>` after
+sourcing and exit 5 naming `sudo install-skills-bin core`.
+
 ---
 
 ## Flag parsing

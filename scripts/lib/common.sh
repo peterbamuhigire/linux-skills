@@ -711,6 +711,55 @@ run() {
 }
 
 # =============================================================================
+# Trusted configuration loading
+# =============================================================================
+
+sk_source_trusted_config() {
+    # sk_source_trusted_config <file>
+    # Source a shell configuration file only if nobody but root or the caller
+    # could have written it. A script run as root that sources a file another
+    # user can edit hands that user root. Checks: regular file (not a symlink),
+    # owned by root or the effective user, not group- or world-writable, inside
+    # a directory with the same properties.
+    # Return: 0 = loaded, 1 = file absent (nothing done), 2 = refused as untrusted.
+    local file="$1" dir owner mode reason=""
+    [[ -e "$file" || -L "$file" ]] || return 1
+    dir="$(dirname -- "$file")"
+    if [[ -L "$file" || ! -f "$file" ]]; then
+        reason="not a regular file (symlinks are refused)"
+    else
+        owner="$(stat -c '%u' -- "$file")" || reason="cannot inspect owner"
+        mode="$(stat -c '%a' -- "$file")" || reason="cannot inspect mode"
+        if [[ -z "$reason" ]]; then
+            if [[ "$owner" != "0" && "$owner" != "$EUID" ]]; then
+                reason="owned by uid $owner, expected root or the current user"
+            elif [[ ! "$mode" =~ ^[0-7]+$ ]] || (( (8#$mode & 0022) != 0 )); then
+                reason="mode $mode is writable by group or others"
+            fi
+        fi
+    fi
+    if [[ -z "$reason" ]]; then
+        owner="$(stat -c '%u' -- "$dir")" || reason="cannot inspect directory $dir"
+        mode="$(stat -c '%a' -- "$dir")" || reason="cannot inspect directory $dir"
+        if [[ -z "$reason" ]]; then
+            if [[ "$owner" != "0" && "$owner" != "$EUID" ]]; then
+                reason="directory $dir is owned by uid $owner, expected root or the current user"
+            elif [[ ! "$mode" =~ ^[0-7]+$ ]] || (( (8#$mode & 0022) != 0 )); then
+                reason="directory $dir has mode $mode, writable by group or others"
+            fi
+        fi
+    fi
+    if [[ -n "$reason" ]]; then
+        fail "refusing to load configuration $file: $reason"
+        return 2
+    fi
+    # shellcheck source=/dev/null
+    source "$file"
+    # The file's last command is configuration, not a status: do not leak it.
+    return 0
+}
+
+# =============================================================================
 # Audit log (always written for destructive operations)
 # =============================================================================
 
