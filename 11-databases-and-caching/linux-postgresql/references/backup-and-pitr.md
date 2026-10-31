@@ -109,10 +109,22 @@ dump start and end times, file names, sizes, mode and `sha256sum`.
    unproven and keep the last known-good backup.
 
 Status: this procedure follows the current PostgreSQL manuals for `pg_restore`
-and `pg_dumpall` (pages read 2026-10-31; the manual's release number was not recorded). It has not been run in a lab by this
-engine, and no PostgreSQL server was used to test `sk-pg-backup`, which is
-covered by stub fixtures only (`tests/test_pg_backup.py`). Timing, reconciliation
-and failure behaviour on real data are `NOT_ASSESSED`.
+and `pg_dumpall` (pages read 2026-10-31; the manual's release number was not recorded).
+Lab result, 2026-10-31: the commands above ran as written on a scratch instance in
+Debian 12 (PostgreSQL 15.19) and Fedora 44 (PostgreSQL 18.6), each restoring a backup
+that `sk-pg-backup` made on a separate source instance (a 5 000-row table with a trigger,
+view, index, extension and grants, plus a database named `lab odd;db`). The globals file
+restored with exit 0 and the documented `role "postgres" already exists` error; both
+databases restored in about 0.3 s; row counts, a content checksum, indexes, triggers, views,
+extensions, the sequence value, owner and grants equalled the figures taken at dump time. A
+second `--create` restore into the same instance and a truncated dump both failed with a
+non-zero exit, and `pg_restore -j` from standard input failed with the manual's message.
+`sk-pg-backup` itself was exercised on both sources: modes 0700 and 0600, repeated runs,
+retention, and controlled failures (PostgreSQL stopped, unwritable path, write failure,
+truncated dump). Repeat it with `LINUX_SKILLS_LAB=1 python -m pytest tests/test_distro_labs.py`
+(rootless Podman, local images, evidence in `docs/kaizen/2026-10-linux-lab-wave/`).
+`NOT_ASSESSED`: production data sizes and restore times, PostgreSQL 14 and 16 to 17 servers,
+a restore into a newer major version, and the RHEL 9 and 10 packages.
 
 ## WAL archiving & PITR
 
