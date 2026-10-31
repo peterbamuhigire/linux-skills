@@ -1,0 +1,42 @@
+### dnf version
+dnf5 version 5.4.6.0
+dnf5 plugin API version 2.0
+### documented: sudo dnf install dnf-automatic
+rc=0
+[2/3] Prepare transaction               100% |  29.0   B/s |   1.0   B |  00m00s
+[3/3] Installing dnf5-plugin-automatic- 100% | 543.5 KiB/s | 194.0 KiB |  00m00s
+Complete!
+### rpm -q dnf5-plugin-automatic dnf-automatic
+dnf5-plugin-automatic-5.4.6.0-1.fc44.x86_64
+package dnf-automatic is not installed
+### systemctl list-unit-files dnf*automatic*
+UNIT FILE              STATE    PRESET
+dnf-automatic.service  alias    -
+dnf5-automatic.service static   -
+dnf-automatic.timer    alias    -
+dnf5-automatic.timer   disabled disabled
+
+4 unit files listed.
+### config files
+ls: cannot access '/etc/dnf/automatic.conf': No such file or directory
+-rw-r--r--. 1 root root 4028 Sep 24 00:00 /usr/share/dnf5/dnf5-plugins/automatic.conf
+apply_updates = no
+download_updates = yes
+upgrade_type = default
+reboot = never
+reboot_command = "shutdown -r +5 'Rebooting after applying package updates'"
+### documented: enable via dnf-automatic.timer alias
+Created symlink '/etc/systemd/system/timers.target.wants/dnf5-automatic.timer' → '/usr/lib/systemd/system/dnf5-automatic.timer'.
+NEXT                        LEFT LAST PASSED UNIT                 ACTIVATES
+Sun 2026-11-01 06:13:43 UTC  14h -         - dnf5-automatic.timer dnf5-automatic.service
+
+1 timers listed.
+Pass --all to see loaded but inactive timers, too.
+### documented: dnf5 updateinfo list --security
+Updating and loading repositories:
+Repositories loaded.
+### documented (Red Hat form) dnf updateinfo list updates security on dnf5
+Updating and loading repositories:
+Repositories loaded.
+No advisory found matching the requested name: "updates, security"
+rc=0

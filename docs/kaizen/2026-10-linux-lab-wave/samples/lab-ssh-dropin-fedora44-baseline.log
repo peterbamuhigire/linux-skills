@@ -1,0 +1,69 @@
+### Fedora Linux 44 (Container Image), OpenSSH_10.2p1, OpenSSL 3.5.9 29 Sep 2026
+### service unit name on this distro: sshd
+--- state before any hardening
+permitrootlogin prohibit-password
+passwordauthentication yes
+PASS  pre: password login works (lab can detect a failure)
+PASS  pre: key login works
+
+=== A. New procedure (blocks from provisioning-steps.md section 3, verbatim)
+--- block 01 (list definers)
+/etc/ssh/sshd_config.d/50-redhat.conf:3:KbdInteractiveAuthentication no
+/etc/ssh/sshd_config.d/50-cloud-init.conf:2:PasswordAuthentication yes
+--- block 02 (write drop-in, sshd -t)
+PASS  block 02 exit 0 (sshd -t silent)
+--- block 03 as written (reload unit 'ssh')
+Failed to reload ssh.service: Unit ssh.service not found.
+block 03 exit=5
+FAIL  block 03 as written fails on this distro (unit name 'ssh')
+--- block 03 with unit 'sshd'
+PASS  block 03 with 'sshd' exit 0
+--- block 05 (verify)
+permitrootlogin no
+pubkeyauthentication yes
+passwordauthentication no
+allowusers administrator
+pubkeyauthoptions none
+PASS  sshd -T reports: permitrootlogin no
+PASS  sshd -T reports: passwordauthentication no
+PASS  sshd -T reports: pubkeyauthentication yes
+PASS  sshd -T reports: allowusers administrator
+PASS  REAL password login refused after procedure
+administrator@127.0.0.1: Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+PASS  REAL key login still works for administrator
+PASS  REAL key login refused for user outside AllowUsers
+intruder@127.0.0.1: Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+PASS  REAL root key login refused (PermitRootLogin no)
+
+=== B. Rollback (block 04 verbatim)
+root@127.0.0.1: Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+Failed to reload ssh.service: Unit ssh.service not found.
+block 04 exit=5
+FAIL  block 04 as written fails on this distro
+PASS  rollback: password login possible again (state restored to cloud-init default)
+
+=== C. Old name (99-hardening.conf from the pre-pass-2 procedure)
+permitrootlogin no
+passwordauthentication yes
+PASS  old name: sshd -T says passwordauthentication yes (the drop-in lost)
+PASS  old name: REAL password login still succeeds (hardening ineffective)
+
+=== D. Controlled failure: syntax error in the drop-in
+1
+administrator@127.0.0.1: Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+PASS  D0: hardened sshd refuses password login
+/etc/ssh/sshd_config.d/00-linux-skills-ssh.conf line 3: unsupported option "maybe".
+PASS  D1: block 02 (sshd -t step) exits non-zero on the broken drop-in (rc=255)
+chain 'sshd -t && systemctl reload' exit=255: /etc/ssh/sshd_config.d/00-linux-skills-ssh.conf line 3: unsupported option "maybe". 
+PASS  D2: the && chain stops before reload
+PASS  D3: no reload reached systemctl during the failure
+PASS  D4: running sshd still enforces the previous good config (key login ok)
+PASS  D5: running sshd still refuses passwords
+--- sshd -T against broken file (rc, message):
+administrator@127.0.0.1: Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+rc=255
+/etc/ssh/sshd_config.d/00-linux-skills-ssh.conf line 3: unsupported option "maybe".
+PASS  D6: after repair, password login refused
+
+administrator@127.0.0.1: Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+### RESULT: HAS-FAILURES

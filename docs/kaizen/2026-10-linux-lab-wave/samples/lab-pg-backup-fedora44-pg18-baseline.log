@@ -1,0 +1,150 @@
+### Fedora Linux 44 (Container Image); PostgreSQL 18.6 on x86_64-redhat-linux-gnu, compiled by gcc 
+### script version: #: Version:     0.2.0
+--- fingerprints at dump time
+customers_rows|5000
+customers_md5|03ff3690912436243551a0b0a7610106
+audit_rows|5000
+indexes|2
+functions|38
+triggers|1
+views|1
+extensions|pgcrypto,plpgsql
+seq_last|5000
+owner|app_user
+grant_app_ro|t
+t_rows|300
+t_md5|3e6f2061ccd6ea8d742ffb4f7086c9ad
+
+=== P1 dry run
+  WARN: 0
+  FAIL: 0
+
+  [PASS] dry-run completed; no backup was written
+PASS  dry-run exit 0
+PASS  dry-run created nothing
+
+=== P2 real run, all databases
+  [PASS] globals: /srv/pgbk/globals_20261031-150855.sql
+
+=== Step 3/4: Dumping databases (pg_dump --format=custom) ===
+  [INFO]   dumping lab_a -> /srv/pgbk/lab_a_20261031-150855.dump
+  [PASS]   lab_a (56K)
+  [INFO]   dumping lab odd;db -> /srv/pgbk/lab_odd_db_2678297631_20261031-150855.dump
+  [PASS]   lab odd;db (12K)
+
+=== Step 4/4: WAL archive check ===
+  [INFO] WAL archive check disabled (no --wal-archive)
+
+=== Rotation: pruning old dumps ===
+
+=============================================
+ SUMMARY
+=============================================
+  PASS: 3
+  WARN: 0
+  FAIL: 0
+  Score: 100%
+
+  [PASS] backup completed successfully
+elapsed: 296 ms
+PASS  real run exit 0
+total 72
+drwx------. 1 root root   190 Oct 31 15:08 .
+drwxr-xr-x. 1 root root     8 Oct 31 15:08 ..
+-rw-------. 1 root root   917 Oct 31 15:08 globals_20261031-150855.sql
+-rw-------. 1 root root 53973 Oct 31 15:08 lab_a_20261031-150855.dump
+-rw-------. 1 root root  8880 Oct 31 15:08 lab_odd_db_2678297631_20261031-150855.dump
+PASS  backup dir mode 700
+PASS  backup dir owned by root
+PASS  every file is mode 600 (non-600 count=0)
+PASS  no staging directory or temp file remains
+PASS  one globals file and 2 dumps (globals=1 dumps=2)
+PASS  postgres maintenance db not dumped
+PASS  globals holds the app_user role
+PASS  globals holds a SCRAM hash (so 600 matters)
+  globals_20261031-150855.sql
+  lab_a_20261031-150855.dump
+  lab_odd_db_2678297631_20261031-150855.dump
+
+=== P3 repeated run and retention
+PASS  second run exit 0
+PASS  second run adds a second set (globals=2, dumps=4)
+  [INFO]   pruned: /srv/pgbk/globals_20261031-150855.sql
+  [INFO]   pruned: /srv/pgbk/lab_a_20261031-150855.dump
+  [INFO]   pruned: /srv/pgbk/lab_odd_db_2678297631_20261031-150855.dump
+PASS  retention run exit 0
+PASS  old set pruned (files with ts 20261031-150855 gone)
+PASS  two newer sets retained (globals=2)
+PASS  unrelated old files untouched
+PASS  retention left no non-600 script file
+
+=== P4 controlled failures
+FATAL: pg_dump failed for lab_missing
+
+FAILURE: sk-pg-backup exited 1 at line 1
+  last command: exit "$code"
+F1 rc=1
+PASS  F1 --db of a missing database: exit 1
+PASS  F1 no staging left behind
+/root/pg-source.sh: line 115: diff: command not found
+F1 files added: 0 (informational) - new files after failure:
+globals_20261031-150858.sql
+lab_odd_db_2678297631_20261031-150858.dump
+lab_a_20261031-150858.dump
+postgres stopped: inactive
+
+FAILURE: sk-pg-backup exited 1 at line 1
+  last command: exit "$code"
+F2a (all, db stopped) rc=1
+PASS  F2a database stopped, --all: exit 1
+PASS  F2a nothing written
+
+FAILURE: sk-pg-backup exited 1 at line 1
+  last command: exit "$code"
+F2b (--db, db stopped) rc=1
+PASS  F2b database stopped, --db: exit 1
+PASS  F2b nothing written, no staging
+postgres restarted: active
+FAILURE: sk-pg-backup exited 1 at line 1
+  last command: exit "$code"
+F3 rc=1
+PASS  F3 unwritable backup path (parent is a file): exit 1
+FATAL: pg_dump failed for lab_a
+
+FAILURE: sk-pg-backup exited 1 at line 1
+  last command: exit "$code"
+F4 (file-size limit, disk-full stand-in) rc=1
+PASS  F4 write failure: exit non-zero
+PASS  F4 no staging left behind
+F4 files added vs before:
+globals_20261031-150908.sql
+globals_20261031-150858.sql
+lab_odd_db_2678297631_20261031-150858.dump
+PASS  F4 no truncated file published under a backup name
+
+FAILURE: sk-pg-backup exited 1 at line 1
+  last command: exit "$code"
+F5 (truncated dump) rc=1
+PASS  F5 truncated dump: exit 1
+PASS  F5 no truncated .dump published
+FAILURE: sk-pg-backup exited 3 at line 1
+  last command: exit "$code"
+F6 rc=3
+PASS  F6 world-writable config refused: exit 3
+PASS  retention 0 refused
+
+=== final backup directory
+total 160
+drwx------. 1 root root   524 Oct 31 15:09 .
+drwxr-xr-x. 1 root root     8 Oct 31 15:08 ..
+-rw-------. 1 root root   917 Oct 31 15:08 globals_20261031-150856.sql
+-rw-------. 1 root root   917 Oct 31 15:08 globals_20261031-150858.sql
+-rw-------. 1 root root   917 Oct 31 15:09 globals_20261031-150908.sql
+-rw-------. 1 root root 53973 Oct 31 15:08 lab_a_20261031-150856.dump
+-rw-------. 1 root root 53973 Oct 31 15:08 lab_a_20261031-150858.dump
+-rw-------. 1 root root  8880 Oct 31 15:08 lab_odd_db_2678297631_20261031-150856.dump
+-rw-------. 1 root root  8880 Oct 31 15:08 lab_odd_db_2678297631_20261031-150858.dump
+-rw-r--r--. 1 root root     2 Oct  1 15:08 manual.dump
+-rw-r--r--. 1 root root     9 Oct  1 15:08 notes.txt
+-rw-r--r--. 1 root root     2 Oct  1 15:08 other_20200101-000000.sql
+### RESULT: ALL-PASS

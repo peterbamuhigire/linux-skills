@@ -1,0 +1,15 @@
+### step: documented install
+install rc=0
+### pending upgrades by archive
+2026e-0+deb12u1 -> 2026f-0+deb12u1 from Debian-Security:12/oldstable-security
+1
+### shipped Allowed-Origins (Debian 12)
+### documented command: dpkg-reconfigure -plow
+rc=0
+### 20auto-upgrades after reconfigure:
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+### dry run with shipped (default) config
+Allowed origins are: origin=Debian,codename=bookworm,label=Debian, origin=Debian,codename=bookworm,label=Debian-Security, origin=Debian,codename=bookworm-security,label=Debian-Security
+Initial blacklist: 
+Packages that will be upgraded: tzdata

@@ -1,0 +1,53 @@
+### scratch: Fedora Linux 44 (Container Image); PostgreSQL 18.6 on x86_64-redhat-linux-g
+### timestamp 20261031-150855; files:
+total 72
+drwxr-xr-x. 1 root root   190 Oct 31 15:10 .
+dr-xr-x---. 1 root root   128 Oct 31 15:10 ..
+-rw-------. 1 root root   917 Oct 31 15:08 globals_20261031-150855.sql
+-rw-------. 1 root root 53973 Oct 31 15:08 lab_a_20261031-150855.dump
+-rw-------. 1 root root  8880 Oct 31 15:08 lab_odd_db_2678297631_20261031-150855.dump
+
+=== step 1: readability (no server needed) -- verbatim: pg_restore --list appdb.dump > /dev/null
+PASS  pg_restore --list lab_a_20261031-150855.dump
+PASS  pg_restore --list lab_odd_db_2678297631_20261031-150855.dump
+
+=== step 2a: roles first -- verbatim command, lab_a/<timestamp> substituted
+globals restore rc=0 elapsed 85 ms
+ERROR:  role "postgres" already exists
+PASS  globals: rc 0 despite the expected 'role postgres already exists' error
+PASS  the documented harmless error appeared: ERROR:  role "postgres" already exists
+PASS  app_user role exists on scratch
+
+=== step 2b: database restore -- verbatim: pg_restore --exit-on-error --create --dbname=postgres < appdb_<timestamp>.dump
+lab_a restore rc=0 elapsed 296 ms
+PASS  lab_a restore exit 0
+PASS  odd-named database restore exit 0
+
+=== step 3: reconcile with dump-time figures
+--- restored:
+customers_rows|5000
+customers_md5|03ff3690912436243551a0b0a7610106
+audit_rows|5000
+indexes|2
+functions|38
+triggers|1
+views|1
+extensions|pgcrypto,plpgsql
+seq_last|5000
+owner|app_user
+grant_app_ro|t
+t_rows|300
+t_md5|3e6f2061ccd6ea8d742ffb4f7086c9ad
+PASS  lab_a: all 11 reconciliation figures equal the dump-time figures
+PASS  odd db: row count and content md5 equal
+ANALYZE
+1667
+PASS  ANALYZE then a read-only application query
+PASS  restored privilege: app_ro can SELECT
+
+=== controlled failures of the restore
+second restore into the same instance rc=1: pg_restore: error: could not execute query: ERROR:  database "lab_a" already exists Command was: CREATE DATABASE lab_a WITH TEMPLATE = template0 ENCODING = 'UTF8' LOCALE_PROVIDER = libc LOCALE = 'C.UTF-8'; 
+PASS  second --create restore refuses (database exists)
+truncated dump rc=1: pg_restore: error: could not read from input file: end of file 
+PASS  truncated dump restore fails loudly
+### RESULT: ALL-PASS

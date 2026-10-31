@@ -1,0 +1,15 @@
+version: 0.9.0
+shellcheck exit=1
+95
+--- by severity
+     67 note
+     28 warning
+--- by code
+     49 [SC2317]
+     25 [SC2034]
+     11 [SC2015]
+      3 [SC2024]
+      2 [SC2059]
+      2 [SC2016]
+      2 [SC2012]
+      1 [SC1003]

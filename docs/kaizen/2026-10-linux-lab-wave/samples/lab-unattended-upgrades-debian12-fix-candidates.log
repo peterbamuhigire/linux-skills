@@ -1,0 +1,9 @@
+=== Debian security-only Origins-Pattern (candidate fix) ===
+Allowed origins are: origin=Debian,codename=bookworm-security,label=Debian-Security
+Initial blacklist: 
+Packages that will be upgraded: tzdata
+=== candidate verify: pending security updates per apt vs dry-run list ===
+tzdata
+=== the documented 52-local style file on Debian adds a second list; effective allowed origins when both present
+Allowed origins are: o=Debian,a=bookworm-security, origin=Debian,codename=bookworm,label=Debian, origin=Debian,codename=bookworm,label=Debian-Security, origin=Debian,codename=bookworm-security,label=Debian-Security
+Packages that will be upgraded: tzdata

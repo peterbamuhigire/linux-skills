@@ -1,0 +1,27 @@
+### run the real unit once (defaults: download, no apply)
+start rc=0
+inactive
+### documented evidence command: journalctl -u dnf*automatic* -n 50
+Oct 31 15:17:20 2509b4ffbd73 dnf5[571]: Upgrading:
+Oct 31 15:17:20 2509b4ffbd73 dnf5[571]:  libsolv                x86_64 0:0.7.41-1.fc44         updates         985.8 KiB
+Oct 31 15:17:20 2509b4ffbd73 dnf5[571]:    replacing libsolv    x86_64 0:0.7.40-2.fc44         207b42916b0545c 977.2 KiB
+Oct 31 15:17:20 2509b4ffbd73 dnf5[571]: Transaction Summary:
+Oct 31 15:17:20 2509b4ffbd73 dnf5[571]:  Upgrading:          1 package
+Oct 31 15:17:20 2509b4ffbd73 dnf5[571]:  Replacing:          1 package
+Oct 31 15:17:20 2509b4ffbd73 dnf5[571]: Downloading packages:
+Oct 31 15:17:20 2509b4ffbd73 dnf5[571]:   Downloaded: libsolv-0:0.7.41-1.fc44.x86_64
+Oct 31 15:17:20 2509b4ffbd73 dnf5[571]: Packages downloaded.
+Oct 31 15:17:20 2509b4ffbd73 systemd[1]: dnf5-automatic.service: Deactivated successfully.
+Oct 31 15:17:20 2509b4ffbd73 systemd[1]: Finished dnf5-automatic.service - dnf5 automatic.
+Oct 31 15:17:20 2509b4ffbd73 systemd[1]: dnf5-automatic.service: Consumed 1.546s CPU time over 8.632s wall clock time, 146.4M memory peak.
+### the pre-pass-2 command: journalctl -u dnf-automatic -n 50
+-- No entries --
+### documented: dnf history; dnf needs-restarting -r
+ID Command line                           Date and time       Action(s) Altered
+ 4 dnf -y install dnf-automatic           2026-10-31 15:16:40                 1
+ 3 dnf -y --setopt=install_weak_deps=Fals 2026-10-31 14:58:22                19
+ 2 dnf5 --config /kiwi_dnf5.config -y --d 2026-10-29 06:47:46                 1
+Updating and loading repositories:
+ Fedora 44 openh264 (From Cisco) - x86_ 100% | 857.0   B/s |   7.3 KiB |  00m09s
+ Fedora 44 - x86_64 - Updates           100% |   2.1 MiB/s |  27.5 MiB |  00m13s
+rc=0

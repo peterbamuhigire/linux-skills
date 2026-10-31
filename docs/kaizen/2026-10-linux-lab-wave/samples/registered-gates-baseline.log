@@ -1,0 +1,55 @@
+# Registered gates at baseline: HEAD 74e2b6d on main, before any change (2026-10-31)
+
+$ python3 -X utf8 scripts/validate_skills.py --baseline quality-baseline.json
+linux-skills validator: 48 active skills, 1 templates
+fully compliant: 48
+failure counts: {}
+exit=0
+
+$ python3 -X utf8 scripts/routing_smoke_test.py
+routing fixtures: 95/95 valid; expected-target P@1=82/95 (0.863); P@3=95/95 (1.000); required P@3=95/95 (1.000)
+fixture kinds: collision=5, failure-path=5, limited-capability=3, negative=29, positive=53
+coverage: 14/48 skills meet 3 positive + 2 owned-negative fixtures; owned negatives=29
+exit=0
+
+$ bash scripts/tests/check-distro-matrix.sh
+  [PASS] linux-benchmark-scanning: family comparison table in Distro support
+  [PASS] linux-file-integrity: family comparison table in Distro support
+
+-- summary --
+  passed: 41
+  failed: 0
+exit=0
+
+$ python3 -X utf8 scripts/validate_safe_operation_fixture.py tests/fixtures/safe-operation-evidence.json
+[PASS] TEST-PACKAGE-DRY-RUN: dry-run and rollback fields are safe fixture evidence
+[PASS] TEST-SERVICE-DRY-RUN: dry-run and rollback fields are safe fixture evidence
+[PASS] TEST-FIREWALL-DRY-RUN: dry-run and rollback fields are safe fixture evidence
+[PASS] TEST-STORAGE-DRY-RUN: dry-run and rollback fields are safe fixture evidence
+[PASS] TEST-RECOVERY-DRY-RUN: dry-run and rollback fields are safe fixture evidence
+[PASS] fixture-only validation completed; no host action was executed
+exit=0
+
+$ python3 -X utf8 scripts/source_ingestion_guardrail.py
+source-ingestion-guardrail: /home/peter/.claude/skills/linux-skills
+findings: 0
+exit=0
+
+$ python3 scripts/check_marketplace.py
+Package files (excluding .git and ephemeral caches): 398/5000
+Checkout file-like entries (including .git and caches): 972/5000
+PASS: Claude marketplace and Codex compatibility manifests are aligned
+exit=0
+
+$ node scripts/generate-plugin-manifest.js --engine . --root . --exclude docs,scripts,templates,tests,commands,meta,notes,prompts --check
+linux-skills: plugin.json is current — 45 skills.
+exit=0
+
+$ bash scripts/tests/common-sh.test.sh
+  [PASS] audit fallback refuses a pre-existing world-writable directory and writes nothing
+  [PASS] audit fallback refuses a symlinked directory and writes nothing through it
+
+--- common.sh test summary ---
+  passed: 42
+  failed: 0
+exit=0

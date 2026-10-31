@@ -1,0 +1,29 @@
+VERSION()
+8.4.13
+=== account WITHOUT PROCESS, flags the script uses, one schema
+mysqldump: Error: 'Access denied; you need (at least one of) the PROCESS privilege(s) for this operation' when trying to dump tablespaces
+rc=0
+=== account WITHOUT PROCESS, --all-databases (as the script)
+mysqldump: Error: 'Access denied; you need (at least one of) the PROCESS privilege(s) for this operation' when trying to dump tablespaces
+rc=0
+=== account WITHOUT PROCESS, with --tablespaces (-Y)
+mysqldump: [ERROR] unknown option '--tablespaces'.
+rc=2
+=== account WITHOUT PROCESS, with --all-tablespaces output contains CREATE TABLESPACE?
+mysqldump: [ERROR] unknown option '--tablespaces'.
+0
+=== default dump (script flags) for a table in a general tablespace, account WITHOUT PROCESS: has tablespace clause?
+mysqldump: Error: 'Access denied; you need (at least one of) the PROCESS privilege(s) for this operation' when trying to dump tablespaces
+) /*!50100 TABLESPACE `gts1` */ ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+=== --no-tablespaces recognised?
+  -Y, --all-tablespaces 
+                      Dump all the tablespaces.
+  -y, --no-tablespaces 
+                      Do not dump any tablespace information.
+  --add-drop-database Add a DROP DATABASE before each create.
+--
+all-tablespaces                           FALSE
+no-tablespaces                            FALSE
+add-drop-database                         FALSE
+add-drop-table                            TRUE
+mysqldump  Ver 8.4.13 for Linux on x86_64 (MySQL Community Server - GPL)

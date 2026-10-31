@@ -1,0 +1,33 @@
+1:// Unattended-Upgrade::Origins-Pattern controls which packages are
+23:Unattended-Upgrade::Origins-Pattern {
+Unattended-Upgrade::Origins-Pattern {
+        "origin=Debian,codename=${distro_codename},label=Debian";
+        "origin=Debian,codename=${distro_codename},label=Debian-Security";
+        "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+
+};
+=== Test A: documented Allowed-Origins block ALONE (shipped Origins-Pattern removed) ===
+Python 3.11.2
+(none active above means shipped pattern removed)
+Checking if system is running on battery is skipped. Please install powermgmt-base package to check power status and skip installing updates when the system is running on battery.
+Allowed origins are: o=Debian,a=bookworm-security, o=DebianESMApps,a=bookworm-apps-security, o=DebianESM,a=bookworm-infra-security
+Initial blacklist: 
+Checking: tzdata ([<Origin component:'main' archive:'oldstable-security' origin:'Debian' label:'Debian-Security' site:'deb.debian.org' isTrusted:True>])
+No packages found that can be upgraded unattended and no pending auto-removals
+=== cross-check: what do apt policy fields say for the security archive?
+tzdata:
+  Installed: 2026e-0+deb12u1
+  Candidate: 2026f-0+deb12u1
+  Version table:
+     2026f-0+deb12u1 500
+        500 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages
+ *** 2026e-0+deb12u1 100
+        100 /var/lib/dpkg/status
+     2026b-0+deb12u1 500
+        500 http://deb.debian.org/debian bookworm/main amd64 Packages
+     2025b-0+deb12u1 500
+        500 http://deb.debian.org/debian bookworm-updates/main amd64 Packages
+Origin: Debian
+Label: Debian-Security
+Suite: oldstable-security
+Codename: bookworm-security

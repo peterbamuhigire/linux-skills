@@ -1,0 +1,8 @@
+=== #clear + security-only Origins-Pattern in a local file (shipped 50 file untouched)
+Allowed origins are: origin=Debian,codename=bookworm-security,label=Debian-Security
+Initial blacklist: 
+Packages that will be upgraded: tzdata
+Unattended-Upgrade::Origins-Pattern "";
+Unattended-Upgrade::Origins-Pattern:: "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+=== local file removed again
+Allowed origins are: origin=Debian,codename=bookworm,label=Debian, origin=Debian,codename=bookworm,label=Debian-Security, origin=Debian,codename=bookworm-security,label=Debian-Security

@@ -1,0 +1,36 @@
+##### lskw-fed-ssh: broken drop-in plus a plain reload (no sshd -t guard)
+before: active pid=140
+reload rc=0
+after: activating
+● sshd.service - OpenSSH server daemon
+     Loaded: loaded (/usr/lib/systemd/system/sshd.service; enabled; preset: enabled)
+    Drop-In: /usr/lib/systemd/system/service.d
+             └─10-timeout-abort.conf
+     Active: activating (auto-restart) (Result: exit-code) since Sat 2026-10-31 15:02:20 UTC; 1s ago
+ Invocation: 2f366fbaf08d405ba32c0c4ef91fab58
+       Docs: man:sshd(8)
+             man:sshd_config(5)
+    Process: 140 ExecStart=/usr/sbin/sshd -D "\$OPTIONS" (code=exited, status=255/EXCEPTION)
+    Process: 486 ExecReload=/bin/kill -HUP "\$MAINPID" (code=exited, status=0/SUCCESS)
+   Main PID: 140 (code=exited, status=255/EXCEPTION)
+   Mem peak: 22.4M
+recovered: active
+##### lskw-deb-ssh: broken drop-in plus a plain reload (no sshd -t guard)
+before: active pid=1200
+reload rc=1
+Job for ssh.service failed.
+See "systemctl status ssh.service" and "journalctl -xeu ssh.service" for details.
+after: active
+● ssh.service - OpenBSD Secure Shell server
+     Loaded: loaded (/lib/systemd/system/ssh.service; enabled; preset: enabled)
+     Active: active (running) since Sat 2026-10-31 14:57:20 UTC; 5min ago
+       Docs: man:sshd(8)
+             man:sshd_config(5)
+    Process: 1197 ExecStartPre=/usr/sbin/sshd -t (code=exited, status=0/SUCCESS)
+    Process: 1475 ExecReload=/usr/sbin/sshd -t (code=exited, status=255/EXCEPTION)
+    Process: 1461 ExecReload=/bin/kill -HUP $MAINPID (code=exited, status=0/SUCCESS)
+   Main PID: 1200 (sshd)
+      Tasks: 1 (limit: 307)
+     Memory: 1.6M
+        CPU: 976ms
+recovered: active

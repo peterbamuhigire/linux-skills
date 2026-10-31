@@ -1,0 +1,12 @@
+## lskw-fed-pg2
+pg_restore: error: parallel restore from standard input is not supported
+rc=1
+pg_restore: error: parallel restore from standard input is not supported
+direct rc=1
+## lskw-deb-pg2
+could not change directory to "/root/restore": Permission denied
+pg_restore: error: parallel restore from standard input is not supported
+rc=1
+could not change directory to "/root/restore": Permission denied
+pg_restore: error: parallel restore from standard input is not supported
+direct rc=1

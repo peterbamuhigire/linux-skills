@@ -1,0 +1,74 @@
+### scratch: Debian GNU/Linux 12 (bookworm); PostgreSQL 15.19 (Debian 15.19-0+deb12u1
+### timestamp 20261031-150826; files:
+total 64
+drwxr-xr-x. 1 root root   190 Oct 31 15:10 .
+drwx------. 1 root root   112 Oct 31 15:10 ..
+-rw-------. 1 root root   917 Oct 31 15:08 globals_20261031-150826.sql
+-rw-------. 1 root root 49218 Oct 31 15:08 lab_a_20261031-150826.dump
+-rw-------. 1 root root  7962 Oct 31 15:08 lab_odd_db_2678297631_20261031-150826.dump
+
+=== step 1: readability (no server needed) -- verbatim: pg_restore --list appdb.dump > /dev/null
+PASS  pg_restore --list lab_a_20261031-150826.dump
+PASS  pg_restore --list lab_odd_db_2678297631_20261031-150826.dump
+
+=== step 2a: roles first -- verbatim command, lab_a/<timestamp> substituted
+globals restore rc=0 elapsed 112 ms
+could not change directory to "/root/restore": Permission denied
+ERROR:  role "postgres" already exists
+PASS  globals: rc 0 despite the expected 'role postgres already exists' error
+PASS  the documented harmless error appeared: ERROR:  role "postgres" already exists
+could not change directory to "/root/restore": Permission denied
+PASS  app_user role exists on scratch
+
+=== step 2b: database restore -- verbatim: pg_restore --exit-on-error --create --dbname=postgres < appdb_<timestamp>.dump
+lab_a restore rc=0 elapsed 302 ms
+could not change directory to "/root/restore": Permission denied
+PASS  lab_a restore exit 0
+could not change directory to "/root/restore": Permission denied
+PASS  odd-named database restore exit 0
+
+=== step 3: reconcile with dump-time figures
+could not change directory to "/root/restore": Permission denied
+--- restored:
+could not change directory to "/root/restore": Permission denied
+customers_rows|5000
+customers_md5|03ff3690912436243551a0b0a7610106
+audit_rows|5000
+indexes|2
+functions|37
+triggers|1
+views|1
+extensions|pgcrypto,plpgsql
+seq_last|5000
+owner|app_user
+grant_app_ro|t
+t_rows|300
+t_md5|3e6f2061ccd6ea8d742ffb4f7086c9ad
+FAIL  lab_a reconciliation differs
+--- restored | source
+could not change directory to "/root/restore": Permission denied#customers_rows|5000
+customers_rows|5000#customers_md5|03ff3690912436243551a0b0a7610106
+customers_md5|03ff3690912436243551a0b0a7610106#audit_rows|5000
+audit_rows|5000#indexes|2
+indexes|2#functions|37
+functions|37#triggers|1
+triggers|1#views|1
+views|1#extensions|pgcrypto,plpgsql
+extensions|pgcrypto,plpgsql#seq_last|5000
+seq_last|5000#owner|app_user
+owner|app_user#grant_app_ro|t
+grant_app_ro|t#
+PASS  odd db: row count and content md5 equal
+could not change directory to "/root/restore": Permission denied
+ANALYZE
+1667
+PASS  ANALYZE then a read-only application query
+could not change directory to "/root/restore": Permission denied
+PASS  restored privilege: app_ro can SELECT
+
+=== controlled failures of the restore
+second restore into the same instance rc=1: could not change directory to "/root/restore": Permission denied pg_restore: error: could not execute query: ERROR:  database "lab_a" already exists 
+PASS  second --create restore refuses (database exists)
+truncated dump rc=1: could not change directory to "/root/restore": Permission denied pg_restore: error: could not read from input file: end of file 
+PASS  truncated dump restore fails loudly
+### RESULT: HAS-FAILURES
