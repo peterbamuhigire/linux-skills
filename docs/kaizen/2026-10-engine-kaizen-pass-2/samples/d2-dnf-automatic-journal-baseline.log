@@ -1,0 +1,11 @@
+# Defect D2 — dnf-automatic evidence command on a dnf5 host, observed 2026-10-31 (Fedora 44, dnf5 5.4.6.0)
+$ rpm -q --whatprovides dnf-automatic
+dnf5-plugin-automatic-5.4.6.0-1.fc44.x86_64
+$ ls -l /usr/lib/systemd/system/dnf-automatic.timer
+lrwxrwxrwx. /usr/lib/systemd/system/dnf-automatic.timer -> dnf5-automatic.timer
+$ journalctl -u dnf5-automatic -n 3 --no-pager
+Oct 31 06:11:24 <host> systemd[1]: dnf5-automatic.service: Deactivated successfully.
+Oct 31 06:11:24 <host> systemd[1]: Finished dnf5-automatic.service - dnf5 automatic.
+Oct 31 06:11:24 <host> systemd[1]: dnf5-automatic.service: Consumed 6.336s CPU time over 11.939s wall clock time, 358M memory peak.
+$ journalctl -u dnf-automatic -n 3 --no-pager     (the command dnf-reference.md documents as evidence)
+-- No entries --

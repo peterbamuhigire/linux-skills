@@ -1,0 +1,59 @@
+# Python tests at baseline. pytest is not installed on this host, so the three
+# unittest-incompatible modules were run through a minimal stand-in runner and
+# labelled as such. Parametrised cases (2) were not run: NOT_ASSESSED.
+== test_approval_adapter
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK
+== test_audit_ssh
+----------------------------------------------------------------------
+Ran 8 tests in 0.206s
+
+OK
+== test_bootstrap_safety_static
+----------------------------------------------------------------------
+Ran 9 tests in 0.042s
+
+OK
+== test_distro_matrix
+----------------------------------------------------------------------
+Ran 10 tests in 0.914s
+
+OK
+== test_kaizen_contracts
+----------------------------------------------------------------------
+Ran 4 tests in 0.001s
+
+OK
+== test_kaizen_metrics
+----------------------------------------------------------------------
+Ran 9 tests in 0.067s
+
+OK
+== test_marketplace
+----------------------------------------------------------------------
+Ran 10 tests in 0.091s
+
+OK
+== test_safe_operation_fixture
+----------------------------------------------------------------------
+Ran 6 tests in 0.008s
+
+OK
+== test_validate_skills
+----------------------------------------------------------------------
+Ran 0 tests in 0.000s
+
+NO TESTS RAN
+== shim runner (not pytest): test_validate_skills, test_admin_activity, test_codex_model_policy
+test_validate_skills.py: passed=1 failed=0 skipped=0
+SKIP test_record_rejects_empty_secret_like_and_multiline_summaries unsupported fixture summary
+SKIP test_report_rejects_schema_invalid_imported_text unsupported fixture overrides
+test_admin_activity.py: passed=3 failed=0 skipped=2
+test_codex_model_policy.py: passed=4 failed=0 skipped=0
+== bash scripts/tests/common-sh.test.sh
+
+--- common.sh test summary ---
+  passed: 29
+  failed: 0

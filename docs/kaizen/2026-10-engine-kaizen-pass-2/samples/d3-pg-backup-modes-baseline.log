@@ -1,0 +1,19 @@
+# Defect D3 — sk-pg-backup.sh file modes, observed before any change (2026-10-31)
+# Fixture: PATH stubs for sudo, psql, pg_dump, pg_dumpall (synthetic role hash), invoking umask 022,
+# backup directory under a scratch path. No PostgreSQL server was contacted.
+  FAIL: 0
+  Score: 100%
+
+  [PASS] backup completed successfully
+
+$ stat -c '%a %n' <backup dir> <backup dir>/*
+755 <scratch>/pgfx/work/bk
+644 <scratch>/pgfx/work/bk/appdb_20261031-154355.dump
+644 <scratch>/pgfx/work/bk/globals_20261031-154355.sql
+644 <scratch>/pgfx/work/bk/salesdb_20261031-154355.dump
+
+$ cat <backup dir>/globals_*.sql
+CREATE ROLE app;
+ALTER ROLE app WITH LOGIN PASSWORD 'SCRAM-SHA-256$4096:SYNTHETIC-FIXTURE-HASH';
+
+# Directory 755 and role-hash file 644: any local user can read the role password hashes.
