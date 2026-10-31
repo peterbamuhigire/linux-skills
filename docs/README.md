@@ -15,7 +15,7 @@ This index lists what is under `docs/` and which records are current. The skills
 | [`security/`](security/) | [Vulnerability triage runbook](security/current-vulnerability-triage.md) and its [dated source register](security/source-register-2026-10-29.md) |
 | [`continuous-improvement/`](continuous-improvement/) | Standards and records that the cycles use: [platform test matrix](continuous-improvement/platform-test-matrix-2026-08.md), [two-family validation and recovery](continuous-improvement/two-family-validation-and-recovery.md), [safe reversible operations](continuous-improvement/safe-reversible-operations-standard.md), [incident learning](continuous-improvement/incident-learning-standard.md), [product audit checklist](continuous-improvement/linux-product-audit-checklist.md), the [29 October interim record](continuous-improvement/kaizen-2026-10-29.md) and the [Codex model review](continuous-improvement/model-review-2026-10-29.md) |
 
-The latest published score, the open findings and the calendar of date-triggered gates are in the README's [Quality and improvement](../README.md#quality-and-improvement) section.
+The latest published score, [what the October 2026 kaizen improved](../README.md#what-the-october-2026-kaizen-improved), the open findings and the calendar of date-triggered gates are in the README's [Quality and improvement](../README.md#quality-and-improvement) section.
 
 ## Reference
 
