@@ -591,7 +591,26 @@ sudo apt install -y unattended-upgrades apt-listchanges
 sudo dpkg-reconfigure -f noninteractive unattended-upgrades
 ```
 
-Pin it to security + updates, set automatic reboot window:
+Which archive is "security" depends on the distribution. Ubuntu suites are named after the release, so
+`"${distro_id}:${distro_codename}-security"` matches there. On Debian that pattern matches nothing: the
+`a=` field is the Suite (`oldstable-security`), not the codename (Debian 12 lab, 2026-10-31: `No packages
+found that can be upgraded unattended` with a security update pending). On Debian keep the shipped
+`Origins-Pattern`, which already names `codename=${distro_codename}-security,label=Debian-Security`, and
+add only the reboot options. The exact security-only file is in the
+[provisioning procedure](../../../01-provisioning-and-bootstrap/linux-server-provisioning/references/provisioning-steps.md#5-unattended-security-upgrades).
+
+Debian, reboot window:
+
+```bash
+sudo tee /etc/apt/apt.conf.d/52unattended-upgrades-local >/dev/null <<'EOF'
+Unattended-Upgrade::Automatic-Reboot "true";
+Unattended-Upgrade::Automatic-Reboot-Time "03:30";
+Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
+EOF
+```
+
+Ubuntu, pin it to security + updates and set the reboot window (not run in a lab):
 
 ```bash
 sudo tee /etc/apt/apt.conf.d/52unattended-upgrades-local >/dev/null <<'EOF'
@@ -608,10 +627,11 @@ Unattended-Upgrade::Remove-Unused-Dependencies "true";
 EOF
 ```
 
-Verify with a dry run:
+Verify with a dry run. Read the `Allowed origins are:` line: `tail` would cut it off, so filter instead:
 
 ```bash
-sudo unattended-upgrade --dry-run -d 2>&1 | tail -20
+sudo unattended-upgrade --dry-run -d 2>&1 | grep -E 'Allowed origins|Packages that will be upgraded|No packages found'
+apt-get -s dist-upgrade | grep '^Inst' | grep -i security   # pending security upgrades; each must be listed above
 cat /var/log/unattended-upgrades/unattended-upgrades.log 2>/dev/null | tail -20
 ```
 

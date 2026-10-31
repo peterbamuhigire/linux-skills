@@ -232,11 +232,45 @@ sudo apt install -y unattended-upgrades apt-listchanges
 
 # Reconfigure at low priority so non-interactive defaults apply
 sudo dpkg-reconfigure -plow unattended-upgrades
-
-sudo nano /etc/apt/apt.conf.d/50unattended-upgrades
 ```
 
-Key edits:
+**Which archive counts as "security" depends on the distribution.** Ubuntu names its security
+suite after the release (`jammy-security`), so the pattern `"${distro_id}:${distro_codename}-security"`
+matches it. Debian does not: its security archive reports `Suite: oldstable-security` (`stable-security`
+while the release is current) and carries the release name only in `Codename: bookworm-security`. The
+`a=` field of that pattern is the Suite, so on Debian it matches nothing. A Debian 12 lab run of the
+previous text of this section printed `No packages found that can be upgraded unattended` while a
+security update was pending. Use the block for your distribution, then run the verify step, which is
+the only thing that proves the origins match.
+
+**Debian 12 and later.** The package ships a working `Origins-Pattern`, so leave
+`/etc/apt/apt.conf.d/50unattended-upgrades` unedited and keep your policy in a local file. The `#clear`
+line drops the shipped patterns first, which limits the host to the security archive:
+
+```bash
+sudo tee /etc/apt/apt.conf.d/52unattended-upgrades-local >/dev/null <<'EOF'
+#clear Unattended-Upgrade::Origins-Pattern;
+Unattended-Upgrade::Origins-Pattern {
+    "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+};
+
+// Remove unused dependencies
+Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
+Unattended-Upgrade::Remove-New-Unused-Dependencies "true";
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
+
+// Reboot automatically at 04:00 if a kernel update requires it
+Unattended-Upgrade::Automatic-Reboot "true";
+Unattended-Upgrade::Automatic-Reboot-Time "04:00";
+
+// Email the admin on change
+Unattended-Upgrade::Mail "root";
+Unattended-Upgrade::MailReport "on-change";
+EOF
+```
+
+**Ubuntu 22.04 and 24.04.** Edit the `Allowed-Origins` block of
+`/etc/apt/apt.conf.d/50unattended-upgrades` (this edit was not run in a lab; no Ubuntu image was available):
 
 ```
 // Enable security-only (keep updates + proposed OFF)
@@ -255,7 +289,7 @@ Unattended-Upgrade::Remove-Unused-Dependencies "true";
 Unattended-Upgrade::Automatic-Reboot "true";
 Unattended-Upgrade::Automatic-Reboot-Time "04:00";
 
-// Email the admin on failure
+// Email the admin on change
 Unattended-Upgrade::Mail "root";
 Unattended-Upgrade::MailReport "on-change";
 ```
@@ -274,10 +308,20 @@ EOF
 **Verify:**
 
 ```bash
-sudo unattended-upgrade --dry-run --debug 2>&1 | tail -30
-# Expected: "Initial blacklist: ... Packages that will be upgraded: ..."
-#   with no "ERROR" lines.
+sudo unattended-upgrade --dry-run --debug 2>&1 | grep -E 'Allowed origins|Packages that will be upgraded|No packages found'
+apt-get -s dist-upgrade | grep '^Inst' | grep -i security
+# Expected: "Allowed origins are:" names your distribution's security archive (Debian:
+#   label=Debian-Security and codename=<release>-security), and every package that the second command
+#   lists appears after "Packages that will be upgraded:".
+# "No packages found that can be upgraded unattended" while the second command lists packages means the
+#   origins do not match: fix them before trusting the timers. With nothing pending the two commands
+#   cannot tell a working configuration from a broken one; check the "Allowed origins" line by eye.
+```
 
+The first command's output is short on purpose: `unattended-upgrade --debug` prints about 35 lines,
+so `| tail -30` cuts off the `Allowed origins` line you need.
+
+```bash
 sudo systemctl status apt-daily.timer apt-daily-upgrade.timer
 # Expected: both active (waiting)
 ```

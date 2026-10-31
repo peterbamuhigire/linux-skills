@@ -104,6 +104,28 @@ Normal updates still require a human running `apt full-upgrade` —
 exactly what you want on a server where unplanned feature upgrades
 cause outages.
 
+**Debian: use `Origins-Pattern`, not this block.** The `origin:archive` form above only works where
+the archive (apt's `Suite`) is named after the release, as Ubuntu's is. Debian's security archive
+publishes `Origin: Debian`, `Label: Debian-Security`, `Suite: oldstable-security` (or `stable-security`)
+and `Codename: bookworm-security`, so `"${distro_id}:${distro_codename}-security"` expands to
+`o=Debian,a=bookworm-security` and matches nothing. In a Debian 12 container with a security update
+pending, `unattended-upgrade --dry-run --debug` reported `No packages found that can be upgraded
+unattended` with that pattern, and `Packages that will be upgraded: tzdata` with the shipped one.
+Debian's package already ships `Unattended-Upgrade::Origins-Pattern` entries that match on
+`codename=${distro_codename}-security,label=Debian-Security`. Keep them, or limit the host to the
+security archive in a local file (`#clear` is an apt configuration directive that empties a list):
+
+```text
+#clear Unattended-Upgrade::Origins-Pattern;
+Unattended-Upgrade::Origins-Pattern {
+    "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+};
+```
+
+Prove it with the commands under "Dry run, forced run, logs": the `Allowed origins are:` line must
+name `label=Debian-Security`, and every package in `apt-get -s dist-upgrade | grep '^Inst' | grep -i
+security` must appear under `Packages that will be upgraded`. Debian 13 and Ubuntu were not run.
+
 **Allow-listing a third-party origin** (e.g. Ondrej Nginx PPA):
 
 ```text
@@ -257,6 +279,9 @@ test -f /var/run/reboot-required && cat /var/run/reboot-required.pkgs
 nightly monitoring must catch it.
 
 ## Complete production web server config
+
+The `Allowed-Origins` stanza below is the Ubuntu form. On Debian replace it with the
+`#clear` and `Origins-Pattern` stanza shown under Allowed-Origins; keep every other stanza.
 
 Production configuration for a public-facing Nginx + PHP-FPM + MariaDB
 server implementing: (a) security-only updates, (b) mail on any

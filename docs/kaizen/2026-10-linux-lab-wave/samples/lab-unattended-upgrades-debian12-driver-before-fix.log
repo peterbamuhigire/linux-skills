@@ -1,0 +1,26 @@
+installed
+INFO  Debian GNU/Linux 12 (bookworm)
+INFO  pending security upgrades before the procedure: tzdata
+
+=== the archive's own Release fields
+PASS  a security archive Release file is present
+INFO  security archive: Origin=Debian Label=Debian-Security Suite=oldstable-security Codename=bookworm-security
+PASS  the Suite is not the codename (the reason the Ubuntu pattern cannot match on Debian)
+
+=== documented configuration block, verbatim
+PASS  configuration block exits 0
+
+=== documented verify command, verbatim
+pkgs that look like they should be upgraded: 
+Fetched 0 B in 0s (0 B/s)                                                       
+fetch.run() result: 0
+Packages blacklist due to conffile prompts: []
+No packages found that can be upgraded unattended and no pending auto-removals
+The list of kept packages can't be calculated in dry-run mode.
+PASS  the dry run names origins ('Allowed origins are')
+FAIL  the origins include the security archive's Label (Debian-Security)
+FAIL  the origins include the security archive's Codename (bookworm-security)
+FAIL  the dry run does not report 'No packages found' while security upgrades are pending
+FAIL  pending security upgrade tzdata is listed to be upgraded
+### RESULT: HAS-FAILURES
+driver exit=1

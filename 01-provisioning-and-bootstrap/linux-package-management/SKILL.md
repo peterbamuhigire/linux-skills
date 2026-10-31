@@ -371,7 +371,11 @@ sudo apt update
 - **`unattended-upgrades` silently skipped updates.** Check
   `/etc/apt/apt.conf.d/50unattended-upgrades` for Blacklist entries and
   the Allowed-Origins list — the codename must match the current
-  release (e.g. `noble` not `jammy` after an upgrade).
+  release (e.g. `noble` not `jammy` after an upgrade). On Debian the
+  `${distro_id}:${distro_codename}-security` form never matches the security
+  archive (its Suite is `oldstable-security` or `stable-security`); use the
+  `Origins-Pattern` form in the reference and read the dry-run's `Allowed
+  origins` line.
 - **Kernel upgrade without reboot.** Security advisories apply only
   after reboot. Monitor `/var/run/reboot-required`.
 

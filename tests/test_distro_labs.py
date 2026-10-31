@@ -107,6 +107,14 @@ def restore_blocks(destination: Path) -> Path:
     return write_blocks(destination, {"globals.sh": globals_cmd, "database.sh": database_cmd})
 
 
+def unattended_blocks(destination: Path) -> Path:
+    blocks = markdown_blocks(PROVISIONING_STEPS, "## 5. Unattended security upgrades")
+    return write_blocks(destination, {
+        "debian.sh": pick_block(blocks, "52unattended-upgrades-local"),
+        "verify.sh": pick_block(blocks, "unattended-upgrade --dry-run --debug"),
+    })
+
+
 @pytest.mark.parametrize("family", FAMILIES)
 def test_ssh_dropin_procedure(lab: Lab, family: str) -> None:
     """The documented SSH drop-in beats a cloud-init password file, rolls back, and refuses a broken file."""
@@ -149,3 +157,11 @@ def clean_labs_directory(lab: Lab) -> Path:
         for name in ("lab_common.sh", "pg_restore_lab.sh"):
             (destination / name).write_bytes((LAB_REPO / "tests/labs" / name).read_bytes())
     return destination
+
+
+def test_debian_unattended_upgrades_origins_match_the_security_archive(lab: Lab) -> None:
+    """The documented Debian origins must match the security archive and list its pending upgrades."""
+    container = lab.src("debian")
+    blocks = unattended_blocks(lab.work / "uu-blocks")
+    container.put(blocks, "/root/blocks-uu")
+    assert_driver_passed(run_driver(container, "unattended_upgrades_lab.sh", "/root/blocks-uu"))
