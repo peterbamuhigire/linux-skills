@@ -23,7 +23,7 @@ step differ. Body uses Debian/Ubuntu; substitute per this matrix.
 | Package manager | `apt` | `dnf` |
 | Update + base packages | `apt update && apt install …` | `dnf install …` (`ensure_epel` for extras on RHEL/Rocky/Alma) |
 | Admin user group | `usermod -aG sudo <u>` | `usermod -aG wheel <u>` |
-| Firewall | `ufw` | `firewalld` |
+| SSH service unit | `ssh` (`sshd` is an alias, verified on Debian 12) | `sshd`; `ssh` does not exist || Firewall | `ufw` | `firewalld` |
 | Auto security updates | `unattended-upgrades` | `dnf-automatic` |
 | Workstation AppImage support | `fuse3 desktop-file-utils`; add `libfuse2`/`libfuse2t64` for legacy AppImages | `fuse3 desktop-file-utils`; add app-specific libs such as `mpv-libs` when needed |
 | Mandatory access control | AppArmor (already on) | **SELinux enforcing** (already on) |

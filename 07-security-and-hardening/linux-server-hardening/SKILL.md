@@ -25,7 +25,8 @@ the RHEL family (Fedora, RHEL, CentOS Stream, Rocky, Alma, Oracle) enforces
 | Firewall | `ufw` | `firewalld` |
 | Auto security updates | `unattended-upgrades` | `dnf-automatic` |
 | Sudo admin group | `sudo` | `wheel` |
-| SSH hardening | `/etc/ssh/sshd_config[.d]` | identical |
+| SSH hardening | `/etc/ssh/sshd_config[.d]` | identical files and keywords |
+| SSH service unit | `ssh` (`sshd` is an alias, verified on Debian 12) | `sshd`; `ssh` does not exist |
 | sysctl hardening | `/etc/sysctl.d/` | identical |
 | Audit daemon | `auditd` | `auditd` (same) |
 

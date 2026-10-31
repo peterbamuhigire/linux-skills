@@ -9,7 +9,7 @@
 #: Contact: +256784464178
 set -u
 LAB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=tests/labs/lab_common.sh
+# shellcheck source=lab_common.sh
 source "$LAB_DIR/lab_common.sh"
 BLOCKS=${1:?usage: ssh_dropin_lab.sh <blocks-dir>}
 
@@ -62,7 +62,7 @@ if [[ $rc -ne 0 ]]; then
     bash /root/reload-sshd.sh; rc=$?
 fi
 check "reload block exits 0 (after naming the unit sshd where it failed as written)" test $rc -eq 0
-lab_info "reload block exit status as written: $RELOAD_AS_WRITTEN_RC"
+check "the documented reload block exits 0 as written on this distro" test "$RELOAD_AS_WRITTEN_RC" -eq 0
 sleep 1
 out=$(bash "$BLOCKS/verify.sh" | grep -v '^#')
 for want in "permitrootlogin no" "passwordauthentication no" "pubkeyauthentication yes" "allowusers administrator"; do
@@ -80,7 +80,7 @@ if [[ $rc -ne 0 ]]; then
     lab_info "rollback block failed as written on this distro (exit $rc); applying the same steps with sshd"
     rm -f /etc/ssh/sshd_config.d/00-linux-skills-ssh.conf; systemctl reload sshd
 fi
-lab_info "rollback block exit status as written: $ROLLBACK_AS_WRITTEN_RC"
+check "the documented rollback block exits 0 as written on this distro" test "$ROLLBACK_AS_WRITTEN_RC" -eq 0
 sleep 1
 check "after rollback the cloud-init default is back: password login works" pw_login administrator
 

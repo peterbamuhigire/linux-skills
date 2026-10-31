@@ -97,8 +97,20 @@ On Windows PowerShell, use the key-copy feature provided by the client or
 pass the remote command as one quoted argument. Verify the resulting file
 mode and key fingerprint on the server before changing `sshd`.
 
-On Debian systems, inspect `/etc/ssh/sshd_config.d/` before choosing the
-drop-in name. OpenSSH processes `Include` globs in lexical order and, unless
+Service name: the unit is `ssh` on Debian and Ubuntu and `sshd` on the RHEL
+family, so `systemctl reload ssh` fails there with `Unit ssh.service not found`
+(Fedora 44 lab, exit 5). This checklist uses `sshd`: it is the real name on the
+RHEL family and an alias on Debian 12 (`systemctl reload sshd` exited 0 in the
+same lab). If a Debian-family host answers `Unit sshd.service not found`, use
+`ssh`. The packaged RHEL unit reloads with a bare `kill -HUP` and does not run
+`sshd -t` first: after a syntax error in a drop-in the reload stopped the daemon
+in the lab (`activating (auto-restart)`). Debian's unit runs `sshd -t` itself and
+refuses the reload. So the `sudo sshd -t &&` guard below is mandatory on the RHEL
+family, not a precaution.
+
+On Debian systems and cloud images, and on RHEL-family hosts (which ship
+`40-redhat-crypto-policies.conf` and `50-redhat.conf`), inspect
+`/etc/ssh/sshd_config.d/` before choosing the drop-in name. OpenSSH processes `Include` globs in lexical order and, unless
 documented otherwise, uses the first value obtained for each keyword. A
 cloud-init file such as `50-cloud-init.conf` can therefore make a later
 `99-hardening.conf` ineffective. Use an earlier, clearly named file for the
@@ -122,8 +134,7 @@ KbdInteractiveAuthentication no
 Validate and reload without interrupting existing sessions:
 
 ```bash
-sudo sshd -t
-sudo systemctl reload ssh
+sudo sshd -t && sudo systemctl reload sshd
 sudo sshd -T | grep -Ei 'passwordauthentication|kbdinteractiveauthentication|pubkeyauthentication'
 ```
 
@@ -204,7 +215,7 @@ sudo usermod -aG ssh-users $USER
 Test, then reload — keep your existing session open:
 
 ```bash
-sudo sshd -t && sudo systemctl reload ssh
+sudo sshd -t && sudo systemctl reload sshd
 ```
 
 In a **new** terminal from every required device, verify:
@@ -220,8 +231,7 @@ sudo sshd -T | grep -Ei 'permitrootlogin|passwordauthentication|allowgroups'
 ```bash
 sudo mv /etc/ssh/sshd_config.d/00-linux-skills-ssh.conf \
         /etc/ssh/sshd_config.d/00-linux-skills-ssh.conf.disabled
-sudo sshd -t
-sudo systemctl reload ssh
+sudo sshd -t && sudo systemctl reload sshd
 ```
 
 ## UFW firewall

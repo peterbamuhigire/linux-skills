@@ -39,6 +39,17 @@ SSHD = shutil.which("sshd") or ("/usr/sbin/sshd" if Path("/usr/sbin/sshd").exist
 SSH_KEYGEN = shutil.which("ssh-keygen")
 
 
+def fenced_lines(text: str) -> list[tuple[int, str]]:
+    """(line number, line) for every line inside a fenced block: commands, not prose that explains them."""
+    inside, found = False, []
+    for number, line in enumerate(text.splitlines(), 1):
+        if line.strip().startswith("```"):
+            inside = not inside
+        elif inside:
+            found.append((number, line))
+    return found
+
+
 def dropin_mentions(text: str) -> list[tuple[int, str]]:
     return [(int(number), f"{number}-{name}") for number, name in DROPIN_PATH.findall(text)]
 
@@ -100,6 +111,37 @@ class SshDropinNamingTests(unittest.TestCase):
     def test_procedures_exist(self) -> None:
         for relative in PROCEDURES:
             self.assertTrue((ROOT / relative).is_file(), relative)
+
+    def test_reload_and_restart_name_a_unit_the_rhel_family_has(self) -> None:
+        # The Debian unit is `ssh`; the RHEL family has only `sshd`, so `systemctl reload ssh` exits 5 there
+        # ("Unit ssh.service not found", Fedora 44 lab, 2026-10-31), in the apply step and in the rollback.
+        # `sshd` is an alias on Debian 12, so one name serves both families.
+        offenders = [
+            f"{relative}:{number}: {line.strip()}"
+            for relative in PROCEDURES
+            for number, line in fenced_lines((ROOT / relative).read_text(encoding="utf-8"))
+            if re.search(r"systemctl\s+(reload|restart)\s+ssh\b", line)
+        ]
+        self.assertEqual(offenders, [], "use `systemctl reload sshd` (and say why) in two-family procedures")
+
+    def test_every_reload_after_an_edit_is_chained_to_a_syntax_check(self) -> None:
+        # The packaged RHEL unit reloads with a bare `kill -HUP` and no `sshd -t`, so after a syntax error the
+        # reload stops the daemon (lab: `activating (auto-restart)`). A reload that follows an edit must sit on
+        # the same line as `sshd -t &&`. A reload that only follows the removal of the drop-in cannot meet a
+        # syntax error of its own making and is exempt.
+        offenders = []
+        for relative in PROCEDURES:
+            lines = (ROOT / relative).read_text(encoding="utf-8").splitlines()
+            fenced = {number for number, _ in fenced_lines("\n".join(lines))}
+            for index, line in enumerate(lines):
+                if index + 1 not in fenced:
+                    continue
+                if not re.match(r"\s*(sudo\s+)?systemctl\s+reload\s+sshd?\b", line) and "&& sudo systemctl reload ssh" not in line:
+                    continue
+                after_removal = any(re.search(r"\b(rm|mv)\b.*sshd_config\.d", previous) for previous in lines[max(0, index - 3) : index])
+                if "sshd -t &&" not in line and not after_removal:
+                    offenders.append(f"{relative}:{index + 1}: {line.strip()}")
+        self.assertEqual(offenders, [], "chain `sudo sshd -t &&` before every reload that follows an edit")
 
     def test_no_procedure_numbers_a_hardening_dropin_after_cloud_init(self) -> None:
         offenders: list[str] = []

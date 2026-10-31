@@ -120,6 +120,8 @@ Only after the new session works should you close the root session.
 
 Debian/Ubuntu's sshd reads `/etc/ssh/sshd_config.d/*.conf`. Drop a single hardening file there — leave the main `sshd_config` untouched so package upgrades don't conflict.
 
+**Service name.** Debian and Ubuntu call the unit `ssh`; the RHEL family calls it `sshd` and has no `ssh`, so `systemctl reload ssh` fails there (`Unit ssh.service not found`, exit 5). The commands below use `sshd`, which is the real name on the RHEL family and an alias on Debian 12 (`systemctl reload sshd` exited 0 in a Debian 12 container). If a Debian-family host answers `Unit sshd.service not found`, use `ssh`.
+
 **Name the file so it sorts first.** sshd processes the `Include` files in lexical order and keeps the *first* value it finds for each keyword, so a later file cannot override an earlier one. Cloud images ship `50-cloud-init.conf` (often `PasswordAuthentication yes`), and RHEL-family hosts ship `50-redhat.conf` and sometimes `01-permitrootlogin.conf`. A hardening file called `99-hardening.conf` loses to all of them. Use `00-linux-skills-ssh.conf`.
 
 Before writing it, list what already defines the keywords you are about to set:
@@ -167,7 +169,7 @@ sudo sshd -t
 
 ```bash
 # In the original session — test the config and reload
-sudo sshd -t && sudo systemctl reload ssh
+sudo sshd -t && sudo systemctl reload sshd
 
 # In a NEW terminal — verify you can still log in
 ssh administrator@<server-ip>
@@ -177,7 +179,7 @@ If the new session fails, the old session is still open — revert the file and 
 
 ```bash
 sudo rm /etc/ssh/sshd_config.d/00-linux-skills-ssh.conf
-sudo systemctl reload ssh
+sudo systemctl reload sshd
 ```
 
 **Verify (once the new session works):**
