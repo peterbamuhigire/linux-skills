@@ -423,6 +423,65 @@ else
 fi
 
 # -----------------------------------------------------------------------------
+# Test 11: the audit-log fallback never trusts a predictable shared path
+# -----------------------------------------------------------------------------
+AUDIT_FX="$TEST_FIXTURE_DIR/audit-fallback"
+mkdir -m 0700 "$AUDIT_FX"
+audit_probe() {
+    # audit_probe <fixture-dir>: a fresh shell whose TMPDIR is <fixture-dir>, whose
+    # system audit directory does not exist, and which writes one audit line.
+    # Prints the shell's output followed by "disabled=<0|1>".
+    PROBE_DIR="$1" PROBE_LIB="$SK_LIB" TMPDIR="$1" bash -c '
+        source "$PROBE_LIB"
+        SK_AUDIT_DIR="$PROBE_DIR/no-such-system-dir"
+        SK_AUDIT_LOG="$SK_AUDIT_DIR/probe.log"
+        _sk_audit "audit-probe-line"
+        printf "disabled=%s\n" "$SK_AUDIT_DISABLED"
+    ' 2>&1
+}
+if (( EUID != 0 )); then
+    fx="$AUDIT_FX/private"; mkdir -m 0700 "$fx"
+    out="$(audit_probe "$fx")"
+    dir="$fx/linux-skills-audit-$EUID"
+    mode="$(stat -c '%a' "$dir" 2>/dev/null)"
+    if [[ "$out" == *"disabled=0"* && "$mode" == "700" ]] && grep -rqs "audit-probe-line" "$dir"; then
+        pass_t "audit fallback creates a private 0700 directory under TMPDIR and logs there"
+    else
+        fail_t "audit fallback private-directory case failed (mode '$mode'): $out"
+    fi
+
+    fx="$AUDIT_FX/loose"; mkdir -m 0700 "$fx"
+    mkdir "$fx/linux-skills-audit-$EUID" && chmod 0777 "$fx/linux-skills-audit-$EUID"
+    out="$(audit_probe "$fx")"
+    if [[ "$out" == *"disabled=1"* && "$out" == *"audit log disabled"* ]] \
+            && [[ -z "$(find "$fx/linux-skills-audit-$EUID" -type f -print -quit)" ]]; then
+        pass_t "audit fallback refuses a pre-existing world-writable directory and writes nothing"
+    else
+        fail_t "audit fallback accepted a loose directory: $out"
+    fi
+
+    fx="$AUDIT_FX/symlink"; mkdir -m 0700 "$fx"
+    mkdir -m 0700 "$fx/elsewhere"
+    ln -s elsewhere "$fx/linux-skills-audit-$EUID"
+    out="$(audit_probe "$fx")"
+    if [[ "$out" == *"disabled=1"* ]] && [[ -z "$(find "$fx/elsewhere" -type f -print -quit)" ]]; then
+        pass_t "audit fallback refuses a symlinked directory and writes nothing through it"
+    else
+        fail_t "audit fallback followed a symlink: $out"
+    fi
+else
+    fx="$AUDIT_FX/root"; mkdir -m 0700 "$fx"
+    out="$(audit_probe "$fx")"
+    mode="$(stat -c '%a' "$fx/no-such-system-dir" 2>/dev/null)"
+    if [[ "$out" == *"disabled=0"* && "$mode" == "750" ]] && grep -qs "audit-probe-line" "$fx/no-such-system-dir/probe.log"; then
+        pass_t "root creates the system audit directory 0750 and logs to it"
+    else
+        fail_t "root audit directory case failed (mode '$mode'): $out"
+    fi
+    printf "  [SKIP] non-root fallback cases need a non-root caller (not run here)\n"
+fi
+
+# -----------------------------------------------------------------------------
 # Summary
 # -----------------------------------------------------------------------------
 printf "\n--- common.sh test summary ---\n"

@@ -648,7 +648,11 @@ parse_standard_flags() {
                 ;;
             --log)
                 _sk_ensure_log_dir
-                LOG_FILE="${SK_AUDIT_DIR}/${SK_SCRIPT_NAME}-$(date +%Y%m%d-%H%M%S).log"
+                if [[ "$SK_AUDIT_DISABLED" == "1" ]]; then
+                    warn "--log ignored: no trustworthy log directory"
+                else
+                    LOG_FILE="${SK_AUDIT_DIR}/${SK_SCRIPT_NAME}-$(date +%Y%m%d-%H%M%S).log"
+                fi
                 ;;
             --log=*)
                 _sk_ensure_log_dir
@@ -685,16 +689,33 @@ parse_standard_flags() {
     _sk_init_colors
 }
 
+# Set to 1 when no trustworthy audit directory exists; audit writes are skipped.
+SK_AUDIT_DISABLED=0
+
 _sk_ensure_log_dir() {
-    if [[ ! -d "$SK_AUDIT_DIR" ]]; then
-        if [[ $EUID -eq 0 ]]; then
-            mkdir -p "$SK_AUDIT_DIR" && chmod 0750 "$SK_AUDIT_DIR"
-        else
-            # Fall back to /tmp if not root
-            SK_AUDIT_DIR="/tmp/linux-skills-$USER"
-            SK_AUDIT_LOG="${SK_AUDIT_DIR}/${SK_SCRIPT_NAME}.log"
-            mkdir -p "$SK_AUDIT_DIR"
-        fi
+    [[ "$SK_AUDIT_DISABLED" == "1" ]] && return 0
+    [[ -d "$SK_AUDIT_DIR" ]] && return 0
+    if [[ $EUID -eq 0 ]]; then
+        mkdir -p "$SK_AUDIT_DIR" && chmod 0750 "$SK_AUDIT_DIR"
+        return 0
+    fi
+    # Not root and the system directory is absent: use a private per-user
+    # directory under the validated temporary base. A predictable name in a
+    # shared directory is only used if we own it, it is 0700 and it is not a
+    # symlink; otherwise audit writes are skipped rather than redirected.
+    local dir="${SK_TEMP_BASE}/linux-skills-audit-${EUID}" owner mode
+    if [[ ! -e "$dir" && ! -L "$dir" ]]; then
+        (umask 077; mkdir -- "$dir") 2>/dev/null
+    fi
+    if [[ -d "$dir" && ! -L "$dir" ]] \
+        && owner="$(stat -c '%u' -- "$dir" 2>/dev/null)" \
+        && mode="$(stat -c '%a' -- "$dir" 2>/dev/null)" \
+        && [[ "$owner" == "$EUID" && "$mode" == "700" ]]; then
+        SK_AUDIT_DIR="$dir"
+        SK_AUDIT_LOG="${SK_AUDIT_DIR}/${SK_SCRIPT_NAME}.log"
+    else
+        SK_AUDIT_DISABLED=1
+        warn "audit log disabled: $dir is not a private directory owned by uid $EUID"
     fi
 }
 
@@ -765,6 +786,7 @@ sk_source_trusted_config() {
 
 _sk_audit() {
     _sk_ensure_log_dir
+    [[ "$SK_AUDIT_DISABLED" == "1" ]] && return 0
     {
         printf '%s [%s] %s\n' "$(date -Iseconds)" "$SK_SCRIPT_NAME" "$*" >> "$SK_AUDIT_LOG"
     } 2>/dev/null || true
