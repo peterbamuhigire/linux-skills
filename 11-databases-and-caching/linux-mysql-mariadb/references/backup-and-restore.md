@@ -39,7 +39,7 @@ once per schema and once for `--all-databases`. The MySQL 8.4 `mysqldump` manual
 |---|---|
 | Rows of every dumped table | `SELECT`; `--routines` requires the **global** `SELECT` |
 | Views, triggers, events | `SHOW VIEW`, `TRIGGER`, `EVENT` |
-| Tablespace metadata | `PROCESS`, unless `--no-tablespaces` is passed (the script does not pass it) |
+| Tablespace metadata | `PROCESS`, unless `--no-tablespaces` is passed (the script does not pass it). Optional in practice: without it `mysqldump` 8.4 prints `Access denied; you need (at least one of) the PROCESS privilege(s) for this operation` when trying to dump tablespaces to standard error, still exits 0 and dumps every schema, and leaves out the `CREATE TABLESPACE` statements for general tablespaces |
 | Consistent snapshot with GTIDs | `RELOAD` or `FLUSH_TABLES` with `--single-transaction`, when `gtid_mode=ON` and `gtid_purged=ON` or `AUTO` |
 | Table locks | not needed: `--single-transaction` replaces `LOCK TABLES` |
 
@@ -49,19 +49,29 @@ GRANT SELECT, SHOW VIEW, TRIGGER, EVENT, PROCESS, RELOAD ON *.* TO 'sk_backup'@'
 ```
 
 Treat that credential like the dump itself: global `SELECT` reads the `mysql` schema,
-and `PROCESS` shows every session's statements. Two traps follow from narrowing the
-grants. The script lists schemas from `information_schema.schemata`, and MySQL shows a
+and `PROCESS` shows every session's statements. If the server has no general tablespaces,
+drop `PROCESS` from the `GRANT` and accept the standard-error line above on every run (cron mails it).
+
+Two traps follow from narrowing the grants. The script lists schemas from `information_schema.schemata`, and MySQL shows a
 user only the rows for objects it has some privilege on, so a schema the account cannot
 see is left out of the backup and the run still reports success. Compare the dumped
 schema list with `SHOW DATABASES` run by an administrator before trusting a narrower
 account. A missing privilege on a schema the account can see makes `mysqldump` fail, and the
 script then stops with `mysqldump failed` (exit 1).
 
-Status: the privilege list comes from the manual page, not from a server run in this
-review; the example statements were not executed. MariaDB ships `mariadb-dump`
-and its grants were not assessed. Sources: MySQL 8.4
-reference manual, `mysqldump` and INFORMATION_SCHEMA introduction pages, read
-2026-10-31; review by 2026-11-30.
+Status: lab-verified on 2026-10-31 with `mysql:8.4` (8.4.13) in rootless Podman, running the script
+inside the database container. The two statements above, taken from this page unchanged, create an
+account for which `sk-mysql-backup` completes and the archive holds every schema the server holds
+(including `mysql`); `lab_app` restored into a second instance with the same row, trigger, routine,
+event and view counts; and eight write attempts (INSERT, UPDATE, DELETE, CREATE TABLE, a table drop,
+CREATE USER, GRANT, an UPDATE of `mysql.user`) were refused with access-denied errors. Two variants
+also completed: no `PROCESS` (see the table) and no `RELOAD` with GTIDs off. The two traps above were
+reproduced: an account that cannot see a schema left it out of the archive and the run reported
+success; an account that could see a schema but not read it stopped the script with `mysqldump failed`
+(exit 1). Not assessed: MariaDB (`mariadb-dump` and its grants), GTID-enabled servers, general
+tablespaces on the restore side, and other MySQL releases. Sources: MySQL 8.4 reference manual,
+`mysqldump` and INFORMATION_SCHEMA introduction pages, read 2026-10-31; review by 2026-11-30. Test:
+`tests/test_mysql_backup.py::test_mysql_backup_least_privilege_account`.
 
 ## Verify a backup
 
@@ -106,6 +116,8 @@ LINUX_SKILLS_MYSQL_BACKUP_LAB=1 pytest -q tests/test_mysql_backup.py
 
 It needs pre-pulled Podman images `docker.io/library/mysql:8.4` and
 `docker.io/rclone/rclone`; it publishes no database ports and uses only a
-synthetic database and rclone's local backend.
+synthetic database and rclone's local backend. Set `LINUX_SKILLS_LAB_PREFIX=lskw-` to name every container and network so they can be
+removed by name, and `LINUX_SKILLS_LAB_REPO` to a copy of the repository to mount that copy read-only
+instead of the live checkout.
 
 <!-- Author: Peter Bamuhigire <techguypeter.com> +256784464178 -->
