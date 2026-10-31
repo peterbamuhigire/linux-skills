@@ -276,4 +276,4 @@ sudo install-skills-bin linux-postgresql
 
 | Script | Source | Core? | Purpose |
 |---|---|---|---|
-| sk-pg-backup | scripts/sk-pg-backup.sh | yes | Logical backup of one or all databases via `pg_dump -Fc` (+ `pg_dumpall --globals-only` for roles), timestamped, compressed, rotated by retention days. Optional WAL-archive sanity check. Interactive by default; `--yes` for cron. Both families. |
+| sk-pg-backup | scripts/sk-pg-backup.sh | yes | Logical backup of one or all databases via `pg_dump -Fc` (+ `pg_dumpall --globals-only` for roles), timestamped, compressed, written mode 0600 through a private staging directory and checked with `pg_restore --list` before it is published, rotated by retention days (only its own file names). Dumps are not encrypted. Optional WAL-archive sanity check. Interactive by default; `--yes` for cron. Both families. |
