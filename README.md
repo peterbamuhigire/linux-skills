@@ -290,8 +290,6 @@ Three kaizen cycles ran in October 2026. Each evidence folder under `docs/kaizen
 - The first-cycle report also records a stricter 45/100 ceiling requested for that cycle.
 - Scores are reviewer judgements against named evidence, not a percentage of anything.
 
-Next: [what improved](#what-the-october-2026-kaizen-improved), [open findings](#open-findings-that-matter-to-a-user) and [date-triggered gates](#date-triggered-gates).
-
 ## What the October 2026 kaizen improved
 
 The three cycles kept every experiment they ran; none was reverted.
