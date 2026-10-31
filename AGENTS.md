@@ -143,11 +143,17 @@ Alma, Oracle). When acting on a task:
 - All conventions live in [`docs/engine-design/spec.md`](docs/engine-design/spec.md).
 - Skill authoring and July 2026 release gates live in
   [`docs/engine-design/skill-authoring-standard.md`](docs/engine-design/skill-authoring-standard.md).
-- The zero-debt gates are `python -X utf8 scripts/validate_skills.py --baseline quality-baseline.json`
-  and `python -X utf8 scripts/routing_smoke_test.py`; run both after changing a skill contract or route.
-- The curated script catalogue (~88 scripts) is in [`docs/engine-design/script-inventory.md`](docs/engine-design/script-inventory.md).
+- The zero-debt gates are `python3 -X utf8 scripts/validate_skills.py --baseline quality-baseline.json`
+  and `python3 -X utf8 scripts/routing_smoke_test.py`; run both after changing a skill contract or route.
+  The README's [Validation](README.md#validation) section lists every registered check with its
+  exact command, dependencies (`PyYAML`, `pytest`) and what runs only in CI, in a container or as root.
+- The planned script catalogue (88 scripts) is in [`docs/engine-design/script-inventory.md`](docs/engine-design/script-inventory.md).
+  The shipped scripts are the 26 `sk-*` sources found by `find . -name 'sk-*' -type f`, 13 of them tier 1.
 - Scripts install to `/usr/local/bin/` with the `sk-` prefix via `install-skills-bin`.
 - Hybrid install: `sudo install-skills-bin core` at setup, per-skill lazy install on first use.
+  The installer needs root even with `--dry-run`; `install-skills-bin --list` does not.
+  Installed copies do not follow the checkout: after an update, compare and reinstall as in the
+  README's [Updating installed scripts](README.md#updating-installed-scripts).
 - Every script sources `/usr/local/lib/linux-skills/common.sh`.
 
 ## Current Kaizen evidence
@@ -158,7 +164,10 @@ scores and explicit unassessed checks; never promote a target to an achieved
 score. Use the [security triage runbook](docs/security/current-vulnerability-triage.md)
 for current advisory matching and the dated source register for its limitations.
 The [portfolio refresh](docs/kaizen/2026-10-engine-kaizen/portfolio-refresh.md) records native plugin discovery and the hard file-cap regression.
-The [2026-10-31 pass 2](docs/kaizen/2026-10-engine-kaizen-pass-2/05-final-report.md) continues that cycle: it fixed the SSH drop-in naming, `sk-pg-backup` file modes, configuration trust and the audit-log fallback, and its [operator note](docs/updates/2026-10-31-kaizen-pass-2.md) lists the host checks that follow. Installed `sk-*` copies and `/usr/local/lib/linux-skills/common.sh` can be older than this checkout; compare before relying on them.
+The [2026-10-31 pass 2](docs/kaizen/2026-10-engine-kaizen-pass-2/05-final-report.md) continues that cycle: it fixed the SSH drop-in naming, `sk-pg-backup` file modes, configuration trust and the audit-log fallback, and its [operator note](docs/updates/2026-10-31-kaizen-pass-2.md) lists the host checks that follow.
+The [Linux lab wave](docs/kaizen/2026-10-linux-lab-wave/05-final-report.md) of the same day ran rootless Podman labs on Debian 12, Fedora 44 and MySQL 8.4; its [operator note](docs/kaizen/2026-10-linux-lab-wave/operator-note.md) lists the host checks it adds. Its published score is raw 77.9 and `min(raw, 65)` = 65.0; the 95 target is not met. Ubuntu, enterprise RHEL, Debian 13 and real cloud-init images are `NOT_ASSESSED`.
+Installed `sk-*` copies and `/usr/local/lib/linux-skills/common.sh` can be older than this checkout; compare before relying on them.
+The [docs index](docs/README.md) lists every record folder.
 The historical 88-script inventory is a roadmap; installed availability comes
 from `scripts/install-skills-bin --list` and current skill manifests.
 
@@ -173,7 +182,7 @@ Start from these skills unless the task is already narrowly scoped:
 - `skill-writing`: meta-skill for creating or upgrading portable skills
 - `skill-safety-audit`: review gate for new or imported skill content
 
-For current or uncertain distro, security, compliance, vendor, platform, legal, or safety claims, route to `digital-research-engine (resolve through the device catalogue)` and load its source-evaluation and source-verification skills before standardising a command or policy. This Linux engine is an operational consumer of that research engine, not a substitute for current-source verification.
+For current or uncertain distro, security, compliance, vendor, platform, legal, or safety claims, route to the Digital Research Engine (GitHub repository `chwezi-research-engine`, catalogue id `digital-research-skills`; resolve its checkout through the active engine-routing table or the catalogue) and load its source-evaluation and source-verification skills before standardising a command or policy. This Linux engine is an operational consumer of that research engine, not a substitute for current-source verification.
 
 ## Routing
 
@@ -194,7 +203,7 @@ Use `linux-sysadmin` as the default entry point for server work, then route quic
 
 Windows hosts: `windows-admin-engine-skills` (`windows-admin-engine-skills; resolve through the device catalogue`) —
 the reciprocal statement on that engine's side is "Linux hosts: `linux-skills`"
-(`windows-admin-engine-skills\AGENTS.md`). The two engines are the estate's paired
+(in that engine's `AGENTS.md`). The two engines are the estate's paired
 infrastructure engines; route to whichever OS the target host actually runs.
 
 When the task is about creating or upgrading skills in this repo, use `skill-writing`. When the

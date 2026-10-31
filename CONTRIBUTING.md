@@ -15,16 +15,20 @@ Changes must preserve the two-family Linux contract and the zero-debt July 2026 
 
 ## Required checks
 
-```powershell
-python -X utf8 scripts/validate_skills.py --baseline quality-baseline.json
-python -X utf8 scripts/routing_smoke_test.py
+```bash
+python3 -X utf8 scripts/validate_skills.py --baseline quality-baseline.json
+python3 -X utf8 scripts/routing_smoke_test.py
 bash scripts/tests/check-distro-matrix.sh
-python -m pytest -q
+python3 -m pytest -q
 bash scripts/tests/common-sh.test.sh
 git diff --check
 ```
 
-Run the canonical quick validator against each changed skill directory and the canonical engine scanner against `--active-root .`. Run relevant Bash syntax, unit, link, or system tests when operational content changes.
+The validators need `PyYAML` and the tests need `pytest`; the repository has no requirements file, so install both into a virtual environment. The README's [Validation](README.md#validation) section lists every registered check with its exact command and current result, including the checks CI also runs (marketplace and file ceiling, plugin manifest, source-ingestion guardrail, hygiene gate), the opt-in container labs, and which checks need root, Podman or PowerShell.
+
+Run the canonical quick validator against each changed skill directory (`python3 -X utf8 meta/skill-writing/scripts/quick_validate.py <skill-directory>`) and the canonical engine scanner against `--active-root .` (`engine_compliance.py` in the engineering-catalogue checkout, under `skills/sdlc-meta/skill-engine-audit/scripts/`). Run relevant Bash syntax, unit, link, or system tests when operational content changes.
+
+When a change touches a script, a procedure or a shell source, also run the opt-in container labs described in the README (`LINUX_SKILLS_LAB=1 python3 -m pytest -rP tests/test_distro_labs.py`). They need rootless Podman and local images, and the ShellCheck zero-warning gate runs inside them. Say in the release evidence when they were not run.
 
 The baseline is a zero-debt assertion, not a suppression list. Do not add failure counts to it. Update the expected catalogue or fixture count only when an intentional, reviewed change alters those counts and every gate remains clean.
 
@@ -46,7 +50,9 @@ when changing security advice. Keep source access failures and superseding
 verification visible. Do not claim host patch status from an upstream version,
 a cached package query, or a successful repository test.
 
-For this cycle, see the [29 October audit](docs/kaizen/2026-10-engine-kaizen/05-final-report.md).
+For the October 2026 cycles, see the [29 October audit](docs/kaizen/2026-10-engine-kaizen/05-final-report.md),
+the [pass 2 report](docs/kaizen/2026-10-engine-kaizen-pass-2/05-final-report.md) and the
+[lab wave report](docs/kaizen/2026-10-linux-lab-wave/05-final-report.md).
 Historical audit scores remain historical; a requested lower initial cap does
 not authorise inventing a raw score or reporting an unachieved target.
 
