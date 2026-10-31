@@ -35,9 +35,11 @@ Every active skill must meet these gates:
 
 ## Commands
 
-```powershell
-python -X utf8 scripts/validate_skills.py --baseline quality-baseline.json
-python -X utf8 scripts/routing_smoke_test.py
-python -X utf8 C:\wamp64\www\chwezi-dev-engine\skills\sdlc-meta\skill-engine-audit\scripts\engine_compliance.py --root . --active-root . --details
+```bash
+python3 -X utf8 scripts/validate_skills.py --baseline quality-baseline.json
+python3 -X utf8 scripts/routing_smoke_test.py
+python3 -X utf8 <chwezi-dev-engine checkout>/skills/sdlc-meta/skill-engine-audit/scripts/engine_compliance.py --root . --active-root . --details
 bash scripts/tests/check-distro-matrix.sh
 ```
+
+`<chwezi-dev-engine checkout>` is the engineering-catalogue repository; resolve it through the active engine-routing table or the catalogue. The README's [Validation](../../README.md#validation) section lists the other registered checks and their dependencies.

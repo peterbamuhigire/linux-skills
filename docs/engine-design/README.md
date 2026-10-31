@@ -2,8 +2,10 @@
 
 **Author:** Peter Bamuhigire · [techguypeter.com](https://techguypeter.com) · +256 784 464 178
 
-This directory is the design reference for turning `linux-skills` into a full
-Linux server management engine for Ubuntu/Debian production servers.
+This directory is the design reference for the `linux-skills` script and installer
+conventions. It was drafted in April 2026 for Ubuntu/Debian servers; the engine now
+supports both the Debian and RHEL families (see [`../multi-distro/plan.md`](../multi-distro/plan.md)),
+and the spec and inventory below keep their original wording where it has not been revised.
 
 Read these documents before writing any new script or skill in this repo. They
 are the source of truth for conventions; skill files and scripts must match.
@@ -13,7 +15,8 @@ are the source of truth for conventions; skill files and scripts must match.
 | File | Purpose |
 |---|---|
 | [`spec.md`](spec.md) | The engine specification: installation model, standard flags, `common.sh` library contract, manifest format, script template, safety rules. |
-| [`script-inventory.md`](script-inventory.md) | The curated catalogue of ~90 scripts to build, ranked by priority and grouped by theme. Every new script must exist here before being written. |
+| [`script-inventory.md`](script-inventory.md) | The planned catalogue of 88 scripts, ranked by priority and grouped by theme. It is a roadmap, not a list of what ships; for what ships see Status below. |
+| [`skill-authoring-standard.md`](skill-authoring-standard.md) | The local skill contract and release gates for active `SKILL.md` files, with the commands that check them. |
 
 ## Status
 
@@ -24,10 +27,12 @@ are the source of truth for conventions; skill files and scripts must match.
   *Beginner's Guide to the Unix Terminal*, *Ubuntu Server Guide* (Canonical),
   *Linux Network Administrator's Guide*, *Linux System Administration for the
   2020s*, *Mastering Ubuntu* (Atef).
-- **Scripts written:** 3 of ~90 (`server-audit.sh`, `mysql-backup.sh`,
-  `update-all-repos`). The rest are planned — see the inventory.
-- **Next session:** execute the inventory in priority order, starting with
-  tier 1 (Foundation).
+- **Scripts shipped (31 October 2026):** 26 `sk-*` sources
+  (`find . -name 'sk-*' -type f` from the repository root), 18 under `scripts/` and 8 beside
+  their skills; 13 are tier 1 (`scripts/install-skills-bin --list`). The inventory's other
+  entries remain planned.
+- **Validation and evidence:** the README's [Validation](../../README.md#validation) section
+  lists the registered checks; the October 2026 records are under [`../kaizen/`](../kaizen/).
 
 ## How to use this design
 
