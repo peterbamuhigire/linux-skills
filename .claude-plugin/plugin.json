@@ -62,5 +62,10 @@
       "description": "Run this engine's enforcement hooks (e.g. destructive-command gate, banned-font gate where applicable). Disable hook enforcement while keeping skills and agents available.",
       "default": true
     }
+  },
+  "description": "Administer Linux systems across provisioning, identity, networking, services, hardening, storage, observability, automation, and recovery.",
+  "author": {
+    "name": "Peter Bamuhigire",
+    "url": "https://github.com/peterbamuhigire"
   }
 }
