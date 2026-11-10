@@ -39,7 +39,7 @@ def test_semantic_model_drift_in_role_file_is_still_rejected(tmp_path: Path) -> 
         POLICY.check(home, ROOT)
 
 
-def test_medium_root_reasoning_effort_is_rejected_and_apply_preserves_other_settings(
+def test_high_root_reasoning_effort_is_rejected_and_apply_preserves_other_settings(
     tmp_path: Path,
 ) -> None:
     home = _temp_codex_home(tmp_path)
@@ -47,8 +47,8 @@ def test_medium_root_reasoning_effort_is_rejected_and_apply_preserves_other_sett
     config.write_bytes(
         b'approval_policy = "never"\n'
         + config.read_bytes().replace(
-            b'model_reasoning_effort = "high"',
             b'model_reasoning_effort = "medium"',
+            b'model_reasoning_effort = "high"',
             1,
         )
     )
@@ -60,7 +60,7 @@ def test_medium_root_reasoning_effort_is_rejected_and_apply_preserves_other_sett
 
     POLICY.apply(home, ROOT)
     after = POLICY.parse_config(config)
-    assert after["model_reasoning_effort"] == "high"
+    assert after["model_reasoning_effort"] == "medium"
     assert after["approval_policy"] == "never"
 
 
