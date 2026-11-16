@@ -23,7 +23,7 @@ If it reports configuration drift, Peter authorises the bounded
 `--runtime codex --apply` repair, followed by `--check`. The helper backs up
 changes and preserves unrelated settings. If Python or configuration access is
 unavailable, report the limitation; do not replace the user's config wholesale.
-Read `.codex/model-policy.md` for the full contract. Use Luna (`gpt-6-luna`) with medium reasoning by
+Read `.codex/model-policy.md` for the full contract. Use Terra (`gpt-6.1-terra`) with medium reasoning by
 default for orchestration, research, audit, review, and implementation. Use Astra (`gpt-6-astra`) only when
 Peter explicitly selects it for the task; never select or fall back to GPT-5.6. Report unavailable required GPT-6
 models. A running session may need restarting for root settings to apply.

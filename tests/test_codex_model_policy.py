@@ -33,7 +33,7 @@ def test_crlf_only_role_file_is_accepted_without_policy_drift(tmp_path: Path) ->
 def test_semantic_model_drift_in_role_file_is_still_rejected(tmp_path: Path) -> None:
     home = _temp_codex_home(tmp_path)
     role = home / "agents" / "default.toml"
-    role.write_bytes(role.read_bytes().replace(b'gpt-6-luna', b'gpt-6-astra', 1))
+    role.write_bytes(role.read_bytes().replace(b'gpt-6.1-terra', b'gpt-6-astra', 1))
 
     with pytest.raises(POLICY.PolicyDrift, match="role template drift: default"):
         POLICY.check(home, ROOT)
@@ -54,7 +54,7 @@ def test_high_root_reasoning_effort_is_rejected_and_apply_preserves_other_settin
     )
     before = {path: path.read_bytes() for path in home.rglob("*") if path.is_file()}
 
-    with pytest.raises(POLICY.PolicyDrift, match="root reasoning effort policy drift"):
+    with pytest.raises(POLICY.PolicyDrift, match="root model policy drift"):
         POLICY.check(home, ROOT)
     assert {path: path.read_bytes() for path in home.rglob("*") if path.is_file()} == before
 
@@ -76,6 +76,6 @@ def test_shipped_policy_rejects_forbidden_gpt56_model_contract(tmp_path: Path) -
 
     with pytest.raises(
         POLICY.PolicyError,
-        match="default model policy must pin root, review, and execution to gpt-6-luna",
+        match="default model policy must pin root, review, and execution to gpt-6.1-terra",
     ):
         POLICY.load_policy(root)

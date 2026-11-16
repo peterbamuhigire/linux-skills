@@ -1,2 +1,5 @@
 __pycache__/
 *.py[cod]
+
+# Host-specific permissions stay local.
+.claude/settings.local.json

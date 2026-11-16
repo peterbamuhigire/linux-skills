@@ -78,9 +78,9 @@ sudo lastb | head                                 # failed logins
 
 - `Failed password for invalid user admin from 198.51.100.4 port 55342`
   → brute force. Fail2ban should be catching it.
-- `Accepted publickey for peter from 1.2.3.4 port 52341 ssh2: ED25519`
+- `Accepted publickey for admin from 1.2.3.4 port 52341 ssh2: ED25519`
   → normal successful login; compare IP to expected.
-- `sudo:   peter : TTY=pts/0 ; PWD=/home/peter ; USER=root ; COMMAND=/usr/bin/apt update`
+- `sudo:   admin : TTY=pts/0 ; PWD=/home/admin ; USER=root ; COMMAND=/usr/bin/apt update`
   → every sudo invocation is recorded here.
 
 **kern.log** for memory pressure and disk errors:

@@ -13,7 +13,7 @@ metadata:
 ---
 # Skill Writing
 
-Pointer stub. The canonical standard is `chwezi-dev-engine/skills/sdlc-meta/skill-writing` ([canonical on GitHub](https://github.com/peterbamuhigire/chwezi-dev-engine/blob/main/skills/sdlc-meta/skill-writing/SKILL.md); local path `C:\wamp64\www\chwezi-dev-engine\skills\sdlc-meta\skill-writing\SKILL.md`). Load it first; this file keeps a portable minimum and this engine's delta.
+Pointer stub. The canonical standard is `chwezi-dev-engine/skills/sdlc-meta/skill-writing` ([canonical on GitHub](https://github.com/peterbamuhigire/chwezi-dev-engine/blob/main/skills/sdlc-meta/skill-writing/SKILL.md); resolve the local checkout through the device catalogue). Load it first; this file keeps a portable minimum and this engine's delta.
 <!-- dual-compat-start -->
 ## Use When
 - Creating a specialist Linux skill or changing an existing skill's trigger, contract, references or routing fixtures.

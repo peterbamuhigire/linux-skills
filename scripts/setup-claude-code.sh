@@ -102,21 +102,21 @@ STANDARD FLAGS:
 
 EXAMPLES:
     bash scripts/setup-claude-code.sh --dry-run \
-      --skills-root /home/peter/.claude/skills \
+      --skills-root /home/user/.claude/skills \
       --checkout-action existing \
       --git-action skip --node-action skip --claude-action skip \
       --ssh-key-action skip --github-ssh-action skip \
       --engine-action skip --registry-action skip
 
     bash scripts/setup-claude-code.sh --yes \
-      --skills-root /home/peter/.claude/skills \
+      --skills-root /home/user/.claude/skills \
       --checkout-action existing --git-action configure \
       --git-name "Peter Bamuhigire" --git-email peter@example.invalid \
       --node-action install --claude-action skip \
-      --ssh-key-action existing --ssh-key /home/peter/.ssh/id_ed25519 \
-      --github-ssh-action verify --known-hosts /home/peter/.ssh/known_hosts \
+      --ssh-key-action existing --ssh-key /home/user/.ssh/id_ed25519 \
+      --github-ssh-action verify --known-hosts /home/user/.ssh/known_hosts \
       --engine-action install --registry-action skip \
-      --recovery-file /home/peter/bootstrap-recovery.txt \
+      --recovery-file /home/user/bootstrap-recovery.txt \
       --authorize-network --authorize-user-writes \
       --authorize-privileged-writes
 

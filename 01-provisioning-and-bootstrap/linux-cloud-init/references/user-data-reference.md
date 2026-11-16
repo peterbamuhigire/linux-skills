@@ -460,13 +460,13 @@ timezone: Africa/Kampala
 
 users:
   - default
-  - name: peter
+  - name: admin
     groups: [sudo]
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
     lock_passwd: true
     ssh_authorized_keys:
-      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... peter@laptop
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... admin@laptop
 
 ssh_pwauth: false
 disable_root: true
@@ -495,12 +495,12 @@ runcmd:
   - [ufw, allow, OpenSSH]
   - [ufw, --force, enable]
   # Clone the linux-skills knowledge base into the admin's ~/.claude/skills
-  - [install, -d, -o, peter, -g, peter, /home/peter/.claude]
+  - [install, -d, -o, admin, -g, admin, /home/admin/.claude]
   - |
-    sudo -u peter git clone https://github.com/petebwire/linux-skills.git \
-      /home/peter/.claude/skills
+    sudo -u admin git clone https://github.com/petebwire/linux-skills.git \
+      /home/admin/.claude/skills
   # Install shipped core helpers; finish server provisioning with the manual runbook
-  - /home/peter/.claude/skills/scripts/install-skills-bin core
+  - /home/admin/.claude/skills/scripts/install-skills-bin core
   - [systemctl, enable, --now, fail2ban]
 
 final_message: "Bootstrap complete. Continue with the linux-server-provisioning manual procedure before exposing services."
